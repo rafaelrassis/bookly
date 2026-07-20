@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { getBook } from "@/data/books";
 import { Avatar } from "@/components/Avatar";
 import { BookCover } from "@/components/BookCover";
@@ -23,14 +22,31 @@ const ACTIVITY_TABS: { key: ActivityTab; label: string }[] = [
   { key: "likes", label: "Curtidas" },
 ];
 
+function GearIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.6 1.6 0 0 0 .32 1.77l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.6 1.6 0 0 0-1.77-.32 1.6 1.6 0 0 0-.97 1.47V21a2 2 0 1 1-4 0v-.09a1.6 1.6 0 0 0-1.05-1.47 1.6 1.6 0 0 0-1.77.32l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.6 1.6 0 0 0 4.6 15a1.6 1.6 0 0 0-1.47-.97H3a2 2 0 1 1 0-4h.09A1.6 1.6 0 0 0 4.56 9a1.6 1.6 0 0 0-.32-1.77l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.6 1.6 0 0 0 1.77.32H9a1.6 1.6 0 0 0 .97-1.47V3a2 2 0 1 1 4 0v.09c0 .64.38 1.21.97 1.47a1.6 1.6 0 0 0 1.77-.32l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.6 1.6 0 0 0-.32 1.77V9c.26.59.83.97 1.47.97H21a2 2 0 1 1 0 4h-.09a1.6 1.6 0 0 0-1.47.97z" />
+    </svg>
+  );
+}
+
 export default function ProfilePage() {
   const user = useStore((s) => s.user);
   const feed = useStore((s) => s.feed);
-  const logout = useStore((s) => s.logout);
   const { readCount, pagesRead, reviewCount, avgRating, histogram, maxCount, ratedBooks } =
     useMyStats();
   const recommended = useRecommendations(6);
-  const router = useRouter();
 
   const [tab, setTab] = useState<ActivityTab>("ratings");
 
@@ -40,11 +56,7 @@ export default function ProfilePage() {
     .filter((e): e is { book: NonNullable<ReturnType<typeof getBook>>; text: string } =>
       Boolean(e.book)
     );
-
-  function handleLogout() {
-    logout();
-    router.replace("/");
-  }
+  const publicLists = user.lists.filter((l) => l.visibility === "public");
 
   const stats = [
     { label: "lidos", value: String(readCount) },
@@ -53,11 +65,29 @@ export default function ProfilePage() {
   ];
 
   return (
-    <div className="px-5 pt-8">
+    <div className="px-5 pt-6">
+      <div className="flex justify-end">
+        <Link
+          href="/settings"
+          aria-label="Configurações"
+          className="flex h-10 w-10 items-center justify-center rounded-full text-paperDim hover:text-paper"
+        >
+          <GearIcon />
+        </Link>
+      </div>
+
       <section className="flex items-center gap-4">
         <Avatar user={`@${user.username}`} size={72} />
-        <div className="min-w-0">
-          <h1 className="text-xl font-extrabold">{user.name}</h1>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <h1 className="text-xl font-extrabold">{user.name}</h1>
+            <Link
+              href="/profile/edit"
+              className="rounded-full border border-line bg-card px-3 py-1 text-xs font-bold text-paperDim transition-colors hover:text-paper"
+            >
+              Editar perfil
+            </Link>
+          </div>
           <p className="text-sm text-paperDim">@{user.username}</p>
           <p className="mt-1 text-xs text-paperDim">
             <span className="font-bold text-paper">{user.followers}</span> seguidores ·{" "}
@@ -85,11 +115,16 @@ export default function ProfilePage() {
         </section>
       )}
 
-      <div className="mt-6 grid grid-cols-3 gap-3">
-        {stats.map((stat) => (
-          <div key={stat.label} className="rounded-2xl border border-line bg-card py-4 text-center">
+      <div className="mt-6 flex rounded-2xl border border-line bg-card py-4">
+        {stats.map((stat, i) => (
+          <div
+            key={stat.label}
+            className={`flex-1 text-center ${i > 0 ? "border-l border-line" : ""}`}
+          >
             <p className="font-display text-2xl font-bold text-foil">{stat.value}</p>
-            <p className="mt-0.5 text-xs text-paperDim">{stat.label}</p>
+            <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-paperDim">
+              {stat.label}
+            </p>
           </div>
         ))}
       </div>
@@ -129,6 +164,34 @@ export default function ProfilePage() {
           </div>
         </div>
       </section>
+
+      {publicLists.length > 0 && (
+        <section className="mt-6">
+          <SectionTitle>Listas</SectionTitle>
+          <div className="mt-3 flex flex-col gap-3">
+            {publicLists.map((list) => (
+              <Link
+                key={list.id}
+                href={`/lists/${list.id}`}
+                className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-card p-4 transition-colors hover:bg-card2"
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-bold">{list.name}</p>
+                  <p className="text-xs text-paperDim">
+                    {list.bookIds.length} {list.bookIds.length === 1 ? "livro" : "livros"}
+                  </p>
+                </div>
+                <div className="flex shrink-0 gap-1.5">
+                  {list.bookIds.slice(0, 3).map((id) => {
+                    const book = getBook(id);
+                    return book ? <BookCover key={id} book={book} width={28} /> : null;
+                  })}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="mt-6">
         <SectionTitle>Atividade</SectionTitle>
@@ -204,7 +267,7 @@ export default function ProfilePage() {
           ))}
       </section>
 
-      <section className="mt-7">
+      <section className="mb-4 mt-7">
         <SectionTitle>Recomendados para você</SectionTitle>
         <div className="no-scrollbar -mx-5 mt-3 flex gap-3 overflow-x-auto px-5">
           {recommended.map((book) => (
@@ -214,14 +277,6 @@ export default function ProfilePage() {
           ))}
         </div>
       </section>
-
-      <button
-        type="button"
-        onClick={handleLogout}
-        className="mt-8 w-full rounded-xl border border-line bg-card px-5 py-3.5 font-bold text-ribbon transition-colors hover:bg-card2"
-      >
-        Sair
-      </button>
     </div>
   );
 }
