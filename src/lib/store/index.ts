@@ -1,12 +1,22 @@
 "use client";
 
 import { create } from "zustand";
+import { getBook } from "@/data/books";
 import { CLUBS } from "@/data/clubs";
 import { FEED_REVIEWS } from "@/data/feed";
-import type { Club, FeedReview, ShelfStatus, UserState } from "@/lib/types";
+import { nowTime, readingPercent, todayISO } from "@/lib/format";
+import type {
+  Club,
+  FeedReview,
+  ProgressUnit,
+  ShelfEntry,
+  ShelfStatus,
+  UserState,
+  Visibility,
+} from "@/lib/types";
 
 /**
- * Estado mocado em memória (protótipo v2). Todo acesso a dados passa por
+ * Estado mocado em memória (protótipo v3). Todo acesso a dados passa por
  * este store e pelos hooks em ./hooks — na fase futura a troca por
  * NextAuth + Postgres + Google Books API fica localizada aqui.
  */
@@ -19,14 +29,29 @@ const INITIAL_USER: UserState = {
   followers: 128,
   following: 87,
   top4: ["torto-arado", "duna", "1984", "ensaio-sobre-a-cegueira"],
+  avatar: 0,
+  progressUnit: "pages",
   shelf: {
-    "o-nome-do-vento": { status: "READING", currentPage: 408, lastPage: 374 },
-    "torto-arado": { status: "READ" },
-    duna: { status: "READ" },
-    "1984": { status: "READ" },
-    "ensaio-sobre-a-cegueira": { status: "READ" },
-    "a-paciente-silenciosa": { status: "READ" },
-    verity: { status: "READ" },
+    "o-nome-do-vento": {
+      status: "READING",
+      currentPage: 408,
+      lastPage: 374,
+      startedAt: "2026-07-12",
+    },
+    verity: { status: "READING", currentPage: 120, lastPage: 96, startedAt: "2026-07-15" },
+    "torto-arado": { status: "READ", startedAt: "2026-05-02", finishedAt: "2026-05-19" },
+    duna: { status: "READ", startedAt: "2026-03-01", finishedAt: "2026-04-06" },
+    "1984": { status: "READ", startedAt: "2026-06-04", finishedAt: "2026-06-18" },
+    "ensaio-sobre-a-cegueira": {
+      status: "READ",
+      startedAt: "2026-02-10",
+      finishedAt: "2026-02-27",
+    },
+    "a-paciente-silenciosa": {
+      status: "READ",
+      startedAt: "2026-01-05",
+      finishedAt: "2026-01-11",
+    },
   },
   ratings: {
     "torto-arado": 5,
@@ -57,28 +82,67 @@ const INITIAL_USER: UserState = {
   quotes: {
     "1984": [{ text: "Guerra é paz. Liberdade é escravidão. Ignorância é força.", page: 29 }],
   },
+  lists: [
+    {
+      id: "fantasia-que-me-formou",
+      name: "Fantasia que me formou",
+      visibility: "public",
+      bookIds: ["o-nome-do-vento", "duna", "1984"],
+    },
+    {
+      id: "presentes-em-potencial",
+      name: "Presentes em potencial",
+      visibility: "private",
+      bookIds: ["torto-arado", "verity"],
+    },
+  ],
 };
 
 type Toast = { id: number; message: string };
+type Theme = "dark" | "light";
+
+function randomCode(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let code = "";
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
+function slugify(name: string): string {
+  return (
+    name
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") || "item"
+  );
+}
 
 type Store = {
   user: UserState;
   feed: FeedReview[];
   clubs: Club[];
   toast: Toast | null;
+  theme: Theme;
 
   showToast: (message: string) => void;
   clearToast: () => void;
+  setTheme: (theme: Theme) => void;
 
   completeOnboarding: (name: string, username: string, bio: string, genres: string[]) => void;
   logout: () => void;
+  updateProfile: (username: string, avatar: number, bio: string, top4: string[]) => void;
 
-  /** status null remove o livro da estante. */
+  /** status null remove o livro da estante. Datas: startedAt na primeira vez
+   * em Lendo (ou Lido direto); finishedAt ao marcar Lido. */
   setShelfStatus: (bookId: string, status: ShelfStatus | null) => void;
   /** rating 0 remove a nota. Avaliar marca como Lido automaticamente. */
   setRating: (bookId: string, rating: number) => { markedAsRead: boolean };
   saveReview: (bookId: string, text: string) => void;
-  /** Salva a página atual; a anterior vira lastPage. Retorna o delta. */
+  setProgressUnit: (unit: ProgressUnit) => void;
+  /** Salva a página atual (sempre em páginas); a anterior vira lastPage.
+   * Publica mensagem de sistema nos clubes do livro. Retorna o delta. */
   updateProgress: (bookId: string, page: number) => { delta: number };
 
   toggleLike: (reviewId: string) => void;
@@ -89,7 +153,20 @@ type Store = {
   addQuote: (bookId: string, text: string, page?: number) => void;
 
   toggleClub: (clubId: string) => { joined: boolean };
-  postToClub: (clubId: string, text: string) => void;
+  createClub: (
+    name: string,
+    bookId: string,
+    desc: string,
+    visibility: Visibility
+  ) => { id: string; code?: string };
+  /** Retorna o id do clube ao entrar; "already" se já participa; null se inválido. */
+  joinClubByCode: (code: string) => string | "already" | null;
+  postToClub: (clubId: string, text: string, replyTo?: { user: string; text: string }) => void;
+
+  createList: (name: string, visibility: Visibility) => string;
+  toggleListVisibility: (listId: string) => void;
+  addBooksToList: (listId: string, bookIds: string[]) => void;
+  removeBookFromList: (listId: string, bookId: string) => void;
 };
 
 export const useStore = create<Store>()((set, get) => ({
@@ -97,28 +174,44 @@ export const useStore = create<Store>()((set, get) => ({
   feed: FEED_REVIEWS,
   clubs: CLUBS,
   toast: null,
+  theme: "dark",
 
   showToast: (message) => set({ toast: { id: Date.now(), message } }),
   clearToast: () => set({ toast: null }),
+  setTheme: (theme) => set({ theme }),
 
   completeOnboarding: (name, username, bio, genres) =>
     set((s) => ({ user: { ...s.user, loggedIn: true, name, username, bio, genres } })),
 
   logout: () => set((s) => ({ user: { ...s.user, loggedIn: false } })),
 
+  updateProfile: (username, avatar, bio, top4) =>
+    set((s) => ({ user: { ...s.user, username, avatar, bio, top4 } })),
+
   setShelfStatus: (bookId, status) =>
     set((s) => {
       const shelf = { ...s.user.shelf };
       if (status === null) {
         delete shelf[bookId];
-      } else if (status === "READING") {
-        shelf[bookId] = {
-          status,
-          currentPage: shelf[bookId]?.currentPage ?? 0,
-          lastPage: shelf[bookId]?.lastPage ?? 0,
-        };
       } else {
-        shelf[bookId] = { status };
+        const prev = shelf[bookId];
+        const today = todayISO();
+        if (status === "READING") {
+          shelf[bookId] = {
+            status,
+            currentPage: prev?.currentPage ?? 0,
+            lastPage: prev?.lastPage ?? 0,
+            startedAt: prev?.startedAt ?? today,
+          };
+        } else if (status === "READ") {
+          shelf[bookId] = {
+            status,
+            startedAt: prev?.startedAt ?? today,
+            finishedAt: today,
+          };
+        } else {
+          shelf[bookId] = { status };
+        }
       }
       return { user: { ...s.user, shelf } };
     }),
@@ -135,7 +228,15 @@ export const useStore = create<Store>()((set, get) => ({
       ratings[bookId] = rating;
       ratingOrder.unshift(bookId);
       const shelf = { ...s.user.shelf };
-      if (shelf[bookId]?.status !== "READ") shelf[bookId] = { status: "READ" };
+      const prev = shelf[bookId];
+      if (prev?.status !== "READ") {
+        const today = todayISO();
+        shelf[bookId] = {
+          status: "READ",
+          startedAt: prev?.startedAt ?? today,
+          finishedAt: today,
+        };
+      }
       return { user: { ...s.user, ratings, ratingOrder, shelf } };
     });
     return { markedAsRead };
@@ -144,17 +245,47 @@ export const useStore = create<Store>()((set, get) => ({
   saveReview: (bookId, text) =>
     set((s) => ({ user: { ...s.user, myReviews: { ...s.user.myReviews, [bookId]: text } } })),
 
+  setProgressUnit: (unit) => set((s) => ({ user: { ...s.user, progressUnit: unit } })),
+
   updateProgress: (bookId, page) => {
-    const entry = get().user.shelf[bookId];
+    const state = get();
+    const entry: ShelfEntry | undefined = state.user.shelf[bookId];
     const previous = entry?.currentPage ?? 0;
+    const book = getBook(bookId);
+    const percent = book ? readingPercent(page, book.pages) : 0;
+    const username = state.user.username;
     set((s) => ({
       user: {
         ...s.user,
         shelf: {
           ...s.user.shelf,
-          [bookId]: { ...s.user.shelf[bookId], status: "READING", currentPage: page, lastPage: previous },
+          [bookId]: {
+            ...s.user.shelf[bookId],
+            status: "READING",
+            currentPage: page,
+            lastPage: previous,
+            startedAt: s.user.shelf[bookId]?.startedAt ?? todayISO(),
+          },
         },
       },
+      // notificação de leitura nos murais dos clubes que leem este livro
+      clubs: s.clubs.map((c) =>
+        c.joined && c.bookId === bookId && book
+          ? {
+              ...c,
+              feed: [
+                ...c.feed,
+                {
+                  id: `sys-${Date.now()}-${c.id}`,
+                  user: `@${username}`,
+                  text: `📖 @${username} avançou para ${percent}% de ${book.title}`,
+                  time: nowTime(),
+                  system: true,
+                },
+              ],
+            }
+          : c
+      ),
     }));
     return { delta: page - previous };
   },
@@ -221,12 +352,98 @@ export const useStore = create<Store>()((set, get) => ({
     return { joined };
   },
 
-  postToClub: (clubId, text) =>
+  createClub: (name, bookId, desc, visibility) => {
+    const id = `${slugify(name)}-${Date.now().toString(36)}`;
+    const code = visibility === "private" ? randomCode() : undefined;
+    const club: Club = {
+      id,
+      name,
+      bookId,
+      desc,
+      visibility,
+      code,
+      members: 1,
+      joined: true,
+      feed: [],
+      memberProgress: {},
+    };
+    set((s) => ({ clubs: [...s.clubs, club] }));
+    return { id, code };
+  },
+
+  joinClubByCode: (code) => {
+    const normalized = code.trim().toUpperCase();
+    const club = get().clubs.find((c) => c.code === normalized);
+    if (!club) return null;
+    if (club.joined) return "already";
+    set((s) => ({
+      clubs: s.clubs.map((c) =>
+        c.id === club.id ? { ...c, joined: true, members: c.members + 1 } : c
+      ),
+    }));
+    return club.id;
+  },
+
+  postToClub: (clubId, text, replyTo) =>
     set((s) => ({
       clubs: s.clubs.map((c) =>
         c.id === clubId
-          ? { ...c, feed: [...c.feed, { user: `@${s.user.username}`, text }] }
+          ? {
+              ...c,
+              feed: [
+                ...c.feed,
+                {
+                  id: `msg-${Date.now()}`,
+                  user: `@${s.user.username}`,
+                  text,
+                  time: nowTime(),
+                  replyTo,
+                },
+              ],
+            }
           : c
       ),
+    })),
+
+  createList: (name, visibility) => {
+    const id = `${slugify(name)}-${Date.now().toString(36)}`;
+    set((s) => ({
+      user: { ...s.user, lists: [...s.user.lists, { id, name, visibility, bookIds: [] }] },
+    }));
+    return id;
+  },
+
+  toggleListVisibility: (listId) =>
+    set((s) => ({
+      user: {
+        ...s.user,
+        lists: s.user.lists.map((l) =>
+          l.id === listId
+            ? { ...l, visibility: l.visibility === "public" ? "private" : "public" }
+            : l
+        ),
+      },
+    })),
+
+  addBooksToList: (listId, bookIds) =>
+    set((s) => ({
+      user: {
+        ...s.user,
+        lists: s.user.lists.map((l) =>
+          l.id === listId
+            ? { ...l, bookIds: [...l.bookIds, ...bookIds.filter((id) => !l.bookIds.includes(id))] }
+            : l
+        ),
+      },
+    })),
+
+  removeBookFromList: (listId, bookId) =>
+    set((s) => ({
+      user: {
+        ...s.user,
+        lists: s.user.lists.map((l) =>
+          l.id === listId ? { ...l, bookIds: l.bookIds.filter((id) => id !== bookId) } : l
+        ),
+      },
     })),
 }));
