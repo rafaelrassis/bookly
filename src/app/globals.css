@@ -2,14 +2,39 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Tokens do design system como CSS variables (triplas RGB para permitir
+   modificadores de opacidade do Tailwind). Tema controlado por data-theme. */
+:root,
+[data-theme="dark"] {
+  --leather: 22 18 16;
+  --card: 34 28 24;
+  --card2: 43 36 32;
+  --paper: 241 232 216;
+  --paperDim: 184 171 151;
+  --foil: 228 169 60;
+  --ribbon: 196 71 47;
+  --line: 58 50 43;
+}
+
+[data-theme="light"] {
+  --leather: 245 239 227;
+  --card: 251 246 235;
+  --card2: 239 230 212;
+  --paper: 34 28 24;
+  --paperDim: 110 99 83;
+  --foil: 181 130 31;
+  --ribbon: 196 71 47;
+  --line: 224 213 192;
+}
+
 body {
-  background-color: #161210;
-  color: #f1e8d8;
+  background-color: rgb(var(--leather));
+  color: rgb(var(--paper));
 }
 
 /* Foco visível de teclado em todos os elementos interativos */
 :focus-visible {
-  outline: 2px solid #e4a93c;
+  outline: 2px solid rgb(var(--foil));
   outline-offset: 2px;
   border-radius: 4px;
 }
