@@ -4,14 +4,16 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { GENRES } from "@/data/books";
 import { Logo } from "@/components/Logo";
-import { useUser } from "@/lib/store";
+import { useStore } from "@/lib/store";
 
 export default function OnboardingPage() {
-  const { user, completeOnboarding } = useUser();
+  const user = useStore((s) => s.user);
+  const completeOnboarding = useStore((s) => s.completeOnboarding);
   const router = useRouter();
 
   const [name, setName] = useState(user.name);
   const [username, setUsername] = useState(user.username);
+  const [bio, setBio] = useState(user.bio);
   const [genres, setGenres] = useState<string[]>(user.genres);
 
   function toggleGenre(genre: string) {
@@ -22,14 +24,19 @@ export default function OnboardingPage() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    completeOnboarding(name.trim() || user.name, username.trim() || user.username, genres);
+    completeOnboarding(
+      name.trim() || user.name,
+      username.trim() || user.username,
+      bio.trim(),
+      genres
+    );
     router.push("/home");
   }
 
   return (
     <main className="flex min-h-dvh flex-col px-5 pb-10 pt-14">
       <Logo className="text-3xl" />
-      <h1 className="mt-6 font-display text-2xl font-bold">Vamos montar seu perfil</h1>
+      <h1 className="mt-6 text-2xl font-extrabold">Vamos montar seu perfil</h1>
       <p className="mt-1 text-paperDim">Conte quem você é e o que gosta de ler.</p>
 
       <form onSubmit={handleSubmit} className="mt-8 flex flex-1 flex-col">
@@ -55,12 +62,22 @@ export default function OnboardingPage() {
               />
             </div>
           </label>
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
+            Bio
+            <textarea
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              rows={2}
+              className="resize-none rounded-xl border border-line bg-card px-4 py-3 text-base text-paper"
+            />
+          </label>
         </div>
 
         <fieldset className="mt-8">
-          <legend className="text-sm font-medium text-paperDim">
-            Gêneros de interesse
-          </legend>
+          <legend className="text-sm font-medium text-paperDim">Gêneros de interesse</legend>
+          <p className="mt-1 text-xs text-paperDim/80">
+            Usamos seus gêneros para recomendar livros na busca e no perfil.
+          </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {GENRES.map((genre) => {
               const selected = genres.includes(genre);

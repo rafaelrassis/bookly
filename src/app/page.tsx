@@ -5,8 +5,9 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { BookCover } from "@/components/BookCover";
 import { Logo } from "@/components/Logo";
-import { useUser } from "@/lib/store";
+import { SectionTitle } from "@/components/SectionTitle";
 import { topBooks } from "@/lib/store/hooks";
+import { useStore } from "@/lib/store";
 
 const FEATURES = [
   {
@@ -15,26 +16,26 @@ const FEATURES = [
     text: "Notas de 0,5 a 5 para registrar exatamente o que você achou de cada leitura.",
   },
   {
-    icon: "✎",
-    title: "Escreva reviews",
-    text: "Conte o que amou (ou não) e veja o que a comunidade achou de cada livro.",
+    icon: "♥",
+    title: "Reviews como rede social",
+    text: "Um feed de reviews para curtir, comentar e descobrir sua próxima leitura.",
   },
   {
-    icon: "▤",
-    title: "Estante com progresso",
-    text: "Organize por Quero ler, Lendo e Lido — com a página exata em que você parou.",
+    icon: "❋",
+    title: "Clubes do livro",
+    text: "Leia junto: clubes com leitura do mês e mural para discutir cada capítulo.",
   },
 ];
 
 export default function LandingPage() {
-  const { user } = useUser();
+  const loggedIn = useStore((s) => s.user.loggedIn);
   const router = useRouter();
 
   useEffect(() => {
-    if (user.loggedIn) router.replace("/home");
-  }, [user.loggedIn, router]);
+    if (loggedIn) router.replace("/home");
+  }, [loggedIn, router]);
 
-  if (user.loggedIn) return null;
+  if (loggedIn) return null;
 
   return (
     <main className="flex min-h-dvh flex-col px-5 pb-10 pt-16">
@@ -63,7 +64,7 @@ export default function LandingPage() {
       </div>
 
       <section className="mt-10">
-        <h2 className="font-display text-lg font-bold">Top livros do mês</h2>
+        <SectionTitle>Top livros do mês</SectionTitle>
         <div className="no-scrollbar -mx-5 mt-3 flex gap-3 overflow-x-auto px-5">
           {topBooks(4).map((book) => (
             <BookCover key={book.id} book={book} width={96} />
@@ -81,7 +82,7 @@ export default function LandingPage() {
               >
                 {feature.icon}
               </span>
-              <h3 className="font-display font-bold">{feature.title}</h3>
+              <h3 className="font-bold">{feature.title}</h3>
             </div>
             <p className="mt-2 text-sm text-paperDim">{feature.text}</p>
           </div>
