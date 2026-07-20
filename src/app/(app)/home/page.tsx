@@ -8,8 +8,7 @@ import { FeedPost } from "@/components/FeedPost";
 import { Logo } from "@/components/Logo";
 import { SectionTitle } from "@/components/SectionTitle";
 import { readingPercent } from "@/lib/format";
-import { useShelf } from "@/lib/store/hooks";
-import { trendingBooks } from "@/lib/store/hooks";
+import { useShelf, trendingBooks } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
 import type { ShelfBook } from "@/lib/store/hooks";
 
@@ -31,112 +30,49 @@ function SearchIcon() {
   );
 }
 
-/** Card de leitura atual com fita marcadora e atualização de progresso. */
+/** Card de leitura atual — link para o livro; progresso é atualizado lá. */
 function ReadingCard({ item }: { item: ShelfBook }) {
-  const updateProgress = useStore((s) => s.updateProgress);
-  const showToast = useStore((s) => s.showToast);
-  const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState("");
-
   const { book, entry } = item;
   const currentPage = entry.currentPage ?? 0;
   const lastPage = entry.lastPage ?? currentPage;
   const delta = currentPage - lastPage;
   const percent = readingPercent(currentPage, book.pages);
 
-  function save() {
-    const page = Number(value);
-    if (!Number.isInteger(page) || page < 0 || page > book.pages) {
-      showToast(`Digite uma página entre 0 e ${book.pages}`);
-      return;
-    }
-    const result = updateProgress(book.id, page);
-    setEditing(false);
-    setValue("");
-    showToast(result.delta > 0 ? `+${result.delta} páginas! 📖` : "Progresso atualizado 📖");
-  }
-
   return (
-    <div className="relative mt-3 overflow-hidden rounded-2xl border border-line bg-card p-4">
+    <Link
+      href={`/book/${book.id}`}
+      className="relative flex gap-4 overflow-hidden rounded-2xl border border-line bg-card p-4 transition-colors hover:bg-card2"
+    >
       {/* Fita marcadora — assinatura visual do bookly */}
       <span
         aria-hidden="true"
         className="absolute right-6 top-0 h-16 w-6 bg-ribbon"
         style={{ clipPath: "polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 10px), 0 100%)" }}
       />
-      <Link href={`/book/${book.id}`} className="flex gap-4 rounded-xl">
-        <BookCover book={book} width={64} />
-        <div className="min-w-0 flex-1 self-center pr-8">
-          <h3 className="truncate font-display text-base font-bold">{book.title}</h3>
-          <p className="truncate text-sm text-paperDim">{book.authors}</p>
-          <div
-            className="mt-3 h-1.5 overflow-hidden rounded-full bg-card2"
-            role="progressbar"
-            aria-valuenow={percent}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label="Progresso de leitura"
-          >
-            <div className="h-full rounded-full bg-ribbon" style={{ width: `${percent}%` }} />
-          </div>
-          <p className="mt-1.5 text-xs text-paperDim">
-            {percent}% · pág. {currentPage} de {book.pages}
-          </p>
-          {delta > 0 && (
-            <p className="mt-0.5 text-xs font-bold text-foil">
-              +{delta} pág. desde a última leitura
-            </p>
-          )}
+      <BookCover book={book} width={64} />
+      <div className="min-w-0 flex-1 self-center pr-8">
+        <h3 className="truncate font-display text-base font-bold">{book.title}</h3>
+        <p className="truncate text-sm text-paperDim">{book.authors}</p>
+        <div
+          className="mt-3 h-1.5 overflow-hidden rounded-full bg-card2"
+          role="progressbar"
+          aria-valuenow={percent}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="Progresso de leitura"
+        >
+          <div className="h-full rounded-full bg-ribbon" style={{ width: `${percent}%` }} />
         </div>
-      </Link>
-
-      <div className="mt-3 border-t border-line pt-3">
-        {editing ? (
-          <div className="flex items-center gap-2">
-            <input
-              type="number"
-              inputMode="numeric"
-              min={0}
-              max={book.pages}
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") save();
-              }}
-              autoFocus
-              placeholder={`pág. atual (0–${book.pages})`}
-              aria-label="Página atual"
-              className="min-w-0 flex-1 rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper placeholder:text-paperDim/60"
-            />
-            <button
-              type="button"
-              onClick={save}
-              className="rounded-xl bg-foil px-4 py-2.5 text-sm font-bold text-leather"
-            >
-              Salvar
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setEditing(false);
-                setValue("");
-              }}
-              className="rounded-xl px-2 py-2.5 text-sm font-bold text-paperDim hover:text-paper"
-            >
-              Cancelar
-            </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setEditing(true)}
-            className="w-full rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm font-bold text-paper transition-colors hover:border-foil/50"
-          >
-            Atualizar progresso
-          </button>
+        <p className="mt-1.5 text-xs text-paperDim">
+          {percent}% · pág. {currentPage} de {book.pages}
+        </p>
+        {delta > 0 && (
+          <p className="mt-0.5 text-xs font-bold text-foil">
+            +{delta} pág. desde a última leitura
+          </p>
         )}
       </div>
-    </div>
+    </Link>
   );
 }
 
@@ -162,10 +98,16 @@ export default function HomePage() {
         Buscar livros ou autores…
       </Link>
 
-      {reading[0] && (
-        <section className="mt-6" aria-label="Leitura atual">
-          <SectionTitle>Leitura atual</SectionTitle>
-          <ReadingCard item={reading[0]} />
+      {reading.length > 0 && (
+        <section className="mt-6" aria-label="Leituras atuais">
+          <SectionTitle>
+            {reading.length === 1 ? "Leitura atual" : "Leituras atuais"}
+          </SectionTitle>
+          <div className="mt-3 flex flex-col gap-3">
+            {reading.map((item) => (
+              <ReadingCard key={item.book.id} item={item} />
+            ))}
+          </div>
         </section>
       )}
 
