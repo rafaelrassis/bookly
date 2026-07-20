@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Karla } from "next/font/google";
-import { ToastProvider, UserProvider } from "@/lib/store";
+import { Toaster } from "@/components/Toaster";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -11,7 +11,7 @@ const fraunces = Fraunces({
 
 const karla = Karla({
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
+  weight: ["400", "500", "700", "800"],
   variable: "--font-karla",
 });
 
@@ -34,11 +34,8 @@ export default function RootLayout({
       <body
         className={`${fraunces.variable} ${karla.variable} bg-leather font-sans text-paper antialiased`}
       >
-        <UserProvider>
-          <ToastProvider>
-            <div className="mx-auto min-h-dvh w-full max-w-app">{children}</div>
-          </ToastProvider>
-        </UserProvider>
+        <div className="mx-auto min-h-dvh w-full max-w-app">{children}</div>
+        <Toaster />
       </body>
     </html>
   );

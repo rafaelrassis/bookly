@@ -3,52 +3,96 @@
 import { useMemo } from "react";
 import { BOOKS, getBook } from "@/data/books";
 import type { Book, ShelfEntry, ShelfStatus } from "@/lib/types";
-import { useUser } from "./user-provider";
+import { useStore } from "./index";
 
 export type ShelfBook = { book: Book; entry: ShelfEntry };
 
-/** Livros da estante do usuário, opcionalmente filtrados por status. */
+/** Livros da estante, opcionalmente filtrados por status. */
 export function useShelf(status?: ShelfStatus): ShelfBook[] {
-  const { user } = useUser();
+  const shelf = useStore((s) => s.user.shelf);
   return useMemo(() => {
     const items: ShelfBook[] = [];
-    for (const [bookId, entry] of Object.entries(user.shelf)) {
+    for (const [bookId, entry] of Object.entries(shelf)) {
       if (status && entry.status !== status) continue;
       const book = getBook(bookId);
       if (book) items.push({ book, entry });
     }
     return items;
-  }, [user.shelf, status]);
+  }, [shelf, status]);
 }
 
-/** Dados do livro + estado do usuário sobre ele (estante, nota, review). */
+/** Dados do livro + estado do usuário sobre ele. */
 export function useBook(bookId: string) {
-  const { user } = useUser();
+  const shelf = useStore((s) => s.user.shelf);
+  const ratings = useStore((s) => s.user.ratings);
+  const myReviews = useStore((s) => s.user.myReviews);
+  const bookTags = useStore((s) => s.user.bookTags);
+  const quotes = useStore((s) => s.user.quotes);
   return useMemo(
     () => ({
       book: getBook(bookId),
-      entry: user.shelf[bookId] as ShelfEntry | undefined,
-      rating: user.ratings[bookId] as number | undefined,
-      myReview: user.myReviews[bookId] as string | undefined,
+      entry: shelf[bookId] as ShelfEntry | undefined,
+      rating: ratings[bookId] as number | undefined,
+      myReview: myReviews[bookId] as string | undefined,
+      tags: bookTags[bookId] ?? [],
+      bookQuotes: quotes[bookId] ?? [],
     }),
-    [bookId, user.shelf, user.ratings, user.myReviews]
+    [bookId, shelf, ratings, myReviews, bookTags, quotes]
   );
 }
 
-/** Estatísticas do perfil calculadas do estado real. */
+/** Estatísticas do perfil derivadas do estado real. */
 export function useMyStats() {
-  const { user } = useUser();
+  const shelf = useStore((s) => s.user.shelf);
+  const ratings = useStore((s) => s.user.ratings);
+  const ratingOrder = useStore((s) => s.user.ratingOrder);
+  const myReviews = useStore((s) => s.user.myReviews);
+
   return useMemo(() => {
-    const readCount = Object.values(user.shelf).filter((e) => e.status === "READ").length;
-    const reviewCount = Object.keys(user.myReviews).length;
-    const ratings = Object.values(user.ratings);
-    const avgRating =
-      ratings.length > 0 ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length : null;
-    const ratedBooks = Object.entries(user.ratings)
-      .map(([bookId, rating]) => ({ book: getBook(bookId), rating }))
-      .filter((item): item is { book: Book; rating: number } => item.book !== undefined);
-    return { readCount, reviewCount, avgRating, ratedBooks };
-  }, [user.shelf, user.ratings, user.myReviews]);
+    const readIds = Object.entries(shelf)
+      .filter(([, e]) => e.status === "READ")
+      .map(([id]) => id);
+    const readCount = readIds.length;
+
+    // páginas: soma dos lidos + página atual das leituras em andamento
+    let pagesRead = 0;
+    for (const id of readIds) pagesRead += getBook(id)?.pages ?? 0;
+    for (const entry of Object.values(shelf)) {
+      if (entry.status === "READING") pagesRead += entry.currentPage ?? 0;
+    }
+
+    const reviewCount = Object.keys(myReviews).length;
+    const values = Object.values(ratings);
+    const avgRating = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : null;
+
+    // histograma: contagem por nota de 0,5 a 5
+    const buckets = Array.from({ length: 10 }, (_, i) => (i + 1) / 2);
+    const histogram = buckets.map((value) => ({
+      value,
+      count: values.filter((r) => r === value).length,
+    }));
+    const maxCount = Math.max(...histogram.map((h) => h.count));
+
+    const ratedBooks = ratingOrder
+      .map((id) => ({ book: getBook(id), rating: ratings[id] }))
+      .filter(
+        (item): item is { book: Book; rating: number } =>
+          item.book !== undefined && item.rating !== undefined
+      );
+
+    return { readCount, pagesRead, reviewCount, avgRating, histogram, maxCount, ratedBooks };
+  }, [shelf, ratings, ratingOrder, myReviews]);
+}
+
+/** Recomendações: livros dos gêneros do usuário fora da estante (fallback: primeiros 4). */
+export function useRecommendations(limit = 4): Book[] {
+  const genres = useStore((s) => s.user.genres);
+  const shelf = useStore((s) => s.user.shelf);
+  return useMemo(() => {
+    const picks = BOOKS.filter((b) => genres.includes(b.genre) && !shelf[b.id]);
+    const result = picks.length > 0 ? picks : BOOKS.filter((b) => !shelf[b.id]);
+    return (result.length > 0 ? result : BOOKS).slice(0, limit);
+  }, [genres, shelf, limit]);
 }
 
 /** Livros "em alta": os mais avaliados pela comunidade mocada. */
@@ -56,7 +100,7 @@ export function trendingBooks(limit = 5): Book[] {
   return [...BOOKS].sort((a, b) => b.count - a.count).slice(0, limit);
 }
 
-/** Melhores avaliados — usados na landing como "Top livros do mês". */
+/** Melhores avaliados — "Top livros do mês" da landing. */
 export function topBooks(limit = 4): Book[] {
   return [...BOOKS].sort((a, b) => b.avg - a.avg).slice(0, limit);
 }

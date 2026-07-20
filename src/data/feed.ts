@@ -1,0 +1,62 @@
+import type { FeedReview } from "@/lib/types";
+
+/** Reviews do feed social (mock). */
+export const FEED_REVIEWS: FeedReview[] = [
+  {
+    id: "fr1",
+    user: "@ana.estante",
+    bookId: "torto-arado",
+    rating: 5,
+    text: "Um soco no estômago escrito com poesia. Bibiana e Belonísia ainda moram na minha cabeça — melhor romance brasileiro que li em anos.",
+    likes: 57,
+    comments: [
+      { user: "@caio_reads", text: "A última parte muda tudo, né? Fiquei sem ar." },
+      { user: "@leituras.do.vale", text: "Anotado pra próxima leitura do mês!" },
+    ],
+  },
+  {
+    id: "fr2",
+    user: "@thriller.gab",
+    bookId: "a-paciente-silenciosa",
+    rating: 4.5,
+    text: "O plot twist me pegou completamente desprevenido. Li em duas noites e ainda voltei pra reler o começo procurando as pistas.",
+    likes: 41,
+    comments: [{ user: "@rafa.books", text: "As pistas estavam TODAS lá. Releitura obrigatória." }],
+  },
+  {
+    id: "fr3",
+    user: "@leituras.do.vale",
+    bookId: "o-nome-do-vento",
+    rating: 5,
+    text: "A prosa do Rothfuss é música. Kvothe é arrogante, brilhante e impossível de largar. Só sofro esperando o terceiro livro.",
+    likes: 38,
+    comments: [{ user: "@ana.estante", text: "Nós e o resto do mundo esperando o Portas de Pedra…" }],
+  },
+  {
+    id: "fr4",
+    user: "@pedro_lê",
+    bookId: "1984",
+    rating: 4.5,
+    text: "Cada releitura fica mais atual, e isso é a parte mais assustadora. O apêndice sobre a novilíngua é genial.",
+    likes: 29,
+    comments: [],
+  },
+  {
+    id: "fr5",
+    user: "@caio_reads",
+    bookId: "duna",
+    rating: 4,
+    text: "Denso no começo, mas quando engrena vira uma das melhores construções de mundo já escritas. Política, ecologia e religião num deserto só.",
+    likes: 23,
+    comments: [{ user: "@pedro_lê", text: "O glossário no fim salvou minha leitura inteira." }],
+  },
+  {
+    id: "fr6",
+    user: "@rafa.books",
+    bookId: "verity",
+    rating: 3.5,
+    text: "Viciante, impossível soltar, mas algumas escolhas da trama pediram muita boa vontade. Aquele epílogo, porém… ainda penso nele.",
+    likes: 12,
+    comments: [],
+  },
+];
