@@ -13,3 +13,34 @@ export function readingPercent(currentPage: number, pages: number): number {
   if (pages <= 0) return 0;
   return Math.min(100, Math.round((currentPage / pages) * 100));
 }
+
+const SHORT_MONTHS = [
+  "jan",
+  "fev",
+  "mar",
+  "abr",
+  "mai",
+  "jun",
+  "jul",
+  "ago",
+  "set",
+  "out",
+  "nov",
+  "dez",
+];
+
+/** Data curta pt-BR a partir de ISO ("2026-07-12" -> "12 jul"). */
+export function formatShortDate(iso: string): string {
+  const d = new Date(iso.length === 10 ? `${iso}T12:00:00` : iso);
+  return `${d.getDate()} ${SHORT_MONTHS[d.getMonth()]}`;
+}
+
+/** Data de hoje em ISO (YYYY-MM-DD). */
+export function todayISO(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/** Hora atual "HH:mm" para as mensagens do chat. */
+export function nowTime(): string {
+  return new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}

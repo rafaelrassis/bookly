@@ -7,10 +7,10 @@ import { BookCover } from "@/components/BookCover";
 import { RatingInput } from "@/components/RatingInput";
 import { SectionTitle } from "@/components/SectionTitle";
 import { Stars } from "@/components/Stars";
-import { formatCount, formatDecimal } from "@/lib/format";
+import { formatCount, formatDecimal, formatShortDate, readingPercent } from "@/lib/format";
 import { useBook } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
-import type { ShelfStatus } from "@/lib/types";
+import type { Book, ShelfEntry, ShelfStatus } from "@/lib/types";
 
 const STATUS_OPTIONS: { status: ShelfStatus; label: string }[] = [
   { status: "WANT_TO_READ", label: "Quero ler" },
@@ -23,6 +23,112 @@ const STATUS_TOAST: Record<ShelfStatus, string> = {
   READING: "Marcado como Lendo 📖",
   READ: "Marcado como Lido 🎉",
 };
+
+/** "Leu de 12 jul a 20 jul" / "Terminou em 20 jul" / "Começou em 12 jul". */
+function readingDates(entry: ShelfEntry | undefined): string | null {
+  if (!entry) return null;
+  const { startedAt, finishedAt } = entry;
+  if (startedAt && finishedAt)
+    return `Leu de ${formatShortDate(startedAt)} a ${formatShortDate(finishedAt)}`;
+  if (finishedAt) return `Terminou em ${formatShortDate(finishedAt)}`;
+  if (startedAt) return `Começou em ${formatShortDate(startedAt)}`;
+  return null;
+}
+
+/** Atualização de progresso com unidade Páginas | % (preferência no estado). */
+function ProgressSection({ book, entry }: { book: Book; entry: ShelfEntry }) {
+  const unit = useStore((s) => s.user.progressUnit);
+  const setProgressUnit = useStore((s) => s.setProgressUnit);
+  const updateProgress = useStore((s) => s.updateProgress);
+  const showToast = useStore((s) => s.showToast);
+  const [value, setValue] = useState("");
+
+  const currentPage = entry.currentPage ?? 0;
+  const percent = readingPercent(currentPage, book.pages);
+
+  function save() {
+    const n = Number(value);
+    if (unit === "percent" ? !Number.isFinite(n) || n < 0 || n > 100 : !Number.isInteger(n) || n < 0 || n > book.pages) {
+      showToast(unit === "percent" ? "Digite um valor entre 0 e 100" : `Digite uma página entre 0 e ${book.pages}`);
+      return;
+    }
+    const page = unit === "percent" ? Math.round((n / 100) * book.pages) : n;
+    const { delta } = updateProgress(book.id, page);
+    setValue("");
+    showToast(delta > 0 ? `+${delta} páginas! 📖` : "Progresso atualizado 📖");
+  }
+
+  return (
+    <section className="mt-6 rounded-2xl border border-line bg-card p-4">
+      <div className="flex items-center justify-between">
+        <SectionTitle>Seu progresso</SectionTitle>
+        <div
+          className="flex rounded-full border border-line bg-card2 p-0.5 text-xs font-bold"
+          role="group"
+          aria-label="Unidade do progresso"
+        >
+          {(
+            [
+              { key: "pages", label: "Páginas" },
+              { key: "percent", label: "%" },
+            ] as const
+          ).map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              aria-pressed={unit === key}
+              onClick={() => setProgressUnit(key)}
+              className={`rounded-full px-3 py-1 transition-colors ${
+                unit === key ? "bg-foil text-leather" : "text-paperDim hover:text-paper"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div
+        className="mt-3 h-1.5 overflow-hidden rounded-full bg-card2"
+        role="progressbar"
+        aria-valuenow={percent}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label="Progresso de leitura"
+      >
+        <div className="h-full rounded-full bg-ribbon" style={{ width: `${percent}%` }} />
+      </div>
+      <p className="mt-1.5 text-xs text-paperDim">
+        {percent}% · pág. {currentPage} de {book.pages}
+      </p>
+
+      <div className="mt-3 flex items-center gap-2">
+        <input
+          type="number"
+          inputMode="numeric"
+          min={0}
+          max={unit === "percent" ? 100 : book.pages}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") save();
+          }}
+          placeholder={unit === "percent" ? "% lida (0–100)" : `pág. atual (0–${book.pages})`}
+          aria-label={unit === "percent" ? "Percentual lido" : "Página atual"}
+          className="min-w-0 flex-1 rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper placeholder:text-paperDim/60"
+        />
+        <button
+          type="button"
+          onClick={save}
+          disabled={!value.trim()}
+          className="rounded-xl bg-foil px-4 py-2.5 text-sm font-bold text-leather disabled:opacity-40"
+        >
+          Salvar
+        </button>
+      </div>
+    </section>
+  );
+}
 
 export default function BookPage({ params }: { params: { id: string } }) {
   const { book, entry, rating, myReview, tags, bookQuotes } = useBook(params.id);
@@ -136,6 +242,8 @@ export default function BookPage({ params }: { params: { id: string } }) {
           })}
         </div>
       </section>
+
+      {entry?.status === "READING" && <ProgressSection book={book} entry={entry} />}
 
       <section className="mt-6 rounded-2xl border border-line bg-card p-4">
         <SectionTitle>Sua avaliação</SectionTitle>
@@ -315,6 +423,9 @@ export default function BookPage({ params }: { params: { id: string } }) {
                 @{username} <span className="font-medium text-foil">(você)</span>
               </p>
               {rating !== undefined && <Stars rating={rating} className="text-xs" />}
+              {readingDates(entry) && (
+                <p className="mt-1 text-xs text-paperDim">{readingDates(entry)}</p>
+              )}
               <p className="mt-1.5 text-sm text-paperDim">{myReview}</p>
             </article>
           )}
