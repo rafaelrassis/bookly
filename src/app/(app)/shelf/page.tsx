@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { getBook } from "@/data/books";
 import { BookCover } from "@/components/BookCover";
+import { LockIcon } from "@/components/icons";
+import { SectionTitle } from "@/components/SectionTitle";
 import { Stars } from "@/components/Stars";
 import { useShelf } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
-import type { ShelfStatus } from "@/lib/types";
+import type { ShelfStatus, Visibility } from "@/lib/types";
 
 /** Busca case-insensitive; acentos também são ignorados. */
 function normalize(text: string): string {
@@ -28,6 +31,119 @@ const STATUS_BADGE: Record<ShelfStatus, { label: string; className: string }> = 
   WANT_TO_READ: { label: "Quero ler", className: "bg-card2 text-paperDim" },
   READ: { label: "Lido", className: "bg-foil/15 text-foil" },
 };
+
+/** Seção "Minhas listas": cards das listas + criação inline. */
+function MyLists() {
+  const lists = useStore((s) => s.user.lists);
+  const createList = useStore((s) => s.createList);
+  const showToast = useStore((s) => s.showToast);
+
+  const [creating, setCreating] = useState(false);
+  const [name, setName] = useState("");
+  const [visibility, setVisibility] = useState<Visibility>("public");
+
+  function create() {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    createList(trimmed, visibility);
+    setName("");
+    setVisibility("public");
+    setCreating(false);
+    showToast("Lista criada ✦");
+  }
+
+  return (
+    <section className="mt-5">
+      <div className="flex items-center justify-between">
+        <SectionTitle>Minhas listas</SectionTitle>
+        <button
+          type="button"
+          onClick={() => setCreating((c) => !c)}
+          aria-expanded={creating}
+          className="text-xs font-bold text-foil hover:opacity-80"
+        >
+          + Criar lista
+        </button>
+      </div>
+
+      {creating && (
+        <div className="mt-3 rounded-2xl border border-line bg-card p-3">
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") create();
+            }}
+            autoFocus
+            placeholder="Nome da lista…"
+            aria-label="Nome da nova lista"
+            className="w-full rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper placeholder:text-paperDim/60"
+          />
+          <div className="mt-2 flex items-center gap-2">
+            {(
+              [
+                { key: "public", label: "Pública" },
+                { key: "private", label: "Privada" },
+              ] as const
+            ).map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                aria-pressed={visibility === key}
+                onClick={() => setVisibility(key)}
+                className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${
+                  visibility === key
+                    ? "bg-foil text-leather"
+                    : "border border-line bg-card2 text-paperDim hover:text-paper"
+                }`}
+              >
+                {key === "private" && <LockIcon size={10} />}
+                {label}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={create}
+              disabled={!name.trim()}
+              className="ml-auto rounded-xl bg-foil px-4 py-1.5 text-xs font-bold text-leather disabled:opacity-40"
+            >
+              Criar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {lists.length > 0 && (
+        <div className="no-scrollbar -mx-5 mt-3 flex gap-3 overflow-x-auto px-5">
+          {lists.map((list) => (
+            <Link
+              key={list.id}
+              href={`/lists/${list.id}`}
+              className="w-44 shrink-0 rounded-2xl border border-line bg-card p-3.5 transition-colors hover:bg-card2"
+            >
+              <div className="flex gap-1.5">
+                {list.bookIds.slice(0, 3).map((id) => {
+                  const book = getBook(id);
+                  return book ? <BookCover key={id} book={book} width={28} /> : null;
+                })}
+                {list.bookIds.length === 0 && (
+                  <span className="text-xs text-paperDim">Lista vazia</span>
+                )}
+              </div>
+              <p className="mt-2.5 line-clamp-1 text-sm font-bold">{list.name}</p>
+              <p className="mt-0.5 flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.12em] text-paperDim">
+                {list.visibility === "private" && <LockIcon size={9} />}
+                {list.visibility === "private" ? "Privada" : "Pública"} ·{" "}
+                {list.bookIds.length} {list.bookIds.length === 1 ? "livro" : "livros"}
+              </p>
+            </Link>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
 
 function Chip({
   active,
@@ -84,6 +200,8 @@ export default function ShelfPage() {
   return (
     <div className="px-5 pt-5">
       <h1 className="text-2xl font-extrabold">Estante</h1>
+
+      <MyLists />
 
       <input
         type="search"
