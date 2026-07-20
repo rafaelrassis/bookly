@@ -1,12 +1,15 @@
 "use client";
 
-import { notFound, useRouter } from "next/navigation";
+import { notFound } from "next/navigation";
 import { useState } from "react";
+import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
 import { RatingInput } from "@/components/RatingInput";
+import { SectionTitle } from "@/components/SectionTitle";
 import { Stars } from "@/components/Stars";
 import { formatCount, formatDecimal } from "@/lib/format";
-import { useBook, useToast, useUser } from "@/lib/store";
+import { useBook } from "@/lib/store/hooks";
+import { useStore } from "@/lib/store";
 import type { ShelfStatus } from "@/lib/types";
 
 const STATUS_OPTIONS: { status: ShelfStatus; label: string }[] = [
@@ -22,15 +25,27 @@ const STATUS_TOAST: Record<ShelfStatus, string> = {
 };
 
 export default function BookPage({ params }: { params: { id: string } }) {
-  const router = useRouter();
-  const { user, setShelfStatus, setRating, saveReview } = useUser();
-  const { book, entry, rating, myReview } = useBook(params.id);
-  const { showToast } = useToast();
+  const { book, entry, rating, myReview, tags, bookQuotes } = useBook(params.id);
+  const username = useStore((s) => s.user.username);
+  const feed = useStore((s) => s.feed);
+  const setShelfStatus = useStore((s) => s.setShelfStatus);
+  const setRating = useStore((s) => s.setRating);
+  const saveReview = useStore((s) => s.saveReview);
+  const addTag = useStore((s) => s.addTag);
+  const removeTag = useStore((s) => s.removeTag);
+  const addQuote = useStore((s) => s.addQuote);
+  const showToast = useStore((s) => s.showToast);
 
   const [editingReview, setEditingReview] = useState(false);
   const [reviewDraft, setReviewDraft] = useState("");
+  const [tagDraft, setTagDraft] = useState("");
+  const [quoteOpen, setQuoteOpen] = useState(false);
+  const [quoteDraft, setQuoteDraft] = useState("");
+  const [quotePage, setQuotePage] = useState("");
 
   if (!book) notFound();
+
+  const communityReviews = feed.filter((r) => r.bookId === book!.id);
 
   function handleStatusTap(status: ShelfStatus) {
     if (entry?.status === status) {
@@ -44,18 +59,9 @@ export default function BookPage({ params }: { params: { id: string } }) {
 
   function handleRating(value: number) {
     const { markedAsRead } = setRating(book!.id, value);
-    if (value === 0) {
-      showToast("Avaliação removida");
-    } else if (markedAsRead) {
-      showToast("Marcado como Lido 🎉");
-    } else {
-      showToast(`Avaliação salva: ${formatDecimal(value)} ★`);
-    }
-  }
-
-  function openReviewEditor() {
-    setReviewDraft(myReview ?? "");
-    setEditingReview(true);
+    if (value === 0) showToast("Avaliação removida");
+    else if (markedAsRead) showToast("Marcado como Lido 🎉");
+    else showToast(`Avaliação salva: ${formatDecimal(value)} ★`);
   }
 
   function publishReview() {
@@ -66,25 +72,35 @@ export default function BookPage({ params }: { params: { id: string } }) {
     showToast("Review publicada!");
   }
 
+  function handleAddTag() {
+    const tag = tagDraft.trim().toLowerCase();
+    if (!tag) return;
+    addTag(book!.id, tag);
+    setTagDraft("");
+    showToast("Tag adicionada");
+  }
+
+  function saveQuote() {
+    const text = quoteDraft.trim();
+    if (!text) return;
+    const page = Number(quotePage);
+    addQuote(book!.id, text, Number.isInteger(page) && page > 0 ? page : undefined);
+    setQuoteDraft("");
+    setQuotePage("");
+    setQuoteOpen(false);
+    showToast("Citação salva ✦");
+  }
+
   return (
     <div className="px-5 pt-4">
-      <header>
-        <button
-          type="button"
-          onClick={() => router.back()}
-          aria-label="Voltar"
-          className="-ml-2 flex h-10 w-10 items-center justify-center rounded-full text-2xl text-paperDim hover:text-paper"
-        >
-          ‹
-        </button>
-      </header>
+      <BackHeader />
 
       <section className="mt-2 flex gap-5">
         <BookCover book={book} width={108} />
         <div className="min-w-0 self-center">
           <h1 className="font-display text-xl font-bold leading-snug">{book.title}</h1>
           <p className="mt-1 text-sm text-paperDim">
-            {book.authors} · {book.year} · {book.pages} pág.
+            {book.authors} · {book.year} · {book.pages} pág. · {book.genre}
           </p>
           <div className="mt-3 flex items-baseline gap-2">
             <span className="font-display text-4xl font-black text-foil">
@@ -92,9 +108,7 @@ export default function BookPage({ params }: { params: { id: string } }) {
             </span>
             <div>
               <Stars rating={book.avg} className="text-sm" />
-              <p className="text-xs text-paperDim">
-                média · {formatCount(book.count)} avaliações
-              </p>
+              <p className="text-xs text-paperDim">média · {formatCount(book.count)} avaliações</p>
             </div>
           </div>
         </div>
@@ -110,7 +124,7 @@ export default function BookPage({ params }: { params: { id: string } }) {
                 type="button"
                 onClick={() => handleStatusTap(status)}
                 aria-pressed={active}
-                className={`flex-1 rounded-xl px-3 py-2.5 text-sm font-bold transition-colors ${
+                className={`flex-1 rounded-full px-3 py-2.5 text-sm font-bold transition-colors ${
                   active
                     ? "bg-foil text-leather"
                     : "border border-line bg-card text-paperDim hover:text-paper"
@@ -124,7 +138,7 @@ export default function BookPage({ params }: { params: { id: string } }) {
       </section>
 
       <section className="mt-6 rounded-2xl border border-line bg-card p-4">
-        <h2 className="font-display text-base font-bold">Sua avaliação</h2>
+        <SectionTitle>Sua avaliação</SectionTitle>
         <div className="mt-2">
           <RatingInput rating={rating ?? 0} onChange={handleRating} />
         </div>
@@ -162,7 +176,10 @@ export default function BookPage({ params }: { params: { id: string } }) {
           ) : (
             <button
               type="button"
-              onClick={openReviewEditor}
+              onClick={() => {
+                setReviewDraft(myReview ?? "");
+                setEditingReview(true);
+              }}
               className="w-full rounded-xl border border-line bg-card2 px-4 py-3 text-sm font-bold text-paper transition-colors hover:border-foil/50"
             >
               {myReview ? "Editar minha review" : "Escrever review"}
@@ -172,27 +189,142 @@ export default function BookPage({ params }: { params: { id: string } }) {
       </section>
 
       <section className="mt-6">
-        <h2 className="font-display text-lg font-bold">Sinopse</h2>
+        <SectionTitle>Suas tags</SectionTitle>
+        {tags.length === 0 && (
+          <p className="mt-2 text-xs text-paperDim">
+            Tags são suas: use para organizar e filtrar a estante (ex.: &quot;favoritos do
+            ano&quot;).
+          </p>
+        )}
+        <div className="mt-2.5 flex flex-wrap items-center gap-2">
+          {tags.map((tag) => (
+            <span
+              key={tag}
+              className="flex items-center gap-1.5 rounded-full bg-card2 py-1.5 pl-3.5 pr-2 text-xs font-medium text-paper"
+            >
+              {tag}
+              <button
+                type="button"
+                onClick={() => {
+                  removeTag(book!.id, tag);
+                  showToast("Tag removida");
+                }}
+                aria-label={`Remover tag ${tag}`}
+                className="flex h-4 w-4 items-center justify-center rounded-full text-paperDim hover:text-ribbon"
+              >
+                ✕
+              </button>
+            </span>
+          ))}
+          <input
+            type="text"
+            value={tagDraft}
+            onChange={(e) => setTagDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleAddTag();
+            }}
+            onBlur={() => tagDraft.trim() && handleAddTag()}
+            placeholder="+ Adicionar"
+            aria-label="Adicionar tag"
+            className="w-28 rounded-full border border-dashed border-line bg-transparent px-3.5 py-1.5 text-xs text-paper placeholder:text-paperDim/70"
+          />
+        </div>
+      </section>
+
+      <section className="mt-6">
+        <SectionTitle>Citações</SectionTitle>
+        <div className="mt-2.5 flex flex-col gap-3">
+          {bookQuotes.map((quote, i) => (
+            <blockquote
+              key={i}
+              className="rounded-2xl border border-foil/40 bg-card p-4 font-display italic leading-relaxed text-paper"
+            >
+              “{quote.text}”
+              {quote.page !== undefined && (
+                <footer className="mt-2 text-right font-sans text-xs not-italic text-paperDim">
+                  — pág. {quote.page}
+                </footer>
+              )}
+            </blockquote>
+          ))}
+
+          {quoteOpen ? (
+            <div className="rounded-2xl border border-line bg-card p-4">
+              <textarea
+                value={quoteDraft}
+                onChange={(e) => setQuoteDraft(e.target.value)}
+                rows={3}
+                autoFocus
+                placeholder="Copie aqui o trecho que te marcou…"
+                aria-label="Texto da citação"
+                className="w-full rounded-xl border border-line bg-card2 px-4 py-3 text-sm text-paper placeholder:text-paperDim/60"
+              />
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  value={quotePage}
+                  onChange={(e) => setQuotePage(e.target.value)}
+                  placeholder="pág. (opcional)"
+                  aria-label="Página da citação"
+                  className="w-32 rounded-xl border border-line bg-card2 px-3.5 py-2.5 text-sm text-paper placeholder:text-paperDim/60"
+                />
+                <div className="flex flex-1 justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setQuoteOpen(false)}
+                    className="rounded-xl px-3 py-2.5 text-sm font-bold text-paperDim hover:text-paper"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={saveQuote}
+                    disabled={!quoteDraft.trim()}
+                    className="rounded-xl bg-foil px-4 py-2.5 text-sm font-bold text-leather disabled:opacity-40"
+                  >
+                    Salvar
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setQuoteOpen(true)}
+              className="w-full rounded-xl border border-line bg-card px-4 py-3 text-sm font-bold text-paper transition-colors hover:border-foil/50"
+            >
+              ✦ Destacar citação
+            </button>
+          )}
+        </div>
+      </section>
+
+      <section className="mt-6">
+        <SectionTitle>Sinopse</SectionTitle>
         <p className="mt-2 text-sm leading-relaxed text-paperDim">{book.synopsis}</p>
       </section>
 
       <section className="mt-6">
-        <h2 className="font-display text-lg font-bold">Reviews da comunidade</h2>
+        <SectionTitle>Reviews da comunidade</SectionTitle>
         <div className="mt-3 flex flex-col gap-3">
           {myReview && (
             <article className="rounded-2xl border border-foil/40 bg-card p-4">
               <p className="text-sm font-bold">
-                @{user.username} <span className="font-medium text-foil">(você)</span>
+                @{username} <span className="font-medium text-foil">(você)</span>
               </p>
               {rating !== undefined && <Stars rating={rating} className="text-xs" />}
               <p className="mt-1.5 text-sm text-paperDim">{myReview}</p>
             </article>
           )}
-          {book.reviews.map((review) => (
-            <article
-              key={review.user}
-              className="rounded-2xl border border-line bg-card p-4"
-            >
+          {communityReviews.length === 0 && !myReview && (
+            <p className="text-sm text-paperDim">
+              Ainda não há reviews por aqui. Seja a primeira pessoa a avaliar!
+            </p>
+          )}
+          {communityReviews.map((review) => (
+            <article key={review.id} className="rounded-2xl border border-line bg-card p-4">
               <p className="text-sm font-bold">{review.user}</p>
               <Stars rating={review.rating} className="text-xs" />
               <p className="mt-1.5 text-sm text-paperDim">{review.text}</p>
