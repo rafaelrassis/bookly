@@ -30,16 +30,6 @@ const TABS: Tab[] = [
     ),
   },
   {
-    href: "/search",
-    label: "Buscar",
-    icon: (
-      <svg {...iconProps}>
-        <circle cx="11" cy="11" r="7" />
-        <path d="m20 20-3.8-3.8" />
-      </svg>
-    ),
-  },
-  {
     href: "/shelf",
     label: "Estante",
     icon: (
@@ -48,6 +38,18 @@ const TABS: Tab[] = [
         <path d="M9 4v16" />
         <path d="m13.5 5 4.5 15" />
         <path d="M3 20h18" />
+      </svg>
+    ),
+  },
+  {
+    href: "/clubs",
+    label: "Clube",
+    icon: (
+      <svg {...iconProps}>
+        <circle cx="9" cy="8.5" r="3.5" />
+        <path d="M2.5 19.5c.9-2.9 3.4-4.5 6.5-4.5s5.6 1.6 6.5 4.5" />
+        <path d="M15.5 5.5a3.5 3.5 0 0 1 0 6.3" />
+        <path d="M17.5 15.4c2 .6 3.4 2 4 4.1" />
       </svg>
     ),
   },
