@@ -2,7 +2,7 @@
 
 Web app de avaliação e review de livros — um "Letterboxd de livros".
 
-**MVP 1 · Fase A:** frontend com dados mocados. Sem banco, sem auth real, sem API externa — todo o estado vive em memória (React Context) e é reiniciado a cada refresh, como esperado nesta fase.
+**Protótipo v2 (dados mocados):** todo o frontend com estado em memória — sem banco, sem auth real, sem API externa. **Os dados não persistem após refresh**; isso é esperado nesta fase. A v2 incorpora feedback de teste de usuário: feed social com curtidas e comentários, clubes do livro, tags e citações, filtros de estante e perfil com histograma de notas.
 
 ## Rodando
 
@@ -15,29 +15,29 @@ Abre em [http://localhost:3000](http://localhost:3000). Não precisa de variáve
 
 ## Stack
 
-- Next.js 14 (App Router) + TypeScript
+- Next.js 14 (App Router) + TypeScript estrito
 - Tailwind CSS com tokens próprios do design system
-- Fontes: Fraunces (títulos) e Karla (corpo) via `next/font/google`
-- Estado global mocado com React Context (`src/lib/store`)
+- Fontes: Fraunces (marca, títulos de livro, números) e Karla (todo o resto) via `next/font/google`
+- **Zustand** — store único mocado em `src/lib/store`
 
 ## Estrutura
 
 ```
 src/
-  app/            rotas (App Router)
-    page.tsx      landing (deslogado)
-    login/        login fake
-    onboarding/   nome, username e gêneros
-    (app)/        rotas logadas (guard + tab bar)
-      home/  search/  book/[id]/  shelf/  profile/
-  components/     BookCover, Stars, RatingInput, TabBar, Logo
-  data/books.ts   seed mocado com 8 livros
+  app/              rotas (App Router)
+    page.tsx        landing (deslogado)
+    login/          login fake
+    onboarding/     nome, username, bio e gêneros
+    (app)/          rotas logadas (guard + tab bar)
+      home/  search/  book/[id]/  shelf/  clubs/  clubs/[id]/  profile/
+  components/       BookCover, Stars, RatingInput, FeedPost, Avatar, TabBar…
+  data/             seed mocado: books, feed, users, community, clubs
   lib/
-    store/        UserProvider, ToastProvider e hooks (useShelf, useBook…)
-    types.ts      Book, ShelfEntry, UserState…
-    format.ts     formatação pt-BR (vírgula decimal, milhar, progresso)
+    store/          store zustand + hooks derivados (useShelf, useBook, useMyStats…)
+    types.ts        Book, FeedReview, Club, ShelfEntry, UserState…
+    format.ts       formatação pt-BR (vírgula decimal, milhar, progresso)
 ```
 
-## Fase B (futura)
+## Fase futura
 
-O acesso a dados está isolado em `src/lib/store` para que a troca do mock por NextAuth + Postgres/Prisma + Google Books API seja localizada, mantendo os mesmos nomes de campos (`status`, `currentPage`, `rating`).
+O mock será trocado por NextAuth + Postgres/Prisma + Google Books API. Todo acesso a dados passa pelo store e pelos hooks em `src/lib/store`, então a troca fica localizada, mantendo os mesmos nomes de campos (`status`, `currentPage`, `rating`…).
