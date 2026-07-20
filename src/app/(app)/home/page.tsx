@@ -1,13 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { BOOKS } from "@/data/books";
+import { useState } from "react";
+import { FOLLOWED_USERS } from "@/data/users";
 import { BookCover } from "@/components/BookCover";
+import { FeedPost } from "@/components/FeedPost";
 import { Logo } from "@/components/Logo";
-import { Stars } from "@/components/Stars";
+import { SectionTitle } from "@/components/SectionTitle";
 import { readingPercent } from "@/lib/format";
-import { useShelf, useUser } from "@/lib/store";
+import { useShelf } from "@/lib/store/hooks";
 import { trendingBooks } from "@/lib/store/hooks";
+import { useStore } from "@/lib/store";
+import type { ShelfBook } from "@/lib/store/hooks";
 
 function SearchIcon() {
   return (
@@ -27,26 +31,127 @@ function SearchIcon() {
   );
 }
 
-export default function HomePage() {
-  const { user } = useUser();
-  const reading = useShelf("READING");
-  const current = reading[0];
+/** Card de leitura atual com fita marcadora e atualização de progresso. */
+function ReadingCard({ item }: { item: ShelfBook }) {
+  const updateProgress = useStore((s) => s.updateProgress);
+  const showToast = useStore((s) => s.showToast);
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState("");
 
-  const recentReviews = BOOKS.filter((b) => b.reviews.length > 0)
-    .slice(0, 5)
-    .map((book) => ({ book, review: book.reviews[0] }));
+  const { book, entry } = item;
+  const currentPage = entry.currentPage ?? 0;
+  const lastPage = entry.lastPage ?? currentPage;
+  const delta = currentPage - lastPage;
+  const percent = readingPercent(currentPage, book.pages);
+
+  function save() {
+    const page = Number(value);
+    if (!Number.isInteger(page) || page < 0 || page > book.pages) {
+      showToast(`Digite uma página entre 0 e ${book.pages}`);
+      return;
+    }
+    const result = updateProgress(book.id, page);
+    setEditing(false);
+    setValue("");
+    showToast(result.delta > 0 ? `+${result.delta} páginas! 📖` : "Progresso atualizado 📖");
+  }
+
+  return (
+    <div className="relative mt-3 overflow-hidden rounded-2xl border border-line bg-card p-4">
+      {/* Fita marcadora — assinatura visual do bookly */}
+      <span
+        aria-hidden="true"
+        className="absolute right-6 top-0 h-16 w-6 bg-ribbon"
+        style={{ clipPath: "polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 10px), 0 100%)" }}
+      />
+      <Link href={`/book/${book.id}`} className="flex gap-4 rounded-xl">
+        <BookCover book={book} width={64} />
+        <div className="min-w-0 flex-1 self-center pr-8">
+          <h3 className="truncate font-display text-base font-bold">{book.title}</h3>
+          <p className="truncate text-sm text-paperDim">{book.authors}</p>
+          <div
+            className="mt-3 h-1.5 overflow-hidden rounded-full bg-card2"
+            role="progressbar"
+            aria-valuenow={percent}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Progresso de leitura"
+          >
+            <div className="h-full rounded-full bg-ribbon" style={{ width: `${percent}%` }} />
+          </div>
+          <p className="mt-1.5 text-xs text-paperDim">
+            {percent}% · pág. {currentPage} de {book.pages}
+          </p>
+          {delta > 0 && (
+            <p className="mt-0.5 text-xs font-bold text-foil">
+              +{delta} pág. desde a última leitura
+            </p>
+          )}
+        </div>
+      </Link>
+
+      <div className="mt-3 border-t border-line pt-3">
+        {editing ? (
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={book.pages}
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") save();
+              }}
+              autoFocus
+              placeholder={`pág. atual (0–${book.pages})`}
+              aria-label="Página atual"
+              className="min-w-0 flex-1 rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper placeholder:text-paperDim/60"
+            />
+            <button
+              type="button"
+              onClick={save}
+              className="rounded-xl bg-foil px-4 py-2.5 text-sm font-bold text-leather"
+            >
+              Salvar
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEditing(false);
+                setValue("");
+              }}
+              className="rounded-xl px-2 py-2.5 text-sm font-bold text-paperDim hover:text-paper"
+            >
+              Cancelar
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="w-full rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm font-bold text-paper transition-colors hover:border-foil/50"
+          >
+            Atualizar progresso
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function HomePage() {
+  const reading = useShelf("READING");
+  const feed = useStore((s) => s.feed);
+  const [feedFilter, setFeedFilter] = useState<"all" | "following">("all");
+
+  const visibleFeed =
+    feedFilter === "following" ? feed.filter((r) => FOLLOWED_USERS.includes(r.user)) : feed;
 
   return (
     <div className="px-5 pt-5">
-      <header className="flex items-center justify-between">
+      <header>
         <Logo />
-        <Link
-          href="/profile"
-          aria-label="Abrir perfil"
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-card2 font-display font-bold text-foil"
-        >
-          {user.name.charAt(0).toUpperCase()}
-        </Link>
       </header>
 
       <Link
@@ -57,61 +162,18 @@ export default function HomePage() {
         Buscar livros ou autores…
       </Link>
 
-      {current && (
+      {reading[0] && (
         <section className="mt-6" aria-label="Leitura atual">
-          <h2 className="font-display text-lg font-bold">Continuar lendo</h2>
-          <Link
-            href={`/book/${current.book.id}`}
-            className="relative mt-3 flex gap-4 overflow-hidden rounded-2xl border border-line bg-card p-4 transition-colors hover:bg-card2"
-          >
-            {/* Fita marcadora — assinatura visual do bookly */}
-            <span
-              aria-hidden="true"
-              className="absolute right-6 top-0 h-16 w-6 bg-ribbon"
-              style={{
-                clipPath: "polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 10px), 0 100%)",
-              }}
-            />
-            <BookCover book={current.book} width={64} />
-            <div className="min-w-0 flex-1 self-center pr-8">
-              <h3 className="truncate font-display text-base font-bold">
-                {current.book.title}
-              </h3>
-              <p className="truncate text-sm text-paperDim">{current.book.authors}</p>
-              <div
-                className="mt-3 h-1.5 overflow-hidden rounded-full bg-card2"
-                role="progressbar"
-                aria-valuenow={readingPercent(current.entry.currentPage ?? 0, current.book.pages)}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-label="Progresso de leitura"
-              >
-                <div
-                  className="h-full rounded-full bg-ribbon"
-                  style={{
-                    width: `${readingPercent(current.entry.currentPage ?? 0, current.book.pages)}%`,
-                  }}
-                />
-              </div>
-              <p className="mt-1.5 text-xs text-paperDim">
-                {readingPercent(current.entry.currentPage ?? 0, current.book.pages)}% · pág.{" "}
-                {current.entry.currentPage ?? 0} de {current.book.pages}
-              </p>
-            </div>
-          </Link>
+          <SectionTitle>Leitura atual</SectionTitle>
+          <ReadingCard item={reading[0]} />
         </section>
       )}
 
       <section className="mt-7">
-        <h2 className="font-display text-lg font-bold">Em alta esta semana</h2>
+        <SectionTitle>Em alta esta semana</SectionTitle>
         <div className="no-scrollbar -mx-5 mt-3 flex gap-3 overflow-x-auto px-5">
           {trendingBooks(5).map((book) => (
-            <Link
-              key={book.id}
-              href={`/book/${book.id}`}
-              aria-label={book.title}
-              className="rounded-md"
-            >
+            <Link key={book.id} href={`/book/${book.id}`} aria-label={book.title} className="rounded-md">
               <BookCover book={book} width={96} />
             </Link>
           ))}
@@ -119,28 +181,37 @@ export default function HomePage() {
       </section>
 
       <section className="mt-7">
-        <h2 className="font-display text-lg font-bold">Reviews recentes</h2>
-        <div className="mt-3 flex flex-col gap-3">
-          {recentReviews.map(({ book, review }) => (
-            <article
-              key={book.id}
-              className="flex gap-3.5 rounded-2xl border border-line bg-card p-3.5"
-            >
-              <Link
-                href={`/book/${book.id}`}
-                aria-label={book.title}
-                className="self-start rounded-md"
+        <div className="flex items-center justify-between">
+          <SectionTitle>Reviews</SectionTitle>
+          <div
+            className="flex rounded-full border border-line bg-card p-0.5 text-xs font-bold"
+            role="tablist"
+            aria-label="Filtro do feed"
+          >
+            {(
+              [
+                { key: "all", label: "Geral" },
+                { key: "following", label: "Seguindo" },
+              ] as const
+            ).map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={feedFilter === key}
+                onClick={() => setFeedFilter(key)}
+                className={`rounded-full px-3.5 py-1.5 transition-colors ${
+                  feedFilter === key ? "bg-foil text-leather" : "text-paperDim hover:text-paper"
+                }`}
               >
-                <BookCover book={book} width={48} />
-              </Link>
-              <div className="min-w-0">
-                <h3 className="truncate text-sm font-bold">{book.title}</h3>
-                <p className="text-xs text-paperDim">
-                  {review.user} · <Stars rating={review.rating} className="text-xs" />
-                </p>
-                <p className="mt-1.5 line-clamp-2 text-sm text-paperDim">{review.text}</p>
-              </div>
-            </article>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="mt-1">
+          {visibleFeed.map((review) => (
+            <FeedPost key={review.id} review={review} />
           ))}
         </div>
       </section>
