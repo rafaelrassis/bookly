@@ -6,7 +6,7 @@ description: Build, run and drive the bookly frontend to verify changes end-to-e
 # Verificando o bookly
 
 App Next.js 14 (App Router), frontend com dados mocados — estado em memória
-(Zustand), sem env vars.
+(Zustand), sem env vars. Tema claro/escuro via CSS variables + `data-theme`.
 
 ## Build e execução
 
@@ -26,24 +26,23 @@ mode esconde (ex.: batching de state updates do React).
 
 Use Playwright com o Chromium pré-instalado
 (`executablePath: "/opt/pw-browsers/chromium"`, viewport 390×844).
-Fluxo completo a exercitar:
+Fluxo completo a exercitar (v3):
 
-1. Landing `/` → login fake → `/onboarding` (nome/username/bio pré-preenchidos) → `/home`
-2. Home: card de leitura com fita marcadora, "62% · pág. 408 de 656" e delta
-   "+34 pág."; "Atualizar progresso" valida 0..pages e mostra toast "+N páginas! 📖"
-3. Feed: toggle Geral (6 posts) / Seguindo (3); curtir altera contador e fica
-   `ribbon`; comentar publica como @mari.leituras na thread inline
-4. `/search` (via barra da home): sem query mostra Recomendados + Listas da
-   comunidade; com query filtra; termo inexistente → empty state
-5. `/book/[id]`: chips de status, meia estrela no 2º toque, review "(você)",
-   tags com ✕ e citações (borda dourada, Fraunces itálico)
-6. `/shelf`: busca + filtros de status/gênero/tag compõem entre si; contador "N livros"
-7. `/clubs`: Seus clubes / Descubra; participar/sair alterna com toast; mural
-   só aceita post participando
-8. `/profile`: 128 seguidores · 87 seguindo, favoritos (top4), stats
-   lidos/páginas/reviews, histograma com barra(s) máxima(s) em foil, abas
-   Últimas avaliações / Reviews / Curtidas — tudo derivado do estado da sessão
-9. "Sair" volta à landing
+1. Landing `/` → login fake → `/onboarding` → `/home`
+2. Home lista **todas** as leituras atuais (≥2 no seed), sem botão de progresso
+3. `/book/[id]` com status Lendo: seção "Seu progresso" com toggle Páginas | %,
+   valida limites e mostra delta; review com "(você)" exibe datas de leitura
+4. `/clubs`: seções Públicos/Privados, código de 6 chars visível a membros de
+   clube privado, criar clube, entrar com código (válido e inválido)
+5. `/clubs/[id]`: mural em chat (bolhas próprias à direita), responder com
+   citação, menção `@` destacada, mensagem de sistema ao atualizar progresso
+   de um livro lido em clube
+6. `/shelf`: seção "Minhas listas" (criar, pública/privada); `/lists/[id]`
+   adiciona/remove livros e alterna visibilidade
+7. `/profile`: engrenagem → `/settings`; "Editar perfil" → `/profile/edit`;
+   listas públicas aparecem, privadas não; sem botão Sair
+8. `/settings`: alterar senha (mock, valida preenchimento/igualdade), toggle
+   de tema aplica a paleta clara em toda a UI, "Sair da conta" só aqui
 
 Capture erros/avisos do console — o critério de aceite é zero.
 
@@ -52,5 +51,14 @@ Capture erros/avisos do console — o critério de aceite é zero.
 - Estado NÃO persiste após refresh — esperado (mock em memória), não é bug.
 - Guard roda no cliente: `page.goto` direto em rota logada redireciona para `/`.
   Navegue pela UI.
+- Após navegação client-side (clique em `nav`), aguarde `waitForURL` ou um
+  seletor da página antes de ler `body`/contar elementos — senão o teste lê o
+  DOM anterior e reporta falso negativo.
+- Toasts duram ~1,8s e reaproveitam o mesmo nó DOM: se você disparar duas
+  ações em sequência rápida, o toast lido pode ser o da ação anterior. Dê uma
+  pequena espera ou cheque com margem antes de reclicar.
+- Seletores `button:has-text("X")` combinam com qualquer botão cujo texto
+  contenha X como substring (ex.: "Entrar com código" casa com "Entrar") —
+  prefira seletores mais específicos (`input[aria-label=...] + button`).
 - Seletores Playwright com acentos (ê etc.) podem falhar por normalização
   Unicode — prefira regex sem o caractere acentuado (ex.: `/@pedro_l/`).

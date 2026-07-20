@@ -2,7 +2,17 @@
 
 Web app de avaliação e review de livros — um "Letterboxd de livros".
 
-**Protótipo v2 (dados mocados):** todo o frontend com estado em memória — sem banco, sem auth real, sem API externa. **Os dados não persistem após refresh**; isso é esperado nesta fase. A v2 incorpora feedback de teste de usuário: feed social com curtidas e comentários, clubes do livro, tags e citações, filtros de estante e perfil com histograma de notas.
+**Protótipo v3 (dados mocados):** todo o frontend com estado em memória — sem banco, sem auth real, sem API externa. **Os dados não persistem após refresh**; isso é esperado nesta fase.
+
+Principais features (v2 + v3):
+
+- Feed social com curtidas, comentários e filtro Geral/Seguindo
+- Progresso de leitura na página do livro com unidade **Páginas | %** e datas de leitura ("Leu de 12 jul a 20 jul") nas reviews; a home lista **todas** as leituras atuais
+- Tags, citações e avaliação com meia estrela por livro
+- Estante com filtros compostos (status/gênero/tag) e **listas** públicas/privadas (as públicas aparecem no perfil)
+- **Clubes do livro** públicos e privados (código de convite de 6 caracteres), criação de clube e mural em formato de **chat** com respostas citadas, menções `@` e mensagens de sistema de progresso
+- Perfil com histograma de notas, favoritos editáveis, faixa de estatísticas e **edição de perfil** (username, foto, bio, top 4)
+- **Configurações** com conta mocada, troca de senha fake e **tema claro/escuro** funcional (tokens em CSS variables)
 
 ## Rodando
 
@@ -29,7 +39,8 @@ src/
     login/          login fake
     onboarding/     nome, username, bio e gêneros
     (app)/          rotas logadas (guard + tab bar)
-      home/  search/  book/[id]/  shelf/  clubs/  clubs/[id]/  profile/
+      home/  search/  book/[id]/  shelf/  lists/[id]/
+      clubs/  clubs/new/  clubs/[id]/  profile/  profile/edit/  settings/
   components/       BookCover, Stars, RatingInput, FeedPost, Avatar, TabBar…
   data/             seed mocado: books, feed, users, community, clubs
   lib/
