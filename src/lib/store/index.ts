@@ -6,7 +6,6 @@ import { getBook } from "@/data/books";
 import { CLUBS } from "@/data/clubs";
 import { FEED_REVIEWS } from "@/data/feed";
 import { SEED_NOTIFICATIONS } from "@/data/notifications";
-import { FOLLOWED_USERS } from "@/data/users";
 import { withAt } from "@/lib/handle";
 import { nowTime, readingPercent, todayISO } from "@/lib/format";
 import type {
@@ -32,8 +31,8 @@ const INITIAL_USER: UserState = {
   email: "mari.leituras@gmail.com",
   bio: "Um capítulo por noite antes de dormir. Fantasia, thrillers e o que a estante mandar 💛",
   genres: ["Fantasia", "Romance", "Thriller"],
-  followers: 128,
-  following: 87,
+  followers: 0,
+  following: 0,
   top4: ["torto-arado", "duna", "1984", "ensaio-sobre-a-cegueira"],
   avatar: 0,
   progressUnit: "pages",
@@ -81,7 +80,6 @@ const INITIAL_USER: UserState = {
     "1984": "Sufocante no melhor sentido. Cada releitura fica mais atual, e isso é o que assusta.",
   },
   myReviewTitles: {},
-  likedReviews: { fr1: true, fr3: true },
   bookTags: {
     "torto-arado": ["favoritos do ano", "brasil"],
     verity: ["emprestado"],
@@ -89,20 +87,6 @@ const INITIAL_USER: UserState = {
   quotes: {
     "1984": [{ text: "Guerra é paz. Liberdade é escravidão. Ignorância é força.", page: 29 }],
   },
-  lists: [
-    {
-      id: "fantasia-que-me-formou",
-      name: "Fantasia que me formou",
-      visibility: "public",
-      bookIds: ["o-nome-do-vento", "duna", "1984"],
-    },
-    {
-      id: "presentes-em-potencial",
-      name: "Presentes em potencial",
-      visibility: "private",
-      bookIds: ["torto-arado", "verity"],
-    },
-  ],
 };
 
 type Toast = { id: number; message: string };
@@ -143,6 +127,8 @@ function slugify(name: string): string {
 
 type Store = {
   user: UserState;
+  /** Só reviews próprias mocadas ("me-<bookId>", Spec 3a). O feed social real
+   * (comunidade, likes, comentários) vem de GET /api/feed (Spec 3b). */
   feed: FeedReview[];
   clubs: Club[];
   toast: Toast | null;
@@ -174,12 +160,6 @@ type Store = {
    * Publica mensagem de sistema nos clubes do livro. Retorna o delta. */
   updateProgress: (bookId: string, page: number) => { delta: number };
 
-  toggleLike: (reviewId: string) => void;
-  addComment: (reviewId: string, text: string) => void;
-
-  followedUsers: string[];
-  toggleFollow: (user: string) => boolean;
-
   notifications: Notification[];
   markNotificationsRead: () => void;
 
@@ -200,22 +180,16 @@ type Store = {
   /** Só o criador do clube deve poder chamar (checagem fica na UI). */
   updateClub: (clubId: string, name: string, bookId: string, desc: string) => void;
   removeClubMember: (clubId: string, member: string) => void;
-
-  createList: (name: string, visibility: Visibility) => string;
-  toggleListVisibility: (listId: string) => void;
-  addBooksToList: (listId: string, bookIds: string[]) => void;
-  removeBookFromList: (listId: string, bookId: string) => void;
 };
 
 export const useStore = create<Store>()(
   persist(
     (set, get) => ({
     user: INITIAL_USER,
-    feed: FEED_REVIEWS,
+    feed: FEED_REVIEWS.filter((r) => r.id.startsWith("me-")),
     clubs: CLUBS,
     toast: null,
     theme: "dark",
-    followedUsers: [...FOLLOWED_USERS],
     notifications: [...SEED_NOTIFICATIONS],
     hasHydrated: false,
 
@@ -239,7 +213,6 @@ export const useStore = create<Store>()(
     logout: () =>
       set({
         user: { ...INITIAL_USER, loggedIn: false },
-        followedUsers: [...FOLLOWED_USERS],
         notifications: [...SEED_NOTIFICATIONS],
       }),
 
@@ -387,39 +360,6 @@ export const useStore = create<Store>()(
       return { delta: page - previous };
     },
 
-    toggleLike: (reviewId) =>
-      set((s) => {
-        const liked = !s.user.likedReviews[reviewId];
-        const likedReviews = { ...s.user.likedReviews };
-        if (liked) likedReviews[reviewId] = true;
-        else delete likedReviews[reviewId];
-        return {
-          user: { ...s.user, likedReviews },
-          feed: s.feed.map((r) =>
-            r.id === reviewId ? { ...r, likes: r.likes + (liked ? 1 : -1) } : r
-          ),
-        };
-      }),
-
-    addComment: (reviewId, text) =>
-      set((s) => ({
-        feed: s.feed.map((r) =>
-          r.id === reviewId
-            ? { ...r, comments: [...r.comments, { user: withAt(s.user.username), text }] }
-            : r
-        ),
-      })),
-
-    toggleFollow: (user) => {
-      const following = !get().followedUsers.includes(user);
-      set((s) => ({
-        followedUsers: following
-          ? [...s.followedUsers, user]
-          : s.followedUsers.filter((u) => u !== user),
-      }));
-      return following;
-    },
-
     markNotificationsRead: () =>
       set((s) => ({ notifications: s.notifications.map((n) => ({ ...n, read: true })) })),
 
@@ -532,47 +472,6 @@ export const useStore = create<Store>()(
         }),
       })),
 
-    createList: (name, visibility) => {
-      const id = `${slugify(name)}-${Date.now().toString(36)}`;
-      set((s) => ({
-        user: { ...s.user, lists: [...s.user.lists, { id, name, visibility, bookIds: [] }] },
-      }));
-      return id;
-    },
-
-    toggleListVisibility: (listId) =>
-      set((s) => ({
-        user: {
-          ...s.user,
-          lists: s.user.lists.map((l) =>
-            l.id === listId
-              ? { ...l, visibility: l.visibility === "public" ? "private" : "public" }
-              : l
-          ),
-        },
-      })),
-
-    addBooksToList: (listId, bookIds) =>
-      set((s) => ({
-        user: {
-          ...s.user,
-          lists: s.user.lists.map((l) =>
-            l.id === listId
-              ? { ...l, bookIds: [...l.bookIds, ...bookIds.filter((id) => !l.bookIds.includes(id))] }
-              : l
-          ),
-        },
-      })),
-
-    removeBookFromList: (listId, bookId) =>
-      set((s) => ({
-        user: {
-          ...s.user,
-          lists: s.user.lists.map((l) =>
-            l.id === listId ? { ...l, bookIds: l.bookIds.filter((id) => id !== bookId) } : l
-          ),
-        },
-      })),
   }),
   {
     name: "bookly-v5",
@@ -583,7 +482,6 @@ export const useStore = create<Store>()(
       user: s.user,
       feed: s.feed,
       clubs: s.clubs,
-      followedUsers: s.followedUsers,
       notifications: s.notifications,
       theme: s.theme,
     }),

@@ -76,19 +76,20 @@ test("cadastro completo leva ao /home", async ({ page }) => {
 // C3: clicar numa review da comunidade leva à página /review/[id]
 test("review da comunidade abre a página do post", async ({ page }) => {
   await loginAsSeedUser(page);
-  const firstReviewLink = page.locator('article a[href^="/review/fr"]').first();
+  const firstReviewLink = page
+    .locator('article a[href^="/review/"]:not([href*="/review/me-"])')
+    .first();
   await expect(firstReviewLink).toBeVisible();
+  const href = await firstReviewLink.getAttribute("href");
   await firstReviewLink.click();
-  await page.waitForURL(/\/review\/fr/);
+  await page.waitForURL(`**${href}`);
   await expect(page.getByText("Resenha")).toBeVisible();
 });
 
 // C4: clicar no autor de uma review leva ao perfil público
 test("autor da review leva ao perfil publico", async ({ page }) => {
   await loginAsSeedUser(page);
-  // exclui o post "próprio" do seed (feed.ts atribui a "@mari.leituras", que
-  // não existe em MOCK_USERS — clicar nele hoje redireciona pra /profile).
-  const authorLink = page.locator('article a[href^="/u/"]:not([href="/u/mari.leituras"])').first();
+  const authorLink = page.locator('article a[href^="/u/"]').first();
   const href = await authorLink.getAttribute("href");
   await authorLink.click();
   await page.waitForURL(`**${href}`);
@@ -187,4 +188,75 @@ test("avatar e nome do autor alinham na mesma linha do post", async ({ page }) =
     expect(authorBox.y).toBeGreaterThanOrEqual(avatarBox.y - 4);
     expect(authorBox.y).toBeLessThanOrEqual(avatarBox.y + avatarBox.height);
   }
+});
+
+// C11: feed "Seguindo" vazio cai pro geral com aviso (usuário novo não segue ninguém).
+// Usa uma conta isolada (não a semente compartilhada) pra garantir zero seguidos,
+// já que outros testes deste arquivo seguem leitores com a conta semente.
+test("feed Seguindo sem seguidos cai pro geral com aviso", async ({ page, request }) => {
+  const rand = Math.random().toString(36).slice(2, 8);
+  const email = `nofollow.${rand}@example.com`;
+  const username = `nofollow_${rand}`;
+  const res = await request.post("/api/auth/register", {
+    data: { email, username, password: SEED_PASSWORD, name: "Sem Seguidos" },
+  });
+  expect(res.ok()).toBeTruthy();
+
+  await page.goto("/login");
+  await page.fill('input[type="email"]', email);
+  await page.fill('input[type="password"]', SEED_PASSWORD);
+  await page.click('button:has-text("Entrar")');
+  await page.waitForURL("**/home");
+
+  await page.click('button[role="tab"]:has-text("Seguindo")');
+  await expect(page.getByText("Você ainda não segue ninguém")).toBeVisible();
+  await expect(page.locator("main article").first()).toBeVisible();
+});
+
+// C12: curtir uma review do feed é idempotente e atualiza a contagem
+test("curtir review do feed atualiza contagem", async ({ page }) => {
+  await loginAsSeedUser(page);
+  const firstPost = page.locator("main article").first();
+  const likeButton = firstPost.getByLabel("Curtir review");
+  await expect(likeButton).toBeVisible();
+  const before = Number((await likeButton.innerText()).trim());
+  await likeButton.click();
+  await expect(page.getByLabel("Remover curtida")).toHaveText(String(before + 1));
+  // recarregar confirma que persistiu no backend
+  await page.reload();
+  await expect(page.locator("main article").first().getByLabel("Remover curtida")).toHaveText(
+    String(before + 1)
+  );
+});
+
+// C13: comentar numa review do feed publica e aparece na thread
+test("comentar review do feed publica na thread", async ({ page }) => {
+  await loginAsSeedUser(page);
+  const text = `Comentário de teste e2e ${Date.now()}`;
+  const firstPost = page.locator("main article").first();
+  await firstPost.locator('button[aria-expanded]').click();
+  const input = firstPost.getByLabel("Escrever comentário");
+  await input.fill(text);
+  await input.press("Enter");
+  await expect(firstPost.getByText(text)).toBeVisible();
+});
+
+// C14: criar lista, adicionar um livro da estante e ver refletido em /lists/[id]
+test("criar lista e adicionar livro da estante", async ({ page }) => {
+  await loginAsSeedUser(page);
+  await page.click('nav.fixed a[href="/shelf"]');
+  await page.waitForURL("**/shelf");
+
+  await page.click('button:has-text("+ Criar lista")');
+  await page.fill('input[aria-label="Nome da nova lista"]', "Lista E2E");
+  await page.getByRole("button", { name: "Criar", exact: true }).click();
+  await expect(page.getByText("Lista E2E")).toBeVisible();
+
+  await page.click('a:has-text("Lista E2E")');
+  await page.waitForURL(/\/lists\/.+/);
+
+  await page.click('button:has-text("+ Adicionar livros")');
+  await page.click('button[aria-label="Duna"]');
+  await page.click('button:has-text("Adicionar (1)")');
+  await expect(page.locator('a[href="/book/duna"]')).toBeVisible();
 });

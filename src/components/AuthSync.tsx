@@ -39,6 +39,7 @@ export function AuthSync() {
             avatar: profile.avatar,
             top4: profile.top4,
             followers: profile.followers,
+            following: profile.following,
             progressUnit: profile.progressUnit,
           });
         })

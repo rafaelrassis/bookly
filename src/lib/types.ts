@@ -70,14 +70,47 @@ export type ShelfEntry = {
 
 export type Quote = { text: string; page?: number };
 
-export type UserList = {
+export type ProgressUnit = "pages" | "percent";
+
+/** Autor mínimo retornado pelas APIs sociais (feed/comentários/listas). */
+export type ApiAuthor = { username: string; name: string; avatar: number };
+
+/** Review real (Spec 3b) — usada no feed, na página de review e nas reviews do livro. */
+export type ApiReview = {
+  id: string;
+  user: ApiAuthor;
+  book: Book;
+  rating: number;
+  title?: string;
+  text: string;
+  startedAt?: string;
+  finishedAt?: string;
+  likes: number;
+  comments: number;
+  likedByMe: boolean;
+  createdAt: string;
+};
+
+/** Review de `GET /api/books/[id]/reviews` — mesmo shape sem o campo `book` (já conhecido). */
+export type ApiBookReview = Omit<ApiReview, "book">;
+
+/** Review de `GET /api/users/[username]/reviews` — sem o campo `user` (já conhecido). */
+export type ApiUserReview = Omit<ApiReview, "user">;
+
+export type ApiComment = {
+  id: string;
+  text: string;
+  createdAt: string;
+  user: ApiAuthor;
+};
+
+export type ApiList = {
   id: string;
   name: string;
   visibility: Visibility;
   bookIds: string[];
+  books: Book[];
 };
-
-export type ProgressUnit = "pages" | "percent";
 
 export type Notification = {
   id: string;
@@ -112,8 +145,6 @@ export type UserState = {
   ratingOrder: string[];
   myReviews: Record<string, string>;
   myReviewTitles: Record<string, string>;
-  likedReviews: Record<string, boolean>;
   bookTags: Record<string, string[]>;
   quotes: Record<string, Quote[]>;
-  lists: UserList[];
 };

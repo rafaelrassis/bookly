@@ -30,6 +30,101 @@ model User {
 
   followedBy Follow[] @relation("following")
   following  Follow[] @relation("follower")
+
+  reviews     Review[]
+  reviewLikes ReviewLike[]
+  comments    Comment[]
+  lists       List[]
+}
+
+model Book {
+  id           String   @id
+  title        String
+  authors      String
+  year         Int
+  pages        Int
+  genre        String
+  gradientFrom String
+  gradientTo   String
+  avg          Float    @default(0)
+  count        Int      @default(0)
+  synopsis     String
+  createdAt    DateTime @default(now())
+
+  reviews   Review[]
+  listBooks ListBook[]
+}
+
+model Review {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId String
+  book   Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  /// 0.5–5, em passos de meia estrela.
+  rating Float
+  title  String?
+  text   String
+  startedAt  DateTime?
+  finishedAt DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  likes    ReviewLike[]
+  comments Comment[]
+
+  @@unique([userId, bookId])
+  @@index([bookId])
+  @@index([createdAt])
+}
+
+model ReviewLike {
+  id        String   @id @default(cuid())
+  reviewId  String
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([reviewId, userId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  reviewId  String
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text      String
+  createdAt DateTime @default(now())
+
+  @@index([reviewId, createdAt])
+}
+
+model List {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name   String
+  /// "public" | "private"
+  visibility String   @default("public")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  books ListBook[]
+}
+
+model ListBook {
+  id        String   @id @default(cuid())
+  listId    String
+  list      List     @relation(fields: [listId], references: [id], onDelete: Cascade)
+  bookId    String
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  order     Int
+  createdAt DateTime @default(now())
+
+  @@unique([listId, bookId])
+  @@index([listId, order])
 }
 
 model Follow {

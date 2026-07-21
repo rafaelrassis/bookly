@@ -133,9 +133,6 @@ export const MOCK_USERS: Record<string, PublicProfile> = {
   },
 };
 
-/** Quem a usuária logada segue (mock) — usado no filtro "Seguindo" do feed. */
-export const FOLLOWED_USERS = ["@ana.estante", "@leituras.do.vale", "@thriller.gab"];
-
 /** Gradientes de avatar disponíveis para o usuário escolher em Editar perfil. */
 export const AVATAR_CHOICES: [string, string][] = [
   ["#E4A93C", "#8A5E12"],
@@ -148,10 +145,4 @@ export const AVATAR_CHOICES: [string, string][] = [
 
 export function avatarGradient(user: string): [string, string] {
   return MOCK_USERS[user]?.gradient ?? AVATAR_CHOICES[0];
-}
-
-/** Busca o perfil público de um usuário mocado, com ou sem "@" no handle. */
-export function getPublicProfile(username: string): PublicProfile | undefined {
-  const handle = username.startsWith("@") ? username : `@${username}`;
-  return MOCK_USERS[handle];
 }

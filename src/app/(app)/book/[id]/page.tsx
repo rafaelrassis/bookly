@@ -2,17 +2,18 @@
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
 import { ExpandableText } from "@/components/ExpandableText";
 import { RatingInput } from "@/components/RatingInput";
 import { SectionTitle } from "@/components/SectionTitle";
 import { Stars } from "@/components/Stars";
+import { withAt } from "@/lib/handle";
 import { formatCount, formatDecimal, readingDates, readingPercent } from "@/lib/format";
 import { useBook } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
-import type { Book, ShelfEntry, ShelfStatus } from "@/lib/types";
+import type { ApiBookReview, Book, ShelfEntry, ShelfStatus } from "@/lib/types";
 
 const STATUS_OPTIONS: { status: ShelfStatus; label: string }[] = [
   { status: "WANT_TO_READ", label: "Quero ler" },
@@ -124,7 +125,7 @@ function ProgressSection({ book, entry }: { book: Book; entry: ShelfEntry }) {
 export default function BookPage({ params }: { params: { id: string } }) {
   const { book, entry, rating, myReview, tags, bookQuotes } = useBook(params.id);
   const username = useStore((s) => s.user.username);
-  const feed = useStore((s) => s.feed);
+  const [communityReviews, setCommunityReviews] = useState<ApiBookReview[]>([]);
   const setShelfStatus = useStore((s) => s.setShelfStatus);
   const setRating = useStore((s) => s.setRating);
   const saveReview = useStore((s) => s.saveReview);
@@ -143,9 +144,13 @@ export default function BookPage({ params }: { params: { id: string } }) {
   const [quoteDraft, setQuoteDraft] = useState("");
   const [quotePage, setQuotePage] = useState("");
 
-  if (!book) notFound();
+  useEffect(() => {
+    fetch(`/api/books/${params.id}/reviews`)
+      .then((res) => (res.ok ? res.json() : { items: [] }))
+      .then((data) => setCommunityReviews(data.items ?? []));
+  }, [params.id]);
 
-  const communityReviews = feed.filter((r) => r.bookId === book!.id);
+  if (!book) notFound();
 
   function handleStatusTap(status: ShelfStatus) {
     if (entry?.status === status) {
@@ -451,11 +456,15 @@ export default function BookPage({ params }: { params: { id: string } }) {
             </p>
           )}
           {communityReviews.map((review) => (
-            <article key={review.id} className="rounded-2xl border border-line bg-card p-4">
-              <p className="text-sm font-bold">{review.user}</p>
+            <Link
+              key={review.id}
+              href={`/review/${review.id}`}
+              className="block rounded-2xl border border-line bg-card p-4 transition-colors hover:bg-card2"
+            >
+              <p className="text-sm font-bold">{withAt(review.user.username)}</p>
               <Stars rating={review.rating} className="text-xs" />
-              <ExpandableText text={review.text} className="mt-1.5 text-sm text-paperDim" />
-            </article>
+              <p className="mt-1.5 line-clamp-3 text-sm text-paperDim">{review.text}</p>
+            </Link>
           ))}
         </div>
       </section>

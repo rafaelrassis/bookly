@@ -7,13 +7,17 @@ import { useStore } from "@/lib/store";
 type AvatarProps = {
   /** Username com @ (ex.: "@ana.estante"). */
   user: string;
+  /** Índice real em AVATAR_CHOICES (vem da API, campo `User.avatar`). Tem
+   * prioridade sobre o gradiente mocado de data/users.ts quando presente. */
+  avatarIndex?: number;
   size?: number;
   className?: string;
 };
 
 /** Avatar circular com gradiente. O usuário logado usa o gradiente escolhido
- * em Editar perfil; usuários mocados têm gradiente próprio. */
-export function Avatar({ user, size = 36, className = "" }: AvatarProps) {
+ * em Editar perfil; demais usuários usam o `avatarIndex` vindo da API (com
+ * fallback pro gradiente mocado legado quando não informado). */
+export function Avatar({ user, avatarIndex, size = 36, className = "" }: AvatarProps) {
   const username = useStore((s) => s.user.username);
   const myAvatar = useStore((s) => s.user.avatar);
   const myAvatarImage = useStore((s) => s.user.avatarImage);
@@ -33,7 +37,9 @@ export function Avatar({ user, size = 36, className = "" }: AvatarProps) {
 
   const [from, to] = isMe
     ? AVATAR_CHOICES[myAvatar] ?? AVATAR_CHOICES[0]
-    : avatarGradient(user);
+    : avatarIndex !== undefined
+      ? AVATAR_CHOICES[avatarIndex % AVATAR_CHOICES.length]
+      : avatarGradient(user);
 
   return (
     <span

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getBook } from "@/data/books";
 import { Avatar } from "@/components/Avatar";
 import { BookCover } from "@/components/BookCover";
@@ -10,8 +10,9 @@ import { SectionTitle } from "@/components/SectionTitle";
 import { Stars } from "@/components/Stars";
 import { withAt } from "@/lib/handle";
 import { formatCount, formatDecimal } from "@/lib/format";
-import { useMyStats, useRecommendations } from "@/lib/store/hooks";
+import { useFeed, useMyStats, useRecommendations } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
+import type { ApiList } from "@/lib/types";
 
 const HISTOGRAM_LABELS: Record<number, string> = { 0.5: "½★", 5: "★★★★★" };
 
@@ -44,21 +45,27 @@ function GearIcon() {
 
 export default function ProfilePage() {
   const user = useStore((s) => s.user);
-  const feed = useStore((s) => s.feed);
-  const followingCount = useStore((s) => s.followedUsers.length);
+  const followingCount = user.following;
   const { readCount, pagesRead, reviewCount, avgRating, histogram, maxCount, ratedBooks } =
     useMyStats();
   const recommended = useRecommendations(6);
 
   const [tab, setTab] = useState<ActivityTab>("ratings");
+  const { items: likedFeedReviews } = useFeed("liked");
 
-  const likedFeedReviews = feed.filter((r) => user.likedReviews[r.id]);
+  const [lists, setLists] = useState<ApiList[]>([]);
+  useEffect(() => {
+    fetch("/api/lists")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: ApiList[]) => setLists(data ?? []));
+  }, []);
+
   const myReviewEntries = Object.entries(user.myReviews)
     .map(([bookId, text]) => ({ book: getBook(bookId), text }))
     .filter((e): e is { book: NonNullable<ReturnType<typeof getBook>>; text: string } =>
       Boolean(e.book)
     );
-  const publicLists = user.lists.filter((l) => l.visibility === "public");
+  const publicLists = lists.filter((l) => l.visibility === "public");
 
   const stats = [
     { label: "lidos", value: String(readCount) },

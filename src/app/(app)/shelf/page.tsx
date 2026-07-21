@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getBook } from "@/data/books";
 import { BookCover } from "@/components/BookCover";
 import { LockIcon } from "@/components/icons";
@@ -9,7 +9,7 @@ import { SectionTitle } from "@/components/SectionTitle";
 import { Stars } from "@/components/Stars";
 import { useShelf } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
-import type { ShelfStatus, Visibility } from "@/lib/types";
+import type { ApiList, ShelfStatus, Visibility } from "@/lib/types";
 
 /** Busca case-insensitive; acentos também são ignorados. */
 function normalize(text: string): string {
@@ -32,24 +32,45 @@ const STATUS_BADGE: Record<ShelfStatus, { label: string; className: string }> = 
   READ: { label: "Lido", className: "bg-foil/15 text-foil" },
 };
 
-/** Seção "Minhas listas": cards das listas + criação inline. */
+/** Seção "Minhas listas": cards das listas + criação inline (API real). */
 function MyLists() {
-  const lists = useStore((s) => s.user.lists);
-  const createList = useStore((s) => s.createList);
   const showToast = useStore((s) => s.showToast);
+  const [lists, setLists] = useState<ApiList[]>([]);
 
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
   const [visibility, setVisibility] = useState<Visibility>("public");
+  const [saving, setSaving] = useState(false);
 
-  function create() {
+  useEffect(() => {
+    fetch("/api/lists")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => setLists(data ?? []));
+  }, []);
+
+  async function create() {
     const trimmed = name.trim();
-    if (!trimmed) return;
-    createList(trimmed, visibility);
-    setName("");
-    setVisibility("public");
-    setCreating(false);
-    showToast("Lista criada ✦");
+    if (!trimmed || saving) return;
+    setSaving(true);
+    try {
+      const res = await fetch("/api/lists", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmed, visibility }),
+      });
+      if (!res.ok) {
+        showToast("Não foi possível criar a lista");
+        return;
+      }
+      const list: ApiList = await res.json();
+      setLists((current) => [list, ...current]);
+      setName("");
+      setVisibility("public");
+      setCreating(false);
+      showToast("Lista criada ✦");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -105,7 +126,7 @@ function MyLists() {
             <button
               type="button"
               onClick={create}
-              disabled={!name.trim()}
+              disabled={!name.trim() || saving}
               className="ml-auto rounded-xl bg-foil px-4 py-1.5 text-xs font-bold text-leather disabled:opacity-40"
             >
               Criar

@@ -1,14 +1,61 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BOOKS, getBook } from "@/data/books";
-import type { Book, FeedReview, ShelfEntry, ShelfStatus } from "@/lib/types";
+import type { ApiReview, Book, FeedReview, ShelfEntry, ShelfStatus } from "@/lib/types";
 import { useStore } from "./index";
 
-/** Resolve um id de review (comunidade ou própria "me-<bookId>").
- * Ponto único de troca quando reviews e feed virarem endpoints separados. */
-export function useReview(id: string): FeedReview | undefined {
-  return useStore((s) => s.feed.find((r) => r.id === id));
+/** Resolve uma review própria mocada ("me-<bookId>"), única fonte que ainda
+ * vive no store local (a estante/notas/reviews próprias são Spec 3a, fora
+ * do escopo desta fatia — feed e reviews da comunidade já são reais). */
+export function useMyMockReview(id: string): FeedReview | undefined {
+  return useStore((s) => (id.startsWith("me-") ? s.feed.find((r) => r.id === id) : undefined));
+}
+
+export type FeedScope = "all" | "following" | "liked";
+
+/** Feed real (Spec 3b), paginado por cursor. "following" cai pro "all" no
+ * servidor quando o usuário não segue ninguém (fellBackToAll avisa a UI). */
+export function useFeed(scope: FeedScope) {
+  const [items, setItems] = useState<ApiReview[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [fellBackToAll, setFellBackToAll] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetch(`/api/feed?scope=${scope}`)
+      .then((res) => (res.ok ? res.json() : { items: [], nextCursor: null, fellBackToAll: false }))
+      .then((data) => {
+        if (cancelled) return;
+        setItems(data.items ?? []);
+        setNextCursor(data.nextCursor ?? null);
+        setFellBackToAll(Boolean(data.fellBackToAll));
+      })
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [scope]);
+
+  async function loadMore() {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const res = await fetch(`/api/feed?scope=${scope}&cursor=${nextCursor}`);
+      if (res.ok) {
+        const data = await res.json();
+        setItems((current) => [...current, ...(data.items ?? [])]);
+        setNextCursor(data.nextCursor ?? null);
+      }
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
+  return { items, loading, loadingMore, hasMore: nextCursor !== null, loadMore, fellBackToAll };
 }
 
 export type ShelfBook = { book: Book; entry: ShelfEntry };
