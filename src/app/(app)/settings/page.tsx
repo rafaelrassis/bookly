@@ -459,6 +459,16 @@ export default function SettingsPage() {
         >
           Sair da conta
         </button>
+        <button
+          type="button"
+          onClick={() => {
+            useStore.persist.clearStorage();
+            location.reload();
+          }}
+          className="mt-3 w-full rounded-xl border border-line bg-card px-4 py-3 text-sm font-bold text-paperDim hover:text-paper"
+        >
+          Limpar dados de demonstração
+        </button>
       </section>
     </div>
   );

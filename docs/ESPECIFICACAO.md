@@ -1345,7 +1345,7 @@ Seja o primeiro a avaliar este livro!
 ```typescript
 {
   id: UUID,
-  rating: Int (1-5),
+  rating: Int (1-10, cada passo = meia estrela; ex.: 9 = 4,5 estrelas),
   title: String (optional, max 150),
   content: String (10-5000 chars),
   readStartDate: DateTime (optional),
@@ -2589,7 +2589,7 @@ model Book {
 
 model Review {
   id            String    @id @default(cuid())
-  rating        Int       @db.SmallInt // 1-5
+  rating        Int       @db.SmallInt // 1-10; cada passo = meia estrela (produto usa 0,5-5 com incrementos de 0,5, ex.: 9 = 4,5★)
   title         String?   @db.VarChar(150)
   content       String    @db.VarChar(5000)
   readStartDate DateTime?

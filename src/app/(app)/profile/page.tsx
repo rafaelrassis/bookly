@@ -8,6 +8,7 @@ import { BookCover } from "@/components/BookCover";
 import { FeedPost } from "@/components/FeedPost";
 import { SectionTitle } from "@/components/SectionTitle";
 import { Stars } from "@/components/Stars";
+import { withAt } from "@/lib/handle";
 import { formatCount, formatDecimal } from "@/lib/format";
 import { useMyStats, useRecommendations } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
@@ -78,7 +79,7 @@ export default function ProfilePage() {
       </div>
 
       <section className="flex items-center gap-4">
-        <Avatar user={`@${user.username}`} size={72} />
+        <Avatar user={withAt(user.username)} size={72} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <h1 className="text-xl font-extrabold">{user.name}</h1>

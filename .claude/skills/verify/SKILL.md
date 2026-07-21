@@ -48,7 +48,10 @@ Capture erros/avisos do console — o critério de aceite é zero.
 
 ## Pegadinhas
 
-- Estado NÃO persiste após refresh — esperado (mock em memória), não é bug.
+- Estado persiste via `localStorage` (`zustand/persist`, chave `bookly-v5`) —
+  sobrevive a refresh. Para resetar ao seed: botão "Limpar dados de
+  demonstração" em Configurações, ou `localStorage.clear()` + reload. Logout
+  também reseta `user`, `followedUsers` e `notifications` ao seed.
 - Guard roda no cliente: `page.goto` direto em rota logada redireciona para `/`.
   Navegue pela UI.
 - Após navegação client-side (clique em `nav`), aguarde `waitForURL` ou um

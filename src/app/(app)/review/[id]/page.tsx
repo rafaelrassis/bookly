@@ -8,11 +8,13 @@ import { Avatar } from "@/components/Avatar";
 import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
 import { Stars } from "@/components/Stars";
+import { withAt, withoutAt } from "@/lib/handle";
 import { readingDates } from "@/lib/format";
 import { useStore } from "@/lib/store";
+import { useReview } from "@/lib/store/hooks";
 
 export default function ReviewPage({ params }: { params: { id: string } }) {
-  const review = useStore((s) => s.feed.find((r) => r.id === params.id));
+  const review = useReview(params.id);
   const liked = useStore((s) => Boolean(s.user.likedReviews[params.id]));
   const username = useStore((s) => s.user.username);
   const toggleLike = useStore((s) => s.toggleLike);
@@ -24,7 +26,7 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
   const book = getBook(review.bookId);
   if (!book) notFound();
 
-  const profileHref = `/u/${review.user.replace("@", "")}`;
+  const profileHref = `/u/${withoutAt(review.user)}`;
   const dates = readingDates(review.startedAt, review.finishedAt);
 
   function publishComment() {
@@ -89,12 +91,12 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
       <section className="mt-4 flex flex-col gap-3 pb-8">
         {review.comments.map((comment, i) => (
           <div key={i} className="flex gap-2.5">
-            <Link href={`/u/${comment.user.replace("@", "")}`} aria-label={comment.user}>
+            <Link href={`/u/${withoutAt(comment.user)}`} aria-label={comment.user}>
               <Avatar user={comment.user} size={26} />
             </Link>
             <p className="min-w-0 text-sm text-paperDim">
               <Link
-                href={`/u/${comment.user.replace("@", "")}`}
+                href={`/u/${withoutAt(comment.user)}`}
                 className="font-bold text-paper hover:text-foil"
               >
                 {comment.user}
@@ -104,7 +106,7 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
           </div>
         ))}
         <div className="mt-1 flex items-center gap-2">
-          <Avatar user={`@${username}`} size={26} />
+          <Avatar user={withAt(username)} size={26} />
           <input
             type="text"
             value={draft}

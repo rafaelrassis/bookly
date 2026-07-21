@@ -10,11 +10,12 @@ import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
 import { Stars } from "@/components/Stars";
 import { SectionTitle } from "@/components/SectionTitle";
+import { withAt } from "@/lib/handle";
 import { readingDates } from "@/lib/format";
 import { useStore } from "@/lib/store";
 
 export default function PublicProfilePage({ params }: { params: { username: string } }) {
-  const handle = `@${decodeURIComponent(params.username)}`;
+  const handle = withAt(decodeURIComponent(params.username));
   const profile = MOCK_USERS[handle];
 
   const myUsername = useStore((s) => s.user.username);
@@ -25,7 +26,7 @@ export default function PublicProfilePage({ params }: { params: { username: stri
   const router = useRouter();
 
   useEffect(() => {
-    if (handle === `@${myUsername}`) router.replace("/profile");
+    if (handle === withAt(myUsername)) router.replace("/profile");
   }, [handle, myUsername, router]);
 
   if (!profile) notFound();
@@ -106,7 +107,7 @@ export default function PublicProfilePage({ params }: { params: { username: stri
                 <Link
                   key={r.id}
                   href={`/review/${r.id}`}
-                  className="flex gap-3.5 rounded-2xl border border-line bg-card p-3.5 transition-colors hover:bg-card2"
+                  className="flex gap-3.5 rounded-2xl border border-line bg-card p-3.5 transition-colors hover:bg-card2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foil focus-visible:ring-offset-2 focus-visible:ring-offset-leather"
                 >
                   <BookCover book={book} width={48} />
                   <div className="min-w-0">
