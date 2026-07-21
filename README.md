@@ -4,6 +4,8 @@ Web app de avaliação e review de livros — um "Letterboxd de livros".
 
 **Protótipo v3 (dados mocados):** todo o frontend com estado em memória — sem banco, sem auth real, sem API externa. **Os dados não persistem após refresh**; isso é esperado nesta fase.
 
+📄 Especificação completa do produto (visão, fluxos, modelos de dados, roadmap, stack alvo): [`docs/ESPECIFICACAO.md`](docs/ESPECIFICACAO.md).
+
 Principais features (v2 + v3):
 
 - Feed social com curtidas, comentários e filtro Geral/Seguindo
