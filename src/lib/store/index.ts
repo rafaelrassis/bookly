@@ -154,7 +154,10 @@ type Store = {
   clearToast: () => void;
   setTheme: (theme: Theme) => void;
 
-  completeOnboarding: (name: string, username: string, bio: string, genres: string[]) => void;
+  /** Sincroniza a identidade (nome/username/email) a partir da sessão NextAuth. */
+  hydrateFromSession: (session: { name: string; username: string; email: string }) => void;
+  /** Onboarding pós-cadastro: bio e gêneros (perfil-base já veio do registro). */
+  setBioAndGenres: (bio: string, genres: string[]) => void;
   logout: () => void;
   updateProfile: (
     username: string,
@@ -226,8 +229,18 @@ export const useStore = create<Store>()(
     clearToast: () => set({ toast: null }),
     setTheme: (theme) => set({ theme }),
 
-    completeOnboarding: (name, username, bio, genres) =>
-      set((s) => ({ user: { ...s.user, loggedIn: true, name, username, bio, genres } })),
+    hydrateFromSession: ({ name, username, email }) =>
+      set((s) => ({
+        user: {
+          ...s.user,
+          loggedIn: true,
+          name: name || s.user.name,
+          username: username || s.user.username,
+          email: email || s.user.email,
+        },
+      })),
+
+    setBioAndGenres: (bio, genres) => set((s) => ({ user: { ...s.user, bio, genres } })),
 
     logout: () =>
       set({
