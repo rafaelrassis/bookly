@@ -1,24 +1,12 @@
-"use client";
-
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { redirect } from "next/navigation";
 import { TabBar } from "@/components/TabBar";
 import { TopNav } from "@/components/TopNav";
-import { useStore } from "@/lib/store";
+import { auth } from "@/lib/auth";
 
-/** Rotas logadas: redireciona para a landing quando não há sessão. */
-export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const hasHydrated = useStore((s) => s.hasHydrated);
-  const loggedIn = useStore((s) => s.user.loggedIn);
-  const router = useRouter();
-
-  useEffect(() => {
-    // só decide depois que o estado persistido é aplicado — senão o valor
-    // padrão (deslogado) de antes da reidratação chuta a sessão pra fora.
-    if (hasHydrated && !loggedIn) router.replace("/");
-  }, [hasHydrated, loggedIn, router]);
-
-  if (!loggedIn) return null;
+/** Rotas logadas: redireciona para o login quando não há sessão. */
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  const session = await auth();
+  if (!session?.user) redirect("/login");
 
   return (
     <>

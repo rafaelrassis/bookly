@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { BackHeader } from "@/components/BackHeader";
 import { SectionTitle } from "@/components/SectionTitle";
 import { generateVerificationCode } from "@/lib/format";
@@ -143,7 +144,8 @@ export default function SettingsPage() {
     resetPasswordFlow();
   }
 
-  function handleLogout() {
+  async function handleLogout() {
+    await signOut({ redirect: false });
     logout();
     router.replace("/");
   }

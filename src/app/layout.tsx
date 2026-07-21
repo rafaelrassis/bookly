@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Karla } from "next/font/google";
+import { AuthSync } from "@/components/AuthSync";
+import { Providers } from "@/components/Providers";
 import { ThemeSync } from "@/components/ThemeSync";
 import { Toaster } from "@/components/Toaster";
 import "./globals.css";
@@ -35,9 +37,12 @@ export default function RootLayout({
       <body
         className={`${fraunces.variable} ${karla.variable} bg-leather font-sans text-paper antialiased`}
       >
-        <ThemeSync />
-        <div className="min-h-dvh w-full">{children}</div>
-        <Toaster />
+        <Providers>
+          <ThemeSync />
+          <AuthSync />
+          <div className="min-h-dvh w-full">{children}</div>
+          <Toaster />
+        </Providers>
       </body>
     </html>
   );

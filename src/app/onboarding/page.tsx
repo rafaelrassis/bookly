@@ -8,11 +8,9 @@ import { useStore } from "@/lib/store";
 
 export default function OnboardingPage() {
   const user = useStore((s) => s.user);
-  const completeOnboarding = useStore((s) => s.completeOnboarding);
+  const setBioAndGenres = useStore((s) => s.setBioAndGenres);
   const router = useRouter();
 
-  const [name, setName] = useState("");
-  const [username, setUsername] = useState("");
   const [bio, setBio] = useState(user.bio);
   const [genres, setGenres] = useState<string[]>(user.genres);
 
@@ -24,12 +22,7 @@ export default function OnboardingPage() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    completeOnboarding(
-      name.trim() || user.name,
-      username.trim() || user.username,
-      bio.trim(),
-      genres
-    );
+    setBioAndGenres(bio.trim(), genres);
     router.push("/home");
   }
 
@@ -37,33 +30,10 @@ export default function OnboardingPage() {
     <main className="mx-auto flex min-h-dvh w-full max-w-app flex-col px-5 pb-10 pt-14">
       <Logo className="text-3xl" />
       <h1 className="mt-6 text-2xl font-extrabold">Vamos montar seu perfil</h1>
-      <p className="mt-1 text-paperDim">Conte quem você é e o que gosta de ler.</p>
+      <p className="mt-1 text-paperDim">Conte o que você gosta de ler.</p>
 
       <form onSubmit={handleSubmit} className="mt-8 flex flex-1 flex-col">
         <div className="flex flex-col gap-3">
-          <label className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
-            Nome
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Victor Frankenstein"
-              className="rounded-xl border border-line bg-card px-4 py-3 text-base text-paper placeholder:text-paperDim/60"
-            />
-          </label>
-          <label className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
-            Nome de usuário
-            <div className="flex items-center rounded-xl border border-line bg-card px-4">
-              <span className="text-paperDim">@</span>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="meninomaluquinho"
-                className="w-full bg-transparent py-3 pl-1 text-base text-paper placeholder:text-paperDim/60 focus:outline-none"
-              />
-            </div>
-          </label>
           <label className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
             Bio
             <textarea

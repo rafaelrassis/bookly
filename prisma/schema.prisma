@@ -1,0 +1,35 @@
+// Prisma schema — Spec 0 (auth-only slice): User + VerificationCode.
+// Demais modelos (Book, Review, Club, Message) chegam nas specs seguintes.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  username      String    @unique
+  name          String
+  passwordHash  String
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model VerificationCode {
+  id        String    @id @default(cuid())
+  email     String
+  code      String
+  /// "email" | "password"
+  type      String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([email, type])
+}
