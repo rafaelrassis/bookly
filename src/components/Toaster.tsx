@@ -22,7 +22,7 @@ export function Toaster() {
     <div
       role="status"
       aria-live="polite"
-      className="toast-enter fixed bottom-24 left-1/2 z-50 -translate-x-1/2 whitespace-nowrap rounded-full bg-paper px-5 py-2.5 text-sm font-bold text-leather shadow-lg shadow-black/40"
+      className="toast-enter fixed bottom-24 left-1/2 z-50 -translate-x-1/2 whitespace-nowrap rounded-full bg-paper px-5 py-2.5 text-sm font-bold text-leather shadow-lg shadow-black/40 md:bottom-8"
     >
       {toast.message}
     </div>

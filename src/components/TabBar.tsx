@@ -71,7 +71,7 @@ export function TabBar() {
   return (
     <nav
       aria-label="Navegação principal"
-      className="fixed bottom-0 left-1/2 z-40 w-full max-w-app -translate-x-1/2 border-t border-line bg-card/95 backdrop-blur"
+      className="fixed bottom-0 left-1/2 z-40 w-full max-w-app -translate-x-1/2 border-t border-line bg-card/95 backdrop-blur md:hidden"
     >
       <div className="flex">
         {TABS.map((tab) => {

@@ -38,7 +38,7 @@ export default function LandingPage() {
   if (loggedIn) return null;
 
   return (
-    <main className="flex min-h-dvh flex-col px-5 pb-10 pt-16">
+    <main className="mx-auto flex min-h-dvh w-full max-w-app flex-col px-5 pb-10 pt-16">
       <div className="text-center">
         <Logo className="text-5xl" />
         <p className="mt-3 text-lg text-paperDim">

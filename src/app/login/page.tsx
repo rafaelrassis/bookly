@@ -36,7 +36,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-dvh flex-col px-5 pb-10 pt-14">
+    <main className="mx-auto flex min-h-dvh w-full max-w-app flex-col px-5 pb-10 pt-14">
       <Link href="/" className="self-start text-sm text-paperDim hover:text-paper">
         ‹ Voltar
       </Link>

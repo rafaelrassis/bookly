@@ -34,7 +34,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <main className="flex min-h-dvh flex-col px-5 pb-10 pt-14">
+    <main className="mx-auto flex min-h-dvh w-full max-w-app flex-col px-5 pb-10 pt-14">
       <Logo className="text-3xl" />
       <h1 className="mt-6 text-2xl font-extrabold">Vamos montar seu perfil</h1>
       <p className="mt-1 text-paperDim">Conte quem você é e o que gosta de ler.</p>

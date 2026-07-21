@@ -36,7 +36,7 @@ export default function RootLayout({
         className={`${fraunces.variable} ${karla.variable} bg-leather font-sans text-paper antialiased`}
       >
         <ThemeSync />
-        <div className="mx-auto min-h-dvh w-full max-w-app">{children}</div>
+        <div className="min-h-dvh w-full">{children}</div>
         <Toaster />
       </body>
     </html>
