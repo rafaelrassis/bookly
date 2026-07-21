@@ -5,7 +5,6 @@ import { useState } from "react";
 import { getBook } from "@/data/books";
 import { Avatar } from "@/components/Avatar";
 import { BookCover } from "@/components/BookCover";
-import { ExpandableText } from "@/components/ExpandableText";
 import { Stars } from "@/components/Stars";
 import { useStore } from "@/lib/store";
 import type { FeedReview } from "@/lib/types";
@@ -71,10 +70,14 @@ export function FeedPost({ review }: { review: FeedReview }) {
   return (
     <article className="border-b border-line py-4">
       <div className="flex gap-3">
-        <Avatar user={review.user} />
+        <Link href={`/u/${review.user.replace("@", "")}`} aria-label={review.user} className="rounded-full">
+          <Avatar user={review.user} />
+        </Link>
         <div className="min-w-0 flex-1">
           <p className="text-sm leading-snug">
-            <span className="font-bold">{review.user}</span>{" "}
+            <Link href={`/u/${review.user.replace("@", "")}`} className="font-bold hover:text-foil">
+              {review.user}
+            </Link>{" "}
             <span className="text-paperDim">avaliou</span>{" "}
             <Link
               href={`/book/${book.id}`}
@@ -85,7 +88,16 @@ export function FeedPost({ review }: { review: FeedReview }) {
             <span className="text-paperDim">·</span>{" "}
             <Stars rating={review.rating} className="text-xs" />
           </p>
-          <ExpandableText text={review.text} className="mt-1.5 text-sm text-paperDim" />
+          <Link href={`/review/${review.id}`} className="mt-1.5 block">
+            {review.title && (
+              <span className="block font-display text-base font-bold leading-snug text-paper">
+                {review.title}
+              </span>
+            )}
+            <span className="mt-0.5 block text-sm text-paperDim line-clamp-3 hover:text-paper/90">
+              {review.text}
+            </span>
+          </Link>
 
           <div className="mt-2.5 flex items-center gap-5 text-xs text-paperDim">
             <button
@@ -120,9 +132,17 @@ export function FeedPost({ review }: { review: FeedReview }) {
         <div className="ml-12 mt-3 flex flex-col gap-3">
           {review.comments.map((comment, i) => (
             <div key={i} className="flex gap-2.5">
-              <Avatar user={comment.user} size={26} />
+              <Link href={`/u/${comment.user.replace("@", "")}`} aria-label={comment.user}>
+                <Avatar user={comment.user} size={26} />
+              </Link>
               <p className="min-w-0 text-sm text-paperDim">
-                <span className="font-bold text-paper">{comment.user}</span> {comment.text}
+                <Link
+                  href={`/u/${comment.user.replace("@", "")}`}
+                  className="font-bold text-paper hover:text-foil"
+                >
+                  {comment.user}
+                </Link>{" "}
+                {comment.text}
               </p>
             </div>
           ))}

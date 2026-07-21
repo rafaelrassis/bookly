@@ -47,8 +47,8 @@ export default function OnboardingPage() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Frankenstein"
-              className="rounded-xl border border-line bg-card px-4 py-3 text-base text-paper placeholder:text-paperDim/50"
+              placeholder="Victor Frankenstein"
+              className="rounded-xl border border-line bg-card px-4 py-3 text-base text-paper placeholder:text-paperDim/60"
             />
           </label>
           <label className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
@@ -59,8 +59,8 @@ export default function OnboardingPage() {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="capitu"
-                className="w-full bg-transparent py-3 pl-1 text-base text-paper placeholder:text-paperDim/50 focus:outline-none"
+                placeholder="meninomaluquinho"
+                className="w-full bg-transparent py-3 pl-1 text-base text-paper placeholder:text-paperDim/60 focus:outline-none"
               />
             </div>
           </label>
@@ -70,7 +70,8 @@ export default function OnboardingPage() {
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               rows={2}
-              className="resize-none rounded-xl border border-line bg-card px-4 py-3 text-base text-paper"
+              placeholder="Era uma vez..."
+              className="resize-none rounded-xl border border-line bg-card px-4 py-3 text-base text-paper placeholder:text-paperDim/60"
             />
           </label>
         </div>

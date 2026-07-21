@@ -16,7 +16,10 @@ export type FeedReview = {
   user: string;
   bookId: string;
   rating: number;
+  title?: string;
   text: string;
+  startedAt?: string;
+  finishedAt?: string;
   likes: number;
   comments: { user: string; text: string }[];
 };
@@ -97,6 +100,7 @@ export type UserState = {
   ratings: Record<string, number>;
   ratingOrder: string[];
   myReviews: Record<string, string>;
+  myReviewTitles: Record<string, string>;
   likedReviews: Record<string, boolean>;
   bookTags: Record<string, string[]>;
   quotes: Record<string, Quote[]>;

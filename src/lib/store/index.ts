@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { getBook } from "@/data/books";
 import { CLUBS } from "@/data/clubs";
 import { FEED_REVIEWS } from "@/data/feed";
+import { FOLLOWED_USERS } from "@/data/users";
 import { nowTime, readingPercent, todayISO } from "@/lib/format";
 import type {
   Club,
@@ -75,6 +76,7 @@ const INITIAL_USER: UserState = {
       "Terminei de madrugada com o coração apertado. A força das irmãs carrega o livro inteiro — e a última parte muda tudo o que você leu antes.",
     "1984": "Sufocante no melhor sentido. Cada releitura fica mais atual, e isso é o que assusta.",
   },
+  myReviewTitles: {},
   likedReviews: { fr1: true, fr3: true },
   bookTags: {
     "torto-arado": ["favoritos do ano", "brasil"],
@@ -148,7 +150,7 @@ type Store = {
   setShelfStatus: (bookId: string, status: ShelfStatus | null) => void;
   /** rating 0 remove a nota. Avaliar marca como Lido automaticamente. */
   setRating: (bookId: string, rating: number) => { markedAsRead: boolean };
-  saveReview: (bookId: string, text: string) => void;
+  saveReview: (bookId: string, text: string, title?: string) => void;
   setProgressUnit: (unit: ProgressUnit) => void;
   /** Salva a página atual (sempre em páginas); a anterior vira lastPage.
    * Publica mensagem de sistema nos clubes do livro. Retorna o delta. */
@@ -156,6 +158,9 @@ type Store = {
 
   toggleLike: (reviewId: string) => void;
   addComment: (reviewId: string, text: string) => void;
+
+  followedUsers: string[];
+  toggleFollow: (user: string) => boolean;
 
   addTag: (bookId: string, tag: string) => void;
   removeTag: (bookId: string, tag: string) => void;
@@ -187,6 +192,7 @@ export const useStore = create<Store>()((set, get) => ({
   clubs: CLUBS,
   toast: null,
   theme: "dark",
+  followedUsers: [...FOLLOWED_USERS],
 
   showToast: (message) => set({ toast: { id: Date.now(), message } }),
   clearToast: () => set({ toast: null }),
@@ -259,8 +265,37 @@ export const useStore = create<Store>()((set, get) => ({
     return { markedAsRead };
   },
 
-  saveReview: (bookId, text) =>
-    set((s) => ({ user: { ...s.user, myReviews: { ...s.user.myReviews, [bookId]: text } } })),
+  saveReview: (bookId, text, title) =>
+    set((s) => {
+      const myReviewTitles = { ...s.user.myReviewTitles };
+      if (title && title.trim()) myReviewTitles[bookId] = title.trim();
+      else delete myReviewTitles[bookId];
+
+      const id = `me-${bookId}`;
+      const handle = `@${s.user.username}`;
+      const entryShelf = s.user.shelf[bookId];
+      const existing = s.feed.find((r) => r.id === id);
+      const review: FeedReview = {
+        id,
+        user: handle,
+        bookId,
+        rating: s.user.ratings[bookId] ?? 0,
+        title: title?.trim() || undefined,
+        text: text.trim(),
+        startedAt: entryShelf?.startedAt,
+        finishedAt: entryShelf?.finishedAt,
+        likes: existing?.likes ?? 0,
+        comments: existing?.comments ?? [],
+      };
+      const feed = existing
+        ? s.feed.map((r) => (r.id === id ? review : r))
+        : [review, ...s.feed];
+
+      return {
+        user: { ...s.user, myReviews: { ...s.user.myReviews, [bookId]: text }, myReviewTitles },
+        feed,
+      };
+    }),
 
   setProgressUnit: (unit) => set((s) => ({ user: { ...s.user, progressUnit: unit } })),
 
@@ -329,6 +364,16 @@ export const useStore = create<Store>()((set, get) => ({
           : r
       ),
     })),
+
+  toggleFollow: (user) => {
+    const following = !get().followedUsers.includes(user);
+    set((s) => ({
+      followedUsers: following
+        ? [...s.followedUsers, user]
+        : s.followedUsers.filter((u) => u !== user),
+    }));
+    return following;
+  },
 
   addTag: (bookId, tag) =>
     set((s) => {

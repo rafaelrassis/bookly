@@ -44,6 +44,7 @@ function GearIcon() {
 export default function ProfilePage() {
   const user = useStore((s) => s.user);
   const feed = useStore((s) => s.feed);
+  const followingCount = useStore((s) => s.followedUsers.length);
   const { readCount, pagesRead, reviewCount, avgRating, histogram, maxCount, ratedBooks } =
     useMyStats();
   const recommended = useRecommendations(6);
@@ -91,7 +92,7 @@ export default function ProfilePage() {
           <p className="text-sm text-paperDim">@{user.username}</p>
           <p className="mt-1 text-xs text-paperDim">
             <span className="font-bold text-paper">{user.followers}</span> seguidores ·{" "}
-            <span className="font-bold text-paper">{user.following}</span> seguindo
+            <span className="font-bold text-paper">{followingCount}</span> seguindo
           </p>
         </div>
       </section>
@@ -243,13 +244,16 @@ export default function ProfilePage() {
                   <Link href={`/book/${book.id}`} aria-label={book.title} className="self-start rounded-md">
                     <BookCover book={book} width={48} />
                   </Link>
-                  <div className="min-w-0">
+                  <Link href={`/review/me-${book.id}`} className="min-w-0 flex-1">
                     <p className="truncate font-display text-sm font-bold">{book.title}</p>
                     {user.ratings[book.id] !== undefined && (
                       <Stars rating={user.ratings[book.id]} className="text-xs" />
                     )}
+                    {user.myReviewTitles?.[book.id] && (
+                      <p className="mt-1 text-sm font-bold">{user.myReviewTitles[book.id]}</p>
+                    )}
                     <p className="mt-1 line-clamp-3 text-sm text-paperDim">{text}</p>
-                  </div>
+                  </Link>
                 </article>
               ))}
             </div>
