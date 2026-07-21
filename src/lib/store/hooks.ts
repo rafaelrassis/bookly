@@ -2,49 +2,13 @@
 
 import { useMemo } from "react";
 import { BOOKS, getBook } from "@/data/books";
-import type { Book, FeedReview, ShelfEntry, ShelfStatus } from "@/lib/types";
+import type { Book, FeedReview } from "@/lib/types";
 import { useStore } from "./index";
 
 /** Resolve um id de review (comunidade ou própria "me-<bookId>").
  * Ponto único de troca quando reviews e feed virarem endpoints separados. */
 export function useReview(id: string): FeedReview | undefined {
   return useStore((s) => s.feed.find((r) => r.id === id));
-}
-
-export type ShelfBook = { book: Book; entry: ShelfEntry };
-
-/** Livros da estante, opcionalmente filtrados por status. */
-export function useShelf(status?: ShelfStatus): ShelfBook[] {
-  const shelf = useStore((s) => s.user.shelf);
-  return useMemo(() => {
-    const items: ShelfBook[] = [];
-    for (const [bookId, entry] of Object.entries(shelf)) {
-      if (status && entry.status !== status) continue;
-      const book = getBook(bookId);
-      if (book) items.push({ book, entry });
-    }
-    return items;
-  }, [shelf, status]);
-}
-
-/** Dados do livro + estado do usuário sobre ele. */
-export function useBook(bookId: string) {
-  const shelf = useStore((s) => s.user.shelf);
-  const ratings = useStore((s) => s.user.ratings);
-  const myReviews = useStore((s) => s.user.myReviews);
-  const bookTags = useStore((s) => s.user.bookTags);
-  const quotes = useStore((s) => s.user.quotes);
-  return useMemo(
-    () => ({
-      book: getBook(bookId),
-      entry: shelf[bookId] as ShelfEntry | undefined,
-      rating: ratings[bookId] as number | undefined,
-      myReview: myReviews[bookId] as string | undefined,
-      tags: bookTags[bookId] ?? [],
-      bookQuotes: quotes[bookId] ?? [],
-    }),
-    [bookId, shelf, ratings, myReviews, bookTags, quotes]
-  );
 }
 
 /** Estatísticas do perfil derivadas do estado real. */

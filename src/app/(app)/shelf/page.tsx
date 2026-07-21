@@ -1,23 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getBook } from "@/data/books";
 import { BookCover } from "@/components/BookCover";
 import { LockIcon } from "@/components/icons";
 import { SectionTitle } from "@/components/SectionTitle";
 import { Stars } from "@/components/Stars";
-import { useShelf } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
-import type { ShelfStatus, Visibility } from "@/lib/types";
+import type { Book, ShelfEntry, ShelfStatus, Visibility } from "@/lib/types";
 
-/** Busca case-insensitive; acentos também são ignorados. */
-function normalize(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
+type ShelfItem = { book: Book; entry: ShelfEntry; tags: string[]; rating: number | null };
 
 const STATUS_FILTERS: { key: ShelfStatus | "ALL"; label: string }[] = [
   { key: "ALL", label: "Todos" },
@@ -169,33 +162,41 @@ function Chip({
 }
 
 export default function ShelfPage() {
-  const shelf = useShelf();
-  const ratings = useStore((s) => s.user.ratings);
-  const bookTags = useStore((s) => s.user.bookTags);
+  const [items, setItems] = useState<ShelfItem[]>([]);
+  const [genres, setGenres] = useState<string[]>([]);
+  const [allTags, setAllTags] = useState<string[]>([]);
+  const [loaded, setLoaded] = useState(false);
 
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<ShelfStatus | "ALL">("ALL");
   const [genre, setGenre] = useState<string>("ALL");
   const [tag, setTag] = useState<string>("ALL");
 
-  const genres = useMemo(
-    () => Array.from(new Set(shelf.map(({ book }) => book.genre))).sort(),
-    [shelf]
-  );
-  const allTags = useMemo(
-    () => Array.from(new Set(Object.values(bookTags).flat())).sort(),
-    [bookTags]
-  );
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      const params = new URLSearchParams();
+      if (query.trim()) params.set("q", query.trim());
+      if (status !== "ALL") params.set("status", status);
+      if (genre !== "ALL") params.set("genre", genre);
+      if (tag !== "ALL") params.set("tag", tag);
 
-  const q = normalize(query.trim());
-  const filtered = shelf.filter(({ book, entry }) => {
-    if (q && !normalize(book.title).includes(q) && !normalize(book.authors).includes(q))
-      return false;
-    if (status !== "ALL" && entry.status !== status) return false;
-    if (genre !== "ALL" && book.genre !== genre) return false;
-    if (tag !== "ALL" && !(bookTags[book.id] ?? []).includes(tag)) return false;
-    return true;
-  });
+      fetch(`/api/shelf?${params.toString()}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (!data) return;
+          setItems(data.items);
+          setGenres(data.genres);
+          setAllTags(data.tags);
+          setLoaded(true);
+        });
+    }, 200);
+    return () => clearTimeout(handle);
+  }, [query, status, genre, tag]);
+
+  const isEmptyShelf = useMemo(
+    () => loaded && items.length === 0 && query === "" && status === "ALL" && genre === "ALL" && tag === "ALL",
+    [loaded, items.length, query, status, genre, tag]
+  );
 
   return (
     <div className="pt-5">
@@ -245,32 +246,32 @@ export default function ShelfPage() {
       )}
 
       <p className="mt-4 text-xs font-bold uppercase tracking-[0.18em] text-paperDim">
-        {filtered.length} {filtered.length === 1 ? "livro" : "livros"}
+        {items.length} {items.length === 1 ? "livro" : "livros"}
       </p>
 
-      {filtered.length === 0 ? (
-        <div className="mt-12 flex flex-col items-center text-center">
-          <p className="font-bold">Nada por aqui</p>
-          <p className="mt-2 max-w-64 text-sm text-paperDim">
-            {shelf.length === 0
-              ? "Sua estante está vazia. Busque um livro e marque como Quero ler, Lendo ou Lido."
-              : "Nenhum livro combina com esses filtros."}
-          </p>
-          {shelf.length === 0 && (
-            <Link
-              href="/search"
-              className="mt-6 rounded-xl bg-foil px-5 py-3 font-bold text-leather transition-opacity hover:opacity-90"
-            >
-              Buscar livros
-            </Link>
-          )}
-        </div>
+      {items.length === 0 ? (
+        loaded && (
+          <div className="mt-12 flex flex-col items-center text-center">
+            <p className="font-bold">Nada por aqui</p>
+            <p className="mt-2 max-w-64 text-sm text-paperDim">
+              {isEmptyShelf
+                ? "Sua estante está vazia. Busque um livro e marque como Quero ler, Lendo ou Lido."
+                : "Nenhum livro combina com esses filtros."}
+            </p>
+            {isEmptyShelf && (
+              <Link
+                href="/search"
+                className="mt-6 rounded-xl bg-foil px-5 py-3 font-bold text-leather transition-opacity hover:opacity-90"
+              >
+                Buscar livros
+              </Link>
+            )}
+          </div>
+        )
       ) : (
         <ul className="mt-2 flex flex-col">
-          {filtered.map(({ book, entry }) => {
+          {items.map(({ book, entry, tags, rating }) => {
             const badge = STATUS_BADGE[entry.status];
-            const tags = bookTags[book.id] ?? [];
-            const rating = ratings[book.id];
             return (
               <li key={book.id}>
                 <Link
@@ -299,9 +300,7 @@ export default function ShelfPage() {
                       ))}
                     </div>
                   </div>
-                  {rating !== undefined && (
-                    <Stars rating={rating} className="shrink-0 text-xs" />
-                  )}
+                  {rating !== null && <Stars rating={rating} className="shrink-0 text-xs" />}
                 </Link>
               </li>
             );

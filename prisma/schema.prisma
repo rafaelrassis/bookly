@@ -1,5 +1,5 @@
-// Prisma schema — Spec 0 (auth-only slice): User + VerificationCode.
-// Demais modelos (Book, Review, Club, Message) chegam nas specs seguintes.
+// Prisma schema — auth (Spec 0/1), perfil (Spec 2) e catálogo/estante/reviews
+// (Spec 3a). Club/Message ficam para a Spec 4.
 
 generator client {
   provider = "prisma-client"
@@ -30,6 +30,11 @@ model User {
 
   followedBy Follow[] @relation("following")
   following  Follow[] @relation("follower")
+
+  shelfEntries ShelfEntry[]
+  reviews      Review[]
+  bookTags     BookTag[]
+  quotes       Quote[]
 }
 
 model Follow {
@@ -55,4 +60,99 @@ model VerificationCode {
   createdAt DateTime  @default(now())
 
   @@index([email, type])
+}
+
+enum ShelfStatus {
+  WANT_TO_READ
+  READING
+  READ
+}
+
+/// Catálogo semeado (Spec 0 previa Google Books; adiado como enriquecimento
+/// futuro — ver docs/specs). `avg`/`count` são cache, recalculados por
+/// recomputeBookRating() a cada gravação/remoção de Review.
+model Book {
+  id           String   @id
+  title        String
+  authors      String
+  year         Int
+  pages        Int
+  genre        String
+  gradientFrom String
+  gradientTo   String
+  synopsis     String
+  avg          Float    @default(0)
+  count        Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  shelfEntries ShelfEntry[]
+  reviews      Review[]
+  tags         BookTag[]
+  quotes       Quote[]
+
+  @@index([genre])
+}
+
+/// Estante do usuário: status + progresso. currentPage/lastPage sempre em
+/// páginas (a unidade de exibição é User.progressUnit).
+model ShelfEntry {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId      String
+  book        Book        @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  status      ShelfStatus
+  currentPage Int?
+  lastPage    Int?
+  startedAt   DateTime?
+  finishedAt  DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@unique([userId, bookId])
+  @@index([bookId])
+}
+
+/// Rating e review são a mesma entidade (1 por usuário+livro). Nota <= 0
+/// apaga a linha inteira (espelha o "remover nota" do protótipo).
+model Review {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId     String
+  book       Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  rating     Float
+  text       String    @default("")
+  startedAt  DateTime?
+  finishedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([userId, bookId])
+  @@index([bookId, createdAt])
+}
+
+model BookTag {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId String
+  book   Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  tag    String
+
+  @@unique([userId, bookId, tag])
+  @@index([userId, tag])
+}
+
+model Quote {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId    String
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  text      String
+  page      Int?
+  createdAt DateTime @default(now())
+
+  @@index([userId, bookId])
 }

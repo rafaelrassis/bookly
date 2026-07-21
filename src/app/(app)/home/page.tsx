@@ -1,16 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BookCover } from "@/components/BookCover";
 import { DiscoverReaders } from "@/components/DiscoverReaders";
 import { FeedPost } from "@/components/FeedPost";
 import { Logo } from "@/components/Logo";
 import { SectionTitle } from "@/components/SectionTitle";
 import { readingPercent } from "@/lib/format";
-import { useShelf, trendingBooks } from "@/lib/store/hooks";
+import { trendingBooks } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
-import type { ShelfBook } from "@/lib/store/hooks";
+import type { Book, ShelfEntry } from "@/lib/types";
+
+type ReadingItem = { book: Book; entry: ShelfEntry };
 
 function SearchIcon() {
   return (
@@ -50,7 +52,7 @@ function BellIcon() {
 }
 
 /** Card de leitura atual — link para o livro; progresso é atualizado lá. */
-function ReadingCard({ item }: { item: ShelfBook }) {
+function ReadingCard({ item }: { item: ReadingItem }) {
   const { book, entry } = item;
   const currentPage = entry.currentPage ?? 0;
   const lastPage = entry.lastPage ?? currentPage;
@@ -96,11 +98,19 @@ function ReadingCard({ item }: { item: ShelfBook }) {
 }
 
 export default function HomePage() {
-  const reading = useShelf("READING");
+  const [reading, setReading] = useState<ReadingItem[]>([]);
   const feed = useStore((s) => s.feed);
   const followedUsers = useStore((s) => s.followedUsers);
   const unread = useStore((s) => s.notifications.filter((n) => !n.read).length);
   const [feedFilter, setFeedFilter] = useState<"all" | "following">("all");
+
+  useEffect(() => {
+    fetch("/api/shelf?status=READING")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) setReading(data.items);
+      });
+  }, []);
 
   const visibleFeed =
     feedFilter === "following" ? feed.filter((r) => followedUsers.includes(r.user)) : feed;

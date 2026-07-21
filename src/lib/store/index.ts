@@ -2,28 +2,19 @@
 
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { getBook } from "@/data/books";
 import { CLUBS } from "@/data/clubs";
 import { FEED_REVIEWS } from "@/data/feed";
 import { SEED_NOTIFICATIONS } from "@/data/notifications";
 import { FOLLOWED_USERS } from "@/data/users";
 import { withAt } from "@/lib/handle";
-import { nowTime, readingPercent, todayISO } from "@/lib/format";
-import type {
-  Club,
-  FeedReview,
-  Notification,
-  ProgressUnit,
-  ShelfEntry,
-  ShelfStatus,
-  UserState,
-  Visibility,
-} from "@/lib/types";
+import { nowTime } from "@/lib/format";
+import type { Club, FeedReview, Notification, UserState, Visibility } from "@/lib/types";
 
 /**
- * Estado mocado em memória (protótipo v3). Todo acesso a dados passa por
- * este store e pelos hooks em ./hooks — na fase futura a troca por
- * NextAuth + Postgres + Google Books API fica localizada aqui.
+ * Estado local (Zustand + localStorage) pro que ainda não é servidor: feed
+ * social, clubes e listas (Spec 3b/4). Identidade/perfil (Spec 2) e
+ * estante/notas/reviews da página do livro (Spec 3a) já vêm da API —
+ * ver AuthSync e src/app/(app)/book, /shelf.
  */
 const INITIAL_USER: UserState = {
   loggedIn: false,
@@ -82,13 +73,6 @@ const INITIAL_USER: UserState = {
   },
   myReviewTitles: {},
   likedReviews: { fr1: true, fr3: true },
-  bookTags: {
-    "torto-arado": ["favoritos do ano", "brasil"],
-    verity: ["emprestado"],
-  },
-  quotes: {
-    "1984": [{ text: "Guerra é paz. Liberdade é escravidão. Ignorância é força.", page: 29 }],
-  },
   lists: [
     {
       id: "fantasia-que-me-formou",
@@ -113,21 +97,6 @@ function randomCode(): string {
   let code = "";
   for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
   return code;
-}
-
-const NOTIFICATION_ACTORS = ["@ana.estante", "@caio_reads", "@leituras.do.vale", "@rafa.books"];
-
-function mockLikeNotification(reviewId: string, bookId: string): Notification {
-  const actor = NOTIFICATION_ACTORS[Math.floor(Math.random() * NOTIFICATION_ACTORS.length)];
-  return {
-    id: `n-${Date.now()}`,
-    kind: "like",
-    actor,
-    reviewId,
-    bookId,
-    read: false,
-    time: new Date().toISOString(),
-  };
 }
 
 function slugify(name: string): string {
@@ -163,17 +132,6 @@ type Store = {
   logout: () => void;
   updatePhone: (phone: string) => void;
 
-  /** status null remove o livro da estante. Datas: startedAt na primeira vez
-   * em Lendo (ou Lido direto); finishedAt ao marcar Lido. */
-  setShelfStatus: (bookId: string, status: ShelfStatus | null) => void;
-  /** rating 0 remove a nota. Avaliar marca como Lido automaticamente. */
-  setRating: (bookId: string, rating: number) => { markedAsRead: boolean };
-  saveReview: (bookId: string, text: string, title?: string) => void;
-  setProgressUnit: (unit: ProgressUnit) => void;
-  /** Salva a página atual (sempre em páginas); a anterior vira lastPage.
-   * Publica mensagem de sistema nos clubes do livro. Retorna o delta. */
-  updateProgress: (bookId: string, page: number) => { delta: number };
-
   toggleLike: (reviewId: string) => void;
   addComment: (reviewId: string, text: string) => void;
 
@@ -182,10 +140,6 @@ type Store = {
 
   notifications: Notification[];
   markNotificationsRead: () => void;
-
-  addTag: (bookId: string, tag: string) => void;
-  removeTag: (bookId: string, tag: string) => void;
-  addQuote: (bookId: string, text: string, page?: number) => void;
 
   toggleClub: (clubId: string) => { joined: boolean };
   createClub: (
@@ -245,148 +199,6 @@ export const useStore = create<Store>()(
 
     updatePhone: (phone) => set((s) => ({ user: { ...s.user, phone } })),
 
-    setShelfStatus: (bookId, status) =>
-      set((s) => {
-        const shelf = { ...s.user.shelf };
-        if (status === null) {
-          delete shelf[bookId];
-        } else {
-          const prev = shelf[bookId];
-          const today = todayISO();
-          if (status === "READING") {
-            shelf[bookId] = {
-              status,
-              currentPage: prev?.currentPage ?? 0,
-              lastPage: prev?.lastPage ?? 0,
-              startedAt: prev?.startedAt ?? today,
-            };
-          } else if (status === "READ") {
-            shelf[bookId] = {
-              status,
-              startedAt: prev?.startedAt ?? today,
-              finishedAt: today,
-            };
-          } else {
-            shelf[bookId] = { status };
-          }
-        }
-        return { user: { ...s.user, shelf } };
-      }),
-
-    setRating: (bookId, rating) => {
-      const markedAsRead = rating > 0 && get().user.shelf[bookId]?.status !== "READ";
-      set((s) => {
-        const ratings = { ...s.user.ratings };
-        const ratingOrder = s.user.ratingOrder.filter((id) => id !== bookId);
-        if (rating <= 0) {
-          delete ratings[bookId];
-          return {
-            user: { ...s.user, ratings, ratingOrder },
-            feed: s.feed.map((r) => (r.id === `me-${bookId}` ? { ...r, rating: 0 } : r)),
-          };
-        }
-        ratings[bookId] = rating;
-        ratingOrder.unshift(bookId);
-        const shelf = { ...s.user.shelf };
-        const prev = shelf[bookId];
-        if (prev?.status !== "READ") {
-          const today = todayISO();
-          shelf[bookId] = {
-            status: "READ",
-            startedAt: prev?.startedAt ?? today,
-            finishedAt: today,
-          };
-        }
-        return {
-          user: { ...s.user, ratings, ratingOrder, shelf },
-          feed: s.feed.map((r) => (r.id === `me-${bookId}` ? { ...r, rating } : r)),
-        };
-      });
-      return { markedAsRead };
-    },
-
-    saveReview: (bookId, text, title) =>
-      set((s) => {
-        const myReviewTitles = { ...s.user.myReviewTitles };
-        if (title && title.trim()) myReviewTitles[bookId] = title.trim();
-        else delete myReviewTitles[bookId];
-
-        const id = `me-${bookId}`;
-        const handle = withAt(s.user.username);
-        const entryShelf = s.user.shelf[bookId];
-        const existing = s.feed.find((r) => r.id === id);
-        const review: FeedReview = {
-          id,
-          user: handle,
-          bookId,
-          rating: s.user.ratings[bookId] ?? 0,
-          title: title?.trim() || undefined,
-          text: text.trim(),
-          startedAt: entryShelf?.startedAt,
-          finishedAt: entryShelf?.finishedAt,
-          likes: existing?.likes ?? 0,
-          comments: existing?.comments ?? [],
-        };
-        const feed = existing
-          ? s.feed.map((r) => (r.id === id ? review : r))
-          : [review, ...s.feed];
-
-        const notifications = existing
-          ? s.notifications
-          : [mockLikeNotification(id, bookId), ...s.notifications];
-
-        return {
-          user: { ...s.user, myReviews: { ...s.user.myReviews, [bookId]: text }, myReviewTitles },
-          feed,
-          notifications,
-        };
-      }),
-
-    setProgressUnit: (unit) => set((s) => ({ user: { ...s.user, progressUnit: unit } })),
-
-    updateProgress: (bookId, page) => {
-      const state = get();
-      const entry: ShelfEntry | undefined = state.user.shelf[bookId];
-      const previous = entry?.currentPage ?? 0;
-      const book = getBook(bookId);
-      const percent = book ? readingPercent(page, book.pages) : 0;
-      const username = state.user.username;
-      set((s) => ({
-        user: {
-          ...s.user,
-          shelf: {
-            ...s.user.shelf,
-            [bookId]: {
-              ...s.user.shelf[bookId],
-              status: "READING",
-              currentPage: page,
-              lastPage: previous,
-              startedAt: s.user.shelf[bookId]?.startedAt ?? todayISO(),
-            },
-          },
-        },
-        // notificação de leitura nos murais dos clubes que leem este livro
-        clubs: s.clubs.map((c) =>
-          c.joined && c.bookId === bookId && book
-            ? {
-                ...c,
-                feed: [
-                  ...c.feed,
-                  {
-                    id: `sys-${Date.now()}-${c.id}`,
-                    user: withAt(username),
-                    text: `📖 ${withAt(username)} avançou para ${percent}% de ${book.title}`,
-                    time: nowTime(),
-                    system: true,
-                  },
-                ],
-              }
-            : c
-        ),
-      }));
-      return { delta: page - previous };
-    },
-
     toggleLike: (reviewId) =>
       set((s) => {
         const liked = !s.user.likedReviews[reviewId];
@@ -422,35 +234,6 @@ export const useStore = create<Store>()(
 
     markNotificationsRead: () =>
       set((s) => ({ notifications: s.notifications.map((n) => ({ ...n, read: true })) })),
-
-    addTag: (bookId, tag) =>
-      set((s) => {
-        const current = s.user.bookTags[bookId] ?? [];
-        if (current.includes(tag)) return s;
-        return {
-          user: { ...s.user, bookTags: { ...s.user.bookTags, [bookId]: [...current, tag] } },
-        };
-      }),
-
-    removeTag: (bookId, tag) =>
-      set((s) => {
-        const remaining = (s.user.bookTags[bookId] ?? []).filter((t) => t !== tag);
-        const bookTags = { ...s.user.bookTags };
-        if (remaining.length > 0) bookTags[bookId] = remaining;
-        else delete bookTags[bookId];
-        return { user: { ...s.user, bookTags } };
-      }),
-
-    addQuote: (bookId, text, page) =>
-      set((s) => ({
-        user: {
-          ...s.user,
-          quotes: {
-            ...s.user.quotes,
-            [bookId]: [...(s.user.quotes[bookId] ?? []), { text, page }],
-          },
-        },
-      })),
 
     toggleClub: (clubId) => {
       const joined = !get().clubs.find((c) => c.id === clubId)?.joined;

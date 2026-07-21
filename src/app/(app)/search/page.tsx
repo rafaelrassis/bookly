@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { BOOKS } from "@/data/books";
+import { useEffect, useState } from "react";
 import { COMMUNITY_LISTS } from "@/data/community";
 import { getBook } from "@/data/books";
 import { BackHeader } from "@/components/BackHeader";
@@ -10,14 +9,6 @@ import { BookCover } from "@/components/BookCover";
 import { SectionTitle } from "@/components/SectionTitle";
 import { useRecommendations } from "@/lib/store/hooks";
 import type { Book } from "@/lib/types";
-
-/** Busca case-insensitive; acentos também são ignorados para facilitar. */
-function normalize(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
 
 function BookRow({ book }: { book: Book }) {
   return (
@@ -38,14 +29,29 @@ function BookRow({ book }: { book: Book }) {
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
+  const [results, setResults] = useState<Book[]>([]);
   const recommended = useRecommendations(4);
 
-  const q = normalize(query.trim());
-  const results = q
-    ? BOOKS.filter(
-        (book) => normalize(book.title).includes(q) || normalize(book.authors).includes(q)
-      )
-    : [];
+  const q = query.trim();
+
+  useEffect(() => {
+    if (!q) {
+      setResults([]);
+      return;
+    }
+    let cancelled = false;
+    const handle = setTimeout(() => {
+      fetch(`/api/books?q=${encodeURIComponent(q)}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (!cancelled && data) setResults(data.items);
+        });
+    }, 200);
+    return () => {
+      cancelled = true;
+      clearTimeout(handle);
+    };
+  }, [q]);
 
   return (
     <div className="pt-4">
@@ -102,7 +108,7 @@ export default function SearchPage() {
         </>
       ) : results.length === 0 ? (
         <p className="mt-10 text-center text-paperDim">
-          Nenhum livro encontrado. No app real, a busca consulta a Google Books API.
+          Nenhum livro encontrado no catálogo.
         </p>
       ) : (
         <ul className="mt-4 flex flex-col">

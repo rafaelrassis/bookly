@@ -202,7 +202,7 @@ export default function ClubPage({ params }: { params: { id: string } }) {
   // membros conhecidos: progresso mocado + usuário logado com progresso real
   const myEntry = user.shelf[club.bookId];
   const myPercent =
-    book && myEntry?.currentPage !== undefined
+    book && typeof myEntry?.currentPage === "number"
       ? readingPercent(myEntry.currentPage, book.pages)
       : myEntry?.status === "READ"
         ? 100

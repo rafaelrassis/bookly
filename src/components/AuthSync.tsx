@@ -6,7 +6,9 @@ import { useStore } from "@/lib/store";
 
 /** Mantém o store em sincronia com a sessão NextAuth e, uma vez logado, com
  * o perfil real vindo de /api/users/me (identidade, bio, gêneros, avatar,
- * top4, seguidores). Estante/notas/reviews continuam mocadas até a Spec 3. */
+ * top4, seguidores, progressUnit). Estante/notas/reviews da página do livro
+ * e da estante já são reais (Spec 3a, ver /book e /shelf); feed social e
+ * listas continuam mocados. */
 export function AuthSync() {
   const { data: session, status } = useSession();
   const hasHydrated = useStore((s) => s.hasHydrated);

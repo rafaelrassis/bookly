@@ -62,13 +62,11 @@ export type ShelfStatus = "WANT_TO_READ" | "READING" | "READ";
 
 export type ShelfEntry = {
   status: ShelfStatus;
-  currentPage?: number;
-  lastPage?: number;
-  startedAt?: string;
-  finishedAt?: string;
+  currentPage?: number | null;
+  lastPage?: number | null;
+  startedAt?: string | null;
+  finishedAt?: string | null;
 };
-
-export type Quote = { text: string; page?: number };
 
 export type UserList = {
   id: string;
@@ -113,7 +111,5 @@ export type UserState = {
   myReviews: Record<string, string>;
   myReviewTitles: Record<string, string>;
   likedReviews: Record<string, boolean>;
-  bookTags: Record<string, string[]>;
-  quotes: Record<string, Quote[]>;
   lists: UserList[];
 };

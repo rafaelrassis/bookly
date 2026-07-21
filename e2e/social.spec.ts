@@ -121,25 +121,25 @@ test("descobrir leitores atualiza sugestoes ao seguir", async ({ page }) => {
   expect(after).toBeLessThanOrEqual(before);
 });
 
-// C7: publicar review própria cria um post no feed
-test("review propria vira post no feed", async ({ page }) => {
+// C7: publicar review própria persiste de verdade (Spec 3a) — cross-post pro
+// feed social fica pra Spec 3b, não é mais responsabilidade desta review.
+test("review propria persiste na pagina do livro", async ({ page }) => {
   await loginAsSeedUser(page);
-  await page.click('nav.fixed a[href="/shelf"]');
-  await page.waitForURL("**/shelf");
-  // marca "Duna" como lido a partir da estante (ja esta no seed como READ)
-  await page.click('a[href="/book/duna"]');
-  await page.waitForURL("**/book/duna");
+  await page.goto("/book/duna");
   await page.waitForSelector("h1");
+
+  await page.click('button[aria-label="4 estrelas"]');
+  await page.waitForTimeout(300);
 
   await page.click('button:has-text("Escrever review"), button:has-text("Editar minha review")');
   await page.fill('textarea[aria-label="Texto da sua review"]', "Review de teste automatizado para o e2e.");
   await page.click('button:has-text("Publicar")');
-  await page.waitForTimeout(2000);
+  await expect(page.getByText("Review de teste automatizado para o e2e.").first()).toBeVisible();
 
-  // navega pela UI (não por page.goto) para não perder a sessão só-memória do teste
-  await page.click('a[href="/review/me-duna"]');
-  await page.waitForURL("**/review/me-duna");
-  await expect(page.getByText("Review de teste automatizado para o e2e.")).toBeVisible();
+  // recarrega pra confirmar que persistiu no banco, não só no estado local
+  await page.reload();
+  await page.waitForSelector("h1");
+  await expect(page.getByText("Review de teste automatizado para o e2e.").first()).toBeVisible();
 });
 
 // C8: perfil próprio renderiza estatísticas e favoritos

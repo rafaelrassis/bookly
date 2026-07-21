@@ -9,11 +9,14 @@ type AvatarProps = {
   user: string;
   size?: number;
   className?: string;
+  /** Índice em AVATAR_CHOICES pra usuários reais (vindos da API), que não
+   * estão no mock MOCK_USERS. Ignorado para o próprio usuário logado. */
+  avatarIndex?: number;
 };
 
 /** Avatar circular com gradiente. O usuário logado usa o gradiente escolhido
- * em Editar perfil; usuários mocados têm gradiente próprio. */
-export function Avatar({ user, size = 36, className = "" }: AvatarProps) {
+ * em Editar perfil; demais usam avatarIndex (real) ou o gradiente mocado. */
+export function Avatar({ user, size = 36, className = "", avatarIndex }: AvatarProps) {
   const username = useStore((s) => s.user.username);
   const myAvatar = useStore((s) => s.user.avatar);
   const myAvatarImage = useStore((s) => s.user.avatarImage);
@@ -33,7 +36,9 @@ export function Avatar({ user, size = 36, className = "" }: AvatarProps) {
 
   const [from, to] = isMe
     ? AVATAR_CHOICES[myAvatar] ?? AVATAR_CHOICES[0]
-    : avatarGradient(user);
+    : avatarIndex !== undefined
+      ? AVATAR_CHOICES[avatarIndex] ?? AVATAR_CHOICES[0]
+      : avatarGradient(user);
 
   return (
     <span
