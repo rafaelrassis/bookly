@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
-import { notFound, useRouter } from "next/navigation";
-import { MOCK_USERS } from "@/data/users";
+import { useRouter } from "next/navigation";
+import { getPublicProfile } from "@/data/users";
 import { getBook } from "@/data/books";
 import { Avatar } from "@/components/Avatar";
 import { BackHeader } from "@/components/BackHeader";
@@ -11,27 +11,37 @@ import { BookCover } from "@/components/BookCover";
 import { Stars } from "@/components/Stars";
 import { SectionTitle } from "@/components/SectionTitle";
 import { withAt } from "@/lib/handle";
-import { readingDates } from "@/lib/format";
 import { useStore } from "@/lib/store";
 
 export default function PublicProfilePage({ params }: { params: { username: string } }) {
   const handle = withAt(decodeURIComponent(params.username));
-  const profile = MOCK_USERS[handle];
+  const profile = getPublicProfile(handle);
 
   const myUsername = useStore((s) => s.user.username);
-  const feed = useStore((s) => s.feed);
   const followed = useStore((s) => s.followedUsers);
   const toggleFollow = useStore((s) => s.toggleFollow);
   const showToast = useStore((s) => s.showToast);
   const router = useRouter();
 
+  const isMe = handle === withAt(myUsername);
+
   useEffect(() => {
-    if (handle === withAt(myUsername)) router.replace("/profile");
-  }, [handle, myUsername, router]);
+    if (isMe) router.replace("/profile");
+  }, [isMe, router]);
 
-  if (!profile) notFound();
+  if (isMe) return null;
 
-  const reviews = feed.filter((r) => r.user === handle);
+  if (!profile) {
+    return (
+      <div className="px-5 pt-4">
+        <BackHeader>
+          <h1 className="text-lg font-extrabold">Perfil</h1>
+        </BackHeader>
+        <p className="mt-8 text-center text-sm text-paperDim">Usuário não encontrado.</p>
+      </div>
+    );
+  }
+
   const isFollowing = followed.includes(handle);
 
   function onFollow() {
@@ -76,11 +86,11 @@ export default function PublicProfilePage({ params }: { params: { username: stri
         {isFollowing ? "Seguindo" : "Seguir"}
       </button>
 
-      {profile.reading.length > 0 && (
+      {profile.top4.length > 0 && (
         <section className="mt-7">
-          <SectionTitle>Lendo agora</SectionTitle>
-          <div className="no-scrollbar -mx-5 mt-3 flex gap-3 overflow-x-auto px-5">
-            {profile.reading.map((id) => {
+          <SectionTitle>Favoritos</SectionTitle>
+          <div className="mt-3 grid grid-cols-4 gap-3">
+            {profile.top4.map((id) => {
               const book = getBook(id);
               if (!book) return null;
               return (
@@ -93,29 +103,45 @@ export default function PublicProfilePage({ params }: { params: { username: stri
         </section>
       )}
 
+      <div className="mt-6 flex rounded-2xl border border-line bg-card py-4">
+        {[
+          { label: "lidos", value: String(profile.readIds.length) },
+          { label: "reviews", value: String(profile.reviews.length) },
+          { label: "seguidores", value: String(profile.followers) },
+        ].map((stat, i) => (
+          <div
+            key={stat.label}
+            className={`flex-1 text-center ${i > 0 ? "border-l border-line" : ""}`}
+          >
+            <p className="font-display text-2xl font-bold text-foil">{stat.value}</p>
+            <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-paperDim">
+              {stat.label}
+            </p>
+          </div>
+        ))}
+      </div>
+
       <section className="mt-7 pb-8">
         <SectionTitle>Reviews</SectionTitle>
-        {reviews.length === 0 ? (
+        {profile.reviews.length === 0 ? (
           <p className="mt-3 text-sm text-paperDim">Nenhuma review ainda.</p>
         ) : (
           <div className="mt-3 flex flex-col gap-3">
-            {reviews.map((r) => {
-              const book = getBook(r.bookId);
+            {profile.reviews.map((review) => {
+              const book = getBook(review.bookId);
               if (!book) return null;
-              const dates = readingDates(r.startedAt, r.finishedAt);
               return (
                 <Link
-                  key={r.id}
-                  href={`/review/${r.id}`}
+                  key={review.bookId}
+                  href={`/book/${book.id}`}
                   className="flex gap-3.5 rounded-2xl border border-line bg-card p-3.5 transition-colors hover:bg-card2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foil focus-visible:ring-offset-2 focus-visible:ring-offset-leather"
                 >
                   <BookCover book={book} width={48} />
                   <div className="min-w-0">
                     <p className="truncate font-display text-sm font-bold">{book.title}</p>
-                    <Stars rating={r.rating} className="text-xs" />
-                    {r.title && <p className="mt-1 text-sm font-bold">{r.title}</p>}
-                    <p className="mt-0.5 line-clamp-2 text-sm text-paperDim">{r.text}</p>
-                    {dates && <p className="mt-0.5 text-xs text-paperDim">{dates}</p>}
+                    <Stars rating={review.rating} className="text-xs" />
+                    {review.title && <p className="mt-1 text-sm font-bold">{review.title}</p>}
+                    <p className="mt-0.5 line-clamp-2 text-sm text-paperDim">{review.text}</p>
                   </div>
                 </Link>
               );
