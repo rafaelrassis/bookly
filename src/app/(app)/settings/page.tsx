@@ -47,7 +47,7 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div className="px-5 pt-4">
+    <div className="pt-4">
       <BackHeader>
         <h1 className="text-lg font-extrabold">Configurações</h1>
       </BackHeader>

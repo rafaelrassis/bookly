@@ -85,7 +85,7 @@ export default function HomePage() {
     feedFilter === "following" ? feed.filter((r) => FOLLOWED_USERS.includes(r.user)) : feed;
 
   return (
-    <div className="px-5 pt-5">
+    <div className="pt-5">
       <header>
         <Logo />
       </header>

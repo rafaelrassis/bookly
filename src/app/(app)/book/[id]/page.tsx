@@ -198,7 +198,7 @@ export default function BookPage({ params }: { params: { id: string } }) {
   }
 
   return (
-    <div className="px-5 pt-4">
+    <div className="pt-4">
       <BackHeader />
 
       <section className="mt-2 flex gap-5">

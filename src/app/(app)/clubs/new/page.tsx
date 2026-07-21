@@ -49,7 +49,7 @@ export default function NewClubPage() {
   }
 
   return (
-    <div className="px-5 pt-4">
+    <div className="pt-4">
       <BackHeader>
         <h1 className="text-lg font-extrabold">Criar clube</h1>
       </BackHeader>

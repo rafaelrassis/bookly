@@ -55,7 +55,7 @@ export default function EditProfilePage() {
   }
 
   return (
-    <div className="px-5 pt-4">
+    <div className="pt-4">
       <BackHeader>
         <h1 className="text-lg font-extrabold">Editar perfil</h1>
       </BackHeader>

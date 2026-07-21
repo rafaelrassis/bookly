@@ -18,7 +18,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <main className="min-h-dvh pb-24">{children}</main>
+      <main className="min-h-dvh px-5 pb-24">{children}</main>
       <TabBar />
     </>
   );

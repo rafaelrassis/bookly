@@ -65,7 +65,7 @@ export default function ProfilePage() {
   ];
 
   return (
-    <div className="px-5 pt-6">
+    <div className="pt-6">
       <div className="flex justify-end">
         <Link
           href="/settings"

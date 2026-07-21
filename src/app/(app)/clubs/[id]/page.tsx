@@ -156,7 +156,7 @@ export default function ClubPage({ params }: { params: { id: string } }) {
   }
 
   return (
-    <div className="px-5 pt-4">
+    <div className="pt-4">
       <BackHeader />
 
       <section className="mt-2 flex flex-col items-center text-center">

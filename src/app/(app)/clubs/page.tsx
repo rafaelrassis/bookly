@@ -67,7 +67,7 @@ export default function ClubsPage() {
   }
 
   return (
-    <div className="px-5 pt-5">
+    <div className="pt-5">
       <h1 className="text-2xl font-extrabold">Clubes</h1>
 
       <div className="mt-4 flex gap-2">

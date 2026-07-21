@@ -48,7 +48,7 @@ export default function SearchPage() {
     : [];
 
   return (
-    <div className="px-5 pt-4">
+    <div className="pt-4">
       <BackHeader>
         <input
           type="search"

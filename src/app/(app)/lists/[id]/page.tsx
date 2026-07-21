@@ -57,7 +57,7 @@ export default function ListPage({ params }: { params: { id: string } }) {
   }
 
   return (
-    <div className="px-5 pt-4">
+    <div className="pt-4">
       <BackHeader>
         <h1 className="min-w-0 truncate text-lg font-extrabold">{list.name}</h1>
       </BackHeader>

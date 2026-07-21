@@ -198,7 +198,7 @@ export default function ShelfPage() {
   });
 
   return (
-    <div className="px-5 pt-5">
+    <div className="pt-5">
       <h1 className="text-2xl font-extrabold">Estante</h1>
 
       <MyLists />
