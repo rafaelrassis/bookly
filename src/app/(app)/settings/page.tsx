@@ -10,7 +10,7 @@ import { useStore } from "@/lib/store";
 
 type EmailStep = "idle" | "editing" | "verifying";
 type PhoneStep = "idle" | "adding" | "verifying";
-type PasswordStep = "idle" | "editing" | "verifying";
+type PasswordStep = "idle" | "editing";
 
 /** Envia (mock) um código de verificação: sem backend, o código aparece no toast. */
 function useMockVerification(showToast: (message: string) => void) {
@@ -34,16 +34,16 @@ export default function SettingsPage() {
   const theme = useStore((s) => s.theme);
   const setTheme = useStore((s) => s.setTheme);
   const logout = useStore((s) => s.logout);
-  const updateEmail = useStore((s) => s.updateEmail);
+  const applyProfile = useStore((s) => s.applyProfile);
   const updatePhone = useStore((s) => s.updatePhone);
   const showToast = useStore((s) => s.showToast);
   const router = useRouter();
 
-  // e-mail
+  // e-mail — troca real: código enviado ao endereço novo (POST .../email/request + /confirm)
   const [emailStep, setEmailStep] = useState<EmailStep>("idle");
   const [emailDraft, setEmailDraft] = useState(user.email);
   const [emailCode, setEmailCode] = useState("");
-  const emailVerification = useMockVerification(showToast);
+  const [emailBusy, setEmailBusy] = useState(false);
 
   // telefone
   const [phoneStep, setPhoneStep] = useState<PhoneStep>("idle");
@@ -51,37 +51,60 @@ export default function SettingsPage() {
   const [phoneCode, setPhoneCode] = useState("");
   const phoneVerification = useMockVerification(showToast);
 
-  // senha
+  // senha — troca real: exige a senha atual, sem código (POST .../password)
   const [passwordStep, setPasswordStep] = useState<PasswordStep>("idle");
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [passwordCode, setPasswordCode] = useState("");
-  const passwordVerification = useMockVerification(showToast);
+  const [passwordBusy, setPasswordBusy] = useState(false);
 
   function resetEmailFlow() {
     setEmailStep("idle");
     setEmailDraft(user.email);
     setEmailCode("");
-    emailVerification.reset();
   }
 
-  function submitNewEmail() {
+  async function submitNewEmail() {
     const value = emailDraft.trim();
     if (!value.includes("@")) {
       showToast("Digite um e-mail válido");
       return;
     }
-    emailVerification.send(user.email);
+    setEmailBusy(true);
+    const res = await fetch("/api/users/me/email/request", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ newEmail: value }),
+    });
+    setEmailBusy(false);
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      showToast(
+        res.status === 409
+          ? "Esse e-mail já está em uso"
+          : res.status === 429
+            ? "Aguarde um pouco antes de reenviar"
+            : (body?.error ?? "Não foi possível enviar o código")
+      );
+      return;
+    }
+    showToast(`Código enviado para ${value}`);
     setEmailStep("verifying");
   }
 
-  function confirmEmailCode() {
-    if (!emailVerification.check(emailCode)) {
-      showToast("Código incorreto");
+  async function confirmEmailCode() {
+    setEmailBusy(true);
+    const res = await fetch("/api/users/me/email/confirm", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ newEmail: emailDraft.trim(), code: emailCode.trim() }),
+    });
+    setEmailBusy(false);
+    if (!res.ok) {
+      showToast(res.status === 409 ? "Esse e-mail já está em uso" : "Código inválido ou expirado");
       return;
     }
-    updateEmail(emailDraft.trim());
+    applyProfile({ email: emailDraft.trim() });
     showToast("E-mail atualizado ✦");
     resetEmailFlow();
   }
@@ -118,26 +141,37 @@ export default function SettingsPage() {
     setCurrent("");
     setNext("");
     setConfirm("");
-    setPasswordCode("");
-    passwordVerification.reset();
   }
 
-  function submitPassword() {
+  async function submitPassword() {
     if (!current || !next || !confirm) {
       showToast("Preencha todos os campos");
+      return;
+    }
+    if (next.length < 8) {
+      showToast("A nova senha precisa ter pelo menos 8 caracteres");
       return;
     }
     if (next !== confirm) {
       showToast("As senhas não coincidem");
       return;
     }
-    passwordVerification.send(user.email);
-    setPasswordStep("verifying");
-  }
-
-  function confirmPasswordCode() {
-    if (!passwordVerification.check(passwordCode)) {
-      showToast("Código incorreto");
+    setPasswordBusy(true);
+    const res = await fetch("/api/users/me/password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ current, next }),
+    });
+    setPasswordBusy(false);
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      showToast(
+        body?.error === "senha atual incorreta"
+          ? "Senha atual incorreta"
+          : body?.error === "a nova senha deve ser diferente da atual"
+            ? "A nova senha deve ser diferente da atual"
+            : "Não foi possível alterar a senha"
+      );
       return;
     }
     showToast("Senha alterada 🔒");
@@ -197,16 +231,17 @@ export default function SettingsPage() {
                     <button
                       type="button"
                       onClick={submitNewEmail}
-                      className="rounded-xl bg-foil px-4 py-2 text-sm font-bold text-leather"
+                      disabled={emailBusy}
+                      className="rounded-xl bg-foil px-4 py-2 text-sm font-bold text-leather disabled:opacity-40"
                     >
-                      Enviar código
+                      {emailBusy ? "Enviando…" : "Enviar código"}
                     </button>
                   </div>
                 </div>
               ) : (
                 <div className="flex flex-col gap-2.5">
                   <p className="text-xs text-paperDim">
-                    Digite o código de verificação enviado para {user.email}
+                    Digite o código de verificação enviado para {emailDraft.trim()}
                   </p>
                   <input
                     type="text"
@@ -228,10 +263,10 @@ export default function SettingsPage() {
                     <button
                       type="button"
                       onClick={confirmEmailCode}
-                      disabled={!emailCode.trim()}
+                      disabled={!emailCode.trim() || emailBusy}
                       className="rounded-xl bg-foil px-4 py-2 text-sm font-bold text-leather disabled:opacity-40"
                     >
-                      Confirmar
+                      {emailBusy ? "Confirmando…" : "Confirmar"}
                     </button>
                   </div>
                 </div>
@@ -378,43 +413,10 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={submitPassword}
-                className="rounded-xl bg-foil px-4 py-2.5 text-sm font-bold text-leather"
-              >
-                Salvar senha
-              </button>
-            </div>
-          </div>
-        )}
-
-        {passwordStep === "verifying" && (
-          <div className="mt-3 rounded-2xl border border-line bg-card p-4">
-            <p className="text-xs text-paperDim">
-              Para confirmar a troca de senha, digite o código enviado para {user.email}
-            </p>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={passwordCode}
-              onChange={(e) => setPasswordCode(e.target.value)}
-              placeholder="000000"
-              aria-label="Código de verificação da senha"
-              className="mt-2.5 w-full rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper placeholder:text-paperDim/60"
-            />
-            <div className="mt-3 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={resetPasswordFlow}
-                className="rounded-xl px-4 py-2.5 text-sm font-bold text-paperDim hover:text-paper"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={confirmPasswordCode}
-                disabled={!passwordCode.trim()}
+                disabled={passwordBusy}
                 className="rounded-xl bg-foil px-4 py-2.5 text-sm font-bold text-leather disabled:opacity-40"
               >
-                Confirmar
+                {passwordBusy ? "Salvando…" : "Salvar senha"}
               </button>
             </div>
           </div>

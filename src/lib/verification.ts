@@ -73,3 +73,17 @@ export async function consumePasswordResetCode(email: string, code: string) {
   await db.verificationCode.update({ where: { id: rec.id }, data: { usedAt: new Date() } });
   return true;
 }
+
+/** Troca de e-mail: o código é enviado ao endereço novo, que ainda não
+ * pertence a nenhum usuário — por isso não atualiza `user` aqui, só
+ * consome o código (a rota faz o update do e-mail do usuário logado). */
+export async function consumeEmailChangeCode(newEmail: string, code: string) {
+  const rec = await db.verificationCode.findFirst({
+    where: { email: newEmail, type: "email", code, usedAt: null, expiresAt: { gt: new Date() } },
+    orderBy: { createdAt: "desc" },
+  });
+  if (!rec) return false;
+
+  await db.verificationCode.update({ where: { id: rec.id }, data: { usedAt: new Date() } });
+  return true;
+}

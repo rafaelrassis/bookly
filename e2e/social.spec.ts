@@ -145,8 +145,16 @@ test("review propria vira post no feed", async ({ page }) => {
 // C8: perfil próprio renderiza estatísticas e favoritos
 test("perfil proprio mostra estatisticas", async ({ page }) => {
   await loginAsSeedUser(page);
-  await page.click('nav.fixed a[href="/profile"]');
-  await page.waitForURL("**/profile");
+  // top4 vem da API (Spec 2) e começa vazio numa conta nova — seta via PATCH
+  // real antes de checar a seção, e navega com goto pra recarregar o perfil.
+  await page.evaluate(async () => {
+    await fetch("/api/users/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ top4: ["torto-arado", "duna", "1984", "ensaio-sobre-a-cegueira"] }),
+    });
+  });
+  await page.goto("/profile");
   await expect(page.getByText("Favoritos")).toBeVisible();
   await expect(page.getByText("lidos")).toBeVisible();
   await expect(page.getByText("Suas notas")).toBeVisible();

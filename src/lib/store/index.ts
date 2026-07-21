@@ -156,17 +156,11 @@ type Store = {
 
   /** Sincroniza a identidade (nome/username/email) a partir da sessão NextAuth. */
   hydrateFromSession: (session: { name: string; username: string; email: string }) => void;
-  /** Onboarding pós-cadastro: bio e gêneros (perfil-base já veio do registro). */
-  setBioAndGenres: (bio: string, genres: string[]) => void;
+  /** Aplica dados reais de perfil vindos da API (/api/users/me), por cima do
+   * mock local. Ponto único de escrita pro que já é servidor: identidade,
+   * bio, gêneros, avatar, top4, contagem de seguidores. */
+  applyProfile: (patch: Partial<UserState>) => void;
   logout: () => void;
-  updateProfile: (
-    username: string,
-    avatar: number,
-    bio: string,
-    top4: string[],
-    avatarImage?: string
-  ) => void;
-  updateEmail: (email: string) => void;
   updatePhone: (phone: string) => void;
 
   /** status null remove o livro da estante. Datas: startedAt na primeira vez
@@ -240,7 +234,7 @@ export const useStore = create<Store>()(
         },
       })),
 
-    setBioAndGenres: (bio, genres) => set((s) => ({ user: { ...s.user, bio, genres } })),
+    applyProfile: (patch) => set((s) => ({ user: { ...s.user, ...patch } })),
 
     logout: () =>
       set({
@@ -249,12 +243,6 @@ export const useStore = create<Store>()(
         notifications: [...SEED_NOTIFICATIONS],
       }),
 
-    updateProfile: (username, avatar, bio, top4, avatarImage) =>
-      set((s) => ({
-        user: { ...s.user, username, avatar, bio, top4, avatarImage: avatarImage ?? s.user.avatarImage },
-      })),
-
-    updateEmail: (email) => set((s) => ({ user: { ...s.user, email } })),
     updatePhone: (phone) => set((s) => ({ user: { ...s.user, phone } })),
 
     setShelfStatus: (bookId, status) =>

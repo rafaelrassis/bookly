@@ -8,7 +8,7 @@ import { useStore } from "@/lib/store";
 
 export default function OnboardingPage() {
   const user = useStore((s) => s.user);
-  const setBioAndGenres = useStore((s) => s.setBioAndGenres);
+  const applyProfile = useStore((s) => s.applyProfile);
   const router = useRouter();
 
   const [bio, setBio] = useState(user.bio);
@@ -20,9 +20,22 @@ export default function OnboardingPage() {
     );
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setBioAndGenres(bio.trim(), genres);
+    try {
+      const res = await fetch("/api/users/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bio: bio.trim(), genres }),
+      });
+      if (res.ok) {
+        const profile = await res.json();
+        applyProfile({ bio: profile.bio, genres: profile.genres });
+      }
+    } catch {
+      // onboarding não deve travar por falha de rede — perfil pode ser
+      // completado depois em /profile/edit.
+    }
     router.push("/home");
   }
 

@@ -17,8 +17,31 @@ model User {
   name          String
   passwordHash  String
   emailVerified DateTime?
+  bio           String?   @db.VarChar(500)
+  /// Índice do gradiente de avatar escolhido (AVATAR_CHOICES no front).
+  avatar        Int       @default(0)
+  genres        String[]  @default([])
+  /// Até 4 bookIds em destaque no perfil (catálogo mocado até a Spec 3).
+  top4          String[]  @default([])
+  /// "pages" | "percent"
+  progressUnit  String    @default("pages")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
+  followedBy Follow[] @relation("following")
+  following  Follow[] @relation("follower")
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  follower    User     @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  followingUser User   @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([followingId])
 }
 
 model VerificationCode {
