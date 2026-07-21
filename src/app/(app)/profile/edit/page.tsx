@@ -12,7 +12,7 @@ import { useStore } from "@/lib/store";
 
 export default function EditProfilePage() {
   const user = useStore((s) => s.user);
-  const updateProfile = useStore((s) => s.updateProfile);
+  const applyProfile = useStore((s) => s.applyProfile);
   const showToast = useStore((s) => s.showToast);
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -22,6 +22,7 @@ export default function EditProfilePage() {
   const [avatarImage, setAvatarImage] = useState(user.avatarImage);
   const [bio, setBio] = useState(user.bio);
   const [top4, setTop4] = useState<string[]>(user.top4);
+  const [saving, setSaving] = useState(false);
 
   function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -58,13 +59,32 @@ export default function EditProfilePage() {
     });
   }
 
-  function save() {
+  async function save() {
     const name = withoutAt(username.trim());
     if (!name) {
       showToast("Escolha um nome de usuário");
       return;
     }
-    updateProfile(name, avatar, bio.trim(), top4, avatarImage);
+    setSaving(true);
+    const res = await fetch("/api/users/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: name, avatar, bio: bio.trim(), top4 }),
+    });
+    setSaving(false);
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      showToast(body?.error === "username em uso" ? "Nome de usuário já em uso" : "Não foi possível salvar");
+      return;
+    }
+    const profile = await res.json();
+    applyProfile({
+      username: profile.username,
+      avatar: profile.avatar,
+      bio: profile.bio,
+      top4: profile.top4,
+      avatarImage,
+    });
     showToast("Perfil atualizado ✦");
     router.push("/profile");
   }
@@ -208,9 +228,10 @@ export default function EditProfilePage() {
         <button
           type="button"
           onClick={save}
-          className="flex-1 rounded-xl bg-foil px-5 py-3.5 font-bold text-leather transition-opacity hover:opacity-90"
+          disabled={saving}
+          className="flex-1 rounded-xl bg-foil px-5 py-3.5 font-bold text-leather transition-opacity hover:opacity-90 disabled:opacity-60"
         >
-          Salvar
+          {saving ? "Salvando…" : "Salvar"}
         </button>
       </div>
     </div>
