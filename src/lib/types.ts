@@ -51,6 +51,8 @@ export type Club = {
   feed: ClubMessage[];
   /** Progresso mocado dos outros membros (0–100). */
   memberProgress: Record<string, number>;
+  /** Username (com @) de quem criou o clube. */
+  creator: string;
 };
 
 export type ShelfStatus = "WANT_TO_READ" | "READING" | "READ";
@@ -78,6 +80,9 @@ export type UserState = {
   loggedIn: boolean;
   name: string;
   username: string;
+  email: string;
+  /** Telefone no formato exibido; ausente até o usuário adicionar um. */
+  phone?: string;
   bio: string;
   genres: string[];
   followers: number;
@@ -85,6 +90,8 @@ export type UserState = {
   top4: string[];
   /** Índice do gradiente de avatar escolhido (AVATAR_CHOICES). */
   avatar: number;
+  /** Foto de perfil enviada pelo usuário (data URL); sobrepõe o gradiente quando presente. */
+  avatarImage?: string;
   progressUnit: ProgressUnit;
   shelf: Record<string, ShelfEntry>;
   ratings: Record<string, number>;

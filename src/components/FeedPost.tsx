@@ -5,6 +5,7 @@ import { useState } from "react";
 import { getBook } from "@/data/books";
 import { Avatar } from "@/components/Avatar";
 import { BookCover } from "@/components/BookCover";
+import { ExpandableText } from "@/components/ExpandableText";
 import { Stars } from "@/components/Stars";
 import { useStore } from "@/lib/store";
 import type { FeedReview } from "@/lib/types";
@@ -84,7 +85,7 @@ export function FeedPost({ review }: { review: FeedReview }) {
             <span className="text-paperDim">·</span>{" "}
             <Stars rating={review.rating} className="text-xs" />
           </p>
-          <p className="mt-1.5 text-sm text-paperDim">{review.text}</p>
+          <ExpandableText text={review.text} className="mt-1.5 text-sm text-paperDim" />
 
           <div className="mt-2.5 flex items-center gap-5 text-xs text-paperDim">
             <button

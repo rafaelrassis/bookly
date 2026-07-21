@@ -15,12 +15,24 @@ type AvatarProps = {
 export function Avatar({ user, size = 36, className = "" }: AvatarProps) {
   const username = useStore((s) => s.user.username);
   const myAvatar = useStore((s) => s.user.avatar);
+  const myAvatarImage = useStore((s) => s.user.avatarImage);
 
   const isMe = user === `@${username}`;
+  const initial = user.replace("@", "").charAt(0).toUpperCase();
+
+  if (isMe && myAvatarImage) {
+    return (
+      <span
+        aria-hidden="true"
+        className={`inline-block shrink-0 overflow-hidden rounded-full bg-cover bg-center ${className}`}
+        style={{ width: size, height: size, backgroundImage: `url(${myAvatarImage})` }}
+      />
+    );
+  }
+
   const [from, to] = isMe
     ? AVATAR_CHOICES[myAvatar] ?? AVATAR_CHOICES[0]
     : avatarGradient(user);
-  const initial = user.replace("@", "").charAt(0).toUpperCase();
 
   return (
     <span

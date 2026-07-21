@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { useState } from "react";
 import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
+import { ExpandableText } from "@/components/ExpandableText";
 import { RatingInput } from "@/components/RatingInput";
 import { SectionTitle } from "@/components/SectionTitle";
 import { Stars } from "@/components/Stars";
@@ -403,7 +404,7 @@ export default function BookPage({ params }: { params: { id: string } }) {
               onClick={() => setQuoteOpen(true)}
               className="w-full rounded-xl border border-line bg-card px-4 py-3 text-sm font-bold text-paper transition-colors hover:border-foil/50"
             >
-              ✦ Destacar citação
+              Destacar citação
             </button>
           )}
         </div>
@@ -426,7 +427,7 @@ export default function BookPage({ params }: { params: { id: string } }) {
               {readingDates(entry) && (
                 <p className="mt-1 text-xs text-paperDim">{readingDates(entry)}</p>
               )}
-              <p className="mt-1.5 text-sm text-paperDim">{myReview}</p>
+              <ExpandableText text={myReview} className="mt-1.5 text-sm text-paperDim" />
             </article>
           )}
           {communityReviews.length === 0 && !myReview && (
@@ -438,7 +439,7 @@ export default function BookPage({ params }: { params: { id: string } }) {
             <article key={review.id} className="rounded-2xl border border-line bg-card p-4">
               <p className="text-sm font-bold">{review.user}</p>
               <Stars rating={review.rating} className="text-xs" />
-              <p className="mt-1.5 text-sm text-paperDim">{review.text}</p>
+              <ExpandableText text={review.text} className="mt-1.5 text-sm text-paperDim" />
             </article>
           ))}
         </div>

@@ -11,8 +11,8 @@ export default function OnboardingPage() {
   const completeOnboarding = useStore((s) => s.completeOnboarding);
   const router = useRouter();
 
-  const [name, setName] = useState(user.name);
-  const [username, setUsername] = useState(user.username);
+  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [bio, setBio] = useState(user.bio);
   const [genres, setGenres] = useState<string[]>(user.genres);
 
@@ -47,7 +47,8 @@ export default function OnboardingPage() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="rounded-xl border border-line bg-card px-4 py-3 text-base text-paper"
+              placeholder="Frankenstein"
+              className="rounded-xl border border-line bg-card px-4 py-3 text-base text-paper placeholder:text-paperDim/50"
             />
           </label>
           <label className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
@@ -58,7 +59,8 @@ export default function OnboardingPage() {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full bg-transparent py-3 pl-1 text-base text-paper focus:outline-none"
+                placeholder="capitu"
+                className="w-full bg-transparent py-3 pl-1 text-base text-paper placeholder:text-paperDim/50 focus:outline-none"
               />
             </div>
           </label>
@@ -104,7 +106,7 @@ export default function OnboardingPage() {
           type="submit"
           className="mt-10 rounded-xl bg-foil px-5 py-3.5 font-bold text-leather transition-opacity hover:opacity-90"
         >
-          Começar a ler ✦
+          Começar a ler
         </button>
       </form>
     </main>

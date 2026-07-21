@@ -12,17 +12,17 @@ import { useStore } from "@/lib/store";
 const FEATURES = [
   {
     icon: "★",
-    title: "Avalie com meia estrela",
+    title: "Precisão de meia estrela",
     text: "Notas de 0,5 a 5 para registrar exatamente o que você achou de cada leitura.",
   },
   {
     icon: "♥",
-    title: "Reviews como rede social",
+    title: "Seu feed de leitura",
     text: "Um feed de reviews para curtir, comentar e descobrir sua próxima leitura.",
   },
   {
     icon: "❋",
-    title: "Clubes do livro",
+    title: "Leia em clube",
     text: "Leia junto: clubes com leitura do mês e mural para discutir cada capítulo.",
   },
 ];

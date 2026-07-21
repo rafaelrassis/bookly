@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AVATAR_CHOICES } from "@/data/users";
 import { getBook } from "@/data/books";
@@ -14,11 +14,25 @@ export default function EditProfilePage() {
   const updateProfile = useStore((s) => s.updateProfile);
   const showToast = useStore((s) => s.showToast);
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [username, setUsername] = useState(user.username);
   const [avatar, setAvatar] = useState(user.avatar);
+  const [avatarImage, setAvatarImage] = useState(user.avatarImage);
   const [bio, setBio] = useState(user.bio);
   const [top4, setTop4] = useState<string[]>(user.top4);
+
+  function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      showToast("Escolha um arquivo de imagem");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setAvatarImage(reader.result as string);
+    reader.readAsDataURL(file);
+  }
 
   // favoritos escolhidos entre os livros lidos (+ os já favoritos)
   const readBooks = Array.from(
@@ -49,7 +63,7 @@ export default function EditProfilePage() {
       showToast("Escolha um nome de usuário");
       return;
     }
-    updateProfile(name, avatar, bio.trim(), top4);
+    updateProfile(name, avatar, bio.trim(), top4, avatarImage);
     showToast("Perfil atualizado ✦");
     router.push("/profile");
   }
@@ -62,21 +76,67 @@ export default function EditProfilePage() {
 
       <section className="mt-4">
         <SectionTitle>Foto</SectionTitle>
-        <div className="mt-3 flex flex-wrap gap-3">
-          {AVATAR_CHOICES.map(([from, to], i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => setAvatar(i)}
-              aria-label={`Avatar ${i + 1}`}
-              aria-pressed={avatar === i}
-              className={`h-14 w-14 rounded-full transition-transform ${
-                avatar === i ? "ring-2 ring-foil ring-offset-2 ring-offset-leather" : ""
-              }`}
-              style={{ backgroundImage: `linear-gradient(135deg, ${from}, ${to})` }}
+        <div className="mt-3 flex items-center gap-4">
+          {avatarImage ? (
+            <img
+              src={avatarImage}
+              alt=""
+              aria-hidden="true"
+              className="h-16 w-16 rounded-full object-cover"
             />
-          ))}
+          ) : (
+            <span
+              aria-hidden="true"
+              className="h-16 w-16 rounded-full"
+              style={{
+                backgroundImage: `linear-gradient(135deg, ${AVATAR_CHOICES[avatar][0]}, ${AVATAR_CHOICES[avatar][1]})`,
+              }}
+            />
+          )}
+          <div className="flex flex-col gap-1.5">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoUpload}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="rounded-full border border-line bg-card px-4 py-2 text-xs font-bold text-paper transition-colors hover:bg-card2"
+            >
+              Enviar foto
+            </button>
+            {avatarImage && (
+              <button
+                type="button"
+                onClick={() => setAvatarImage(undefined)}
+                className="text-xs font-bold text-paperDim hover:text-ribbon"
+              >
+                Remover foto
+              </button>
+            )}
+          </div>
         </div>
+
+        {!avatarImage && (
+          <div className="mt-3 flex flex-wrap gap-3">
+            {AVATAR_CHOICES.map(([from, to], i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setAvatar(i)}
+                aria-label={`Avatar ${i + 1}`}
+                aria-pressed={avatar === i}
+                className={`h-14 w-14 rounded-full transition-transform ${
+                  avatar === i ? "ring-2 ring-foil ring-offset-2 ring-offset-leather" : ""
+                }`}
+                style={{ backgroundImage: `linear-gradient(135deg, ${from}, ${to})` }}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="mt-6 flex flex-col gap-3">

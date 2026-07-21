@@ -24,6 +24,7 @@ const INITIAL_USER: UserState = {
   loggedIn: false,
   name: "Marina Souza",
   username: "mari.leituras",
+  email: "mari.leituras@gmail.com",
   bio: "Um capítulo por noite antes de dormir. Fantasia, thrillers e o que a estante mandar 💛",
   genres: ["Fantasia", "Romance", "Thriller"],
   followers: 128,
@@ -132,7 +133,15 @@ type Store = {
 
   completeOnboarding: (name: string, username: string, bio: string, genres: string[]) => void;
   logout: () => void;
-  updateProfile: (username: string, avatar: number, bio: string, top4: string[]) => void;
+  updateProfile: (
+    username: string,
+    avatar: number,
+    bio: string,
+    top4: string[],
+    avatarImage?: string
+  ) => void;
+  updateEmail: (email: string) => void;
+  updatePhone: (phone: string) => void;
 
   /** status null remove o livro da estante. Datas: startedAt na primeira vez
    * em Lendo (ou Lido direto); finishedAt ao marcar Lido. */
@@ -162,6 +171,9 @@ type Store = {
   /** Retorna o id do clube ao entrar; "already" se já participa; null se inválido. */
   joinClubByCode: (code: string) => string | "already" | null;
   postToClub: (clubId: string, text: string, replyTo?: { user: string; text: string }) => void;
+  /** Só o criador do clube deve poder chamar (checagem fica na UI). */
+  updateClub: (clubId: string, name: string, bookId: string, desc: string) => void;
+  removeClubMember: (clubId: string, member: string) => void;
 
   createList: (name: string, visibility: Visibility) => string;
   toggleListVisibility: (listId: string) => void;
@@ -185,8 +197,13 @@ export const useStore = create<Store>()((set, get) => ({
 
   logout: () => set((s) => ({ user: { ...s.user, loggedIn: false } })),
 
-  updateProfile: (username, avatar, bio, top4) =>
-    set((s) => ({ user: { ...s.user, username, avatar, bio, top4 } })),
+  updateProfile: (username, avatar, bio, top4, avatarImage) =>
+    set((s) => ({
+      user: { ...s.user, username, avatar, bio, top4, avatarImage: avatarImage ?? s.user.avatarImage },
+    })),
+
+  updateEmail: (email) => set((s) => ({ user: { ...s.user, email } })),
+  updatePhone: (phone) => set((s) => ({ user: { ...s.user, phone } })),
 
   setShelfStatus: (bookId, status) =>
     set((s) => {
@@ -355,6 +372,7 @@ export const useStore = create<Store>()((set, get) => ({
   createClub: (name, bookId, desc, visibility) => {
     const id = `${slugify(name)}-${Date.now().toString(36)}`;
     const code = visibility === "private" ? randomCode() : undefined;
+    const creator = `@${get().user.username}`;
     const club: Club = {
       id,
       name,
@@ -366,6 +384,7 @@ export const useStore = create<Store>()((set, get) => ({
       joined: true,
       feed: [],
       memberProgress: {},
+      creator,
     };
     set((s) => ({ clubs: [...s.clubs, club] }));
     return { id, code };
@@ -403,6 +422,21 @@ export const useStore = create<Store>()((set, get) => ({
             }
           : c
       ),
+    })),
+
+  updateClub: (clubId, name, bookId, desc) =>
+    set((s) => ({
+      clubs: s.clubs.map((c) => (c.id === clubId ? { ...c, name, bookId, desc } : c)),
+    })),
+
+  removeClubMember: (clubId, member) =>
+    set((s) => ({
+      clubs: s.clubs.map((c) => {
+        if (c.id !== clubId) return c;
+        const memberProgress = { ...c.memberProgress };
+        delete memberProgress[member];
+        return { ...c, memberProgress, members: Math.max(0, c.members - 1) };
+      }),
     })),
 
   createList: (name, visibility) => {

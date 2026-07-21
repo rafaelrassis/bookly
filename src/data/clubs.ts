@@ -9,6 +9,7 @@ export const CLUBS: Club[] = [
     members: 24,
     joined: true,
     visibility: "public",
+    creator: "@leituras.do.vale",
     desc: "Um mundo novo por mês, sempre com magia. Em julho: a Crônica do Matador do Rei.",
     memberProgress: {
       "@leituras.do.vale": 78,
@@ -48,6 +49,7 @@ export const CLUBS: Club[] = [
     members: 57,
     joined: false,
     visibility: "public",
+    creator: "@thriller.gab",
     desc: "Toda sexta um thriller novo pra discutir no fim de semana. Spoilers só com aviso!",
     memberProgress: {
       "@thriller.gab": 90,
@@ -70,6 +72,7 @@ export const CLUBS: Club[] = [
     joined: true,
     visibility: "private",
     code: "KVX7Q2",
+    creator: "@caio_reads",
     desc: "Clube fechado dos amigos de longa data. Um tijolo de fantasia ou ficção científica por bimestre.",
     memberProgress: {
       "@caio_reads": 66,

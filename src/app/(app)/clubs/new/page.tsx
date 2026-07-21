@@ -169,7 +169,7 @@ export default function NewClubPage() {
         disabled={!valid}
         className="mb-4 mt-8 w-full rounded-xl bg-foil px-5 py-3.5 font-bold text-leather transition-opacity hover:opacity-90 disabled:opacity-40"
       >
-        Criar clube ✦
+        Criar clube
       </button>
     </div>
   );

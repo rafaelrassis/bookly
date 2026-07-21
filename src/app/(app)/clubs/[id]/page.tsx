@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { useRef, useState } from "react";
-import { getBook } from "@/data/books";
+import { useEffect, useRef, useState } from "react";
+import { BOOKS, getBook } from "@/data/books";
 import { Avatar } from "@/components/Avatar";
 import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
@@ -12,6 +12,19 @@ import { SectionTitle } from "@/components/SectionTitle";
 import { readingPercent } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import type { ClubMessage } from "@/lib/types";
+
+/** Busca case-insensitive; acentos também são ignorados. */
+function normalize(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+/** Progresso determinístico para membros mocados sem dado real (evita hidration mismatch). */
+function mockProgress(seed: number): number {
+  return (seed * 37 + 20) % 101;
+}
 
 /** Destaca menções (@usuario) em foil dentro do texto da bolha. */
 function MentionText({ text }: { text: string }) {
@@ -83,21 +96,107 @@ function Bubble({
   );
 }
 
+/** Modal com todos os membros e progresso; se for o criador, permite remover membros. */
+function MembersModal({
+  members,
+  isOwner,
+  me,
+  onClose,
+  onRemove,
+}: {
+  members: { user: string; percent: number; mock: boolean }[];
+  isOwner: boolean;
+  me: string;
+  onClose: () => void;
+  onRemove: (user: string) => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-5"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-label="Membros do clube"
+        onClick={(e) => e.stopPropagation()}
+        className="max-h-[80vh] w-full overflow-y-auto rounded-t-3xl border border-line bg-leather p-5 sm:max-w-md sm:rounded-3xl"
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-lg font-bold">Membros ({members.length})</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fechar"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-paperDim hover:text-paper"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="mt-4 flex flex-col gap-3">
+          {members.map(({ user, percent, mock }) => (
+            <div key={user} className="flex items-center gap-3">
+              <Avatar user={user} size={30} />
+              <div className="min-w-0 flex-1">
+                <p className="flex items-baseline justify-between text-xs">
+                  <span className="truncate font-bold">
+                    {user === me ? `${user} (você)` : user}
+                  </span>
+                  <span className="ml-2 shrink-0 text-paperDim">{percent}%</span>
+                </p>
+                <div className="mt-1 h-1 overflow-hidden rounded-full bg-card2">
+                  <div
+                    className={`h-full rounded-full ${user === me ? "bg-ribbon" : "bg-foil/70"}`}
+                    style={{ width: `${percent}%` }}
+                  />
+                </div>
+              </div>
+              {isOwner && user !== me && !mock && (
+                <button
+                  type="button"
+                  onClick={() => onRemove(user)}
+                  aria-label={`Remover ${user} do clube`}
+                  className="shrink-0 rounded-full px-2 py-1 text-xs font-bold text-paperDim hover:text-ribbon"
+                >
+                  Excluir
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ClubPage({ params }: { params: { id: string } }) {
   const club = useStore((s) => s.clubs.find((c) => c.id === params.id));
   const user = useStore((s) => s.user);
   const toggleClub = useStore((s) => s.toggleClub);
   const postToClub = useStore((s) => s.postToClub);
+  const updateClub = useStore((s) => s.updateClub);
+  const removeClubMember = useStore((s) => s.removeClubMember);
   const showToast = useStore((s) => s.showToast);
 
   const [draft, setDraft] = useState("");
   const [replyTo, setReplyTo] = useState<ClubMessage | null>(null);
+  const [membersOpen, setMembersOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+  const [editBookId, setEditBookId] = useState<string | null>(null);
+  const [editBookQuery, setEditBookQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const feedEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    feedEndRef.current?.scrollIntoView({ block: "end" });
+  }, [club?.feed.length]);
 
   if (!club) notFound();
 
   const book = getBook(club.bookId);
   const me = `@${user.username}`;
+  const isOwner = club.creator === me;
 
   // membros conhecidos: progresso mocado + usuário logado com progresso real
   const myEntry = user.shelf[club.bookId];
@@ -112,6 +211,16 @@ export default function ClubPage({ params }: { params: { id: string } }) {
     ...Object.entries(club.memberProgress).map(([u, percent]) => ({ user: u, percent })),
   ];
   const extraMembers = Math.max(0, club.members - memberRows.length);
+
+  // preenche membros sem dado individual com progresso mocado só para exibição na modal
+  const allMembers = [
+    ...memberRows.map((m) => ({ ...m, mock: false })),
+    ...Array.from({ length: extraMembers }, (_, i) => ({
+      user: `@membro-do-clube-${i + 1}`,
+      percent: mockProgress(i),
+      mock: true,
+    })),
+  ];
 
   // sugestões de menção ao digitar @
   const mentionMatch = draft.match(/@([\w.\-]*)$/);
@@ -155,6 +264,39 @@ export default function ClubPage({ params }: { params: { id: string } }) {
     }
   }
 
+  function openEdit() {
+    setEditName(club!.name);
+    setEditDesc(club!.desc);
+    setEditBookId(club!.bookId);
+    setEditBookQuery("");
+    setEditing(true);
+  }
+
+  function saveEdit() {
+    const name = editName.trim();
+    if (!name || !editBookId) {
+      showToast("Preencha nome e livro do clube");
+      return;
+    }
+    updateClub(club!.id, name, editBookId, editDesc.trim());
+    setEditing(false);
+    showToast("Clube atualizado ✦");
+  }
+
+  function removeMember(member: string) {
+    removeClubMember(club!.id, member);
+    showToast(`${member} removido(a) do clube`);
+  }
+
+  const editBookResults = editBookQuery.trim()
+    ? BOOKS.filter(
+        (b) =>
+          normalize(b.title).includes(normalize(editBookQuery)) ||
+          normalize(b.authors).includes(normalize(editBookQuery))
+      )
+    : BOOKS;
+  const editSelectedBook = BOOKS.find((b) => b.id === editBookId);
+
   return (
     <div className="pt-4">
       <BackHeader />
@@ -170,19 +312,30 @@ export default function ClubPage({ params }: { params: { id: string } }) {
         </h1>
         <p className="mt-2 max-w-72 text-sm text-paperDim">{club.desc}</p>
 
-        <button
-          type="button"
-          onClick={handleToggle}
-          className={`mt-5 w-full rounded-xl px-5 py-3 font-bold transition-colors ${
-            club.joined
-              ? "border border-line bg-card text-paperDim hover:text-paper"
-              : "bg-foil text-leather hover:opacity-90"
-          }`}
-        >
-          {club.joined ? "Sair do clube" : "Participar do clube"}
-        </button>
+        <div className="mt-5 flex w-full gap-2">
+          <button
+            type="button"
+            onClick={handleToggle}
+            className={`flex-1 rounded-xl px-5 py-3 font-bold transition-colors ${
+              club.joined
+                ? "border border-line bg-card text-paperDim hover:text-paper"
+                : "bg-foil text-leather hover:opacity-90"
+            }`}
+          >
+            {club.joined ? "Sair do clube" : "Participar do clube"}
+          </button>
+          {isOwner && (
+            <button
+              type="button"
+              onClick={openEdit}
+              className="rounded-xl border border-line bg-card px-4 py-3 font-bold text-paper transition-colors hover:bg-card2"
+            >
+              Editar
+            </button>
+          )}
+        </div>
 
-        {club.visibility === "private" && club.joined && club.code && (
+        {club.visibility === "private" && isOwner && club.code && (
           <div className="mt-3 flex w-full items-center justify-between rounded-2xl border border-foil/40 bg-card px-4 py-3">
             <div className="text-left">
               <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-paperDim">
@@ -202,6 +355,88 @@ export default function ClubPage({ params }: { params: { id: string } }) {
           </div>
         )}
       </section>
+
+      {editing && isOwner && (
+        <section className="mt-5 rounded-2xl border border-foil/40 bg-card p-4">
+          <SectionTitle>Editar clube</SectionTitle>
+          <div className="mt-3 flex flex-col gap-2.5">
+            <input
+              type="text"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              placeholder="Nome do clube"
+              aria-label="Nome do clube"
+              className="rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper placeholder:text-paperDim/60"
+            />
+            <textarea
+              value={editDesc}
+              onChange={(e) => setEditDesc(e.target.value)}
+              rows={2}
+              placeholder="Bio do clube"
+              aria-label="Bio do clube"
+              className="resize-none rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper placeholder:text-paperDim/60"
+            />
+
+            {editSelectedBook ? (
+              <div className="flex items-center gap-3 rounded-xl border border-foil/40 bg-card2 p-2.5">
+                <BookCover book={editSelectedBook} width={32} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-bold">{editSelectedBook.title}</p>
+                  <p className="truncate text-xs text-paperDim">{editSelectedBook.authors}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditBookId(null)}
+                  aria-label="Trocar livro"
+                  className="shrink-0 rounded-full px-2 text-sm text-paperDim hover:text-ribbon"
+                >
+                  ✕
+                </button>
+              </div>
+            ) : (
+              <>
+                <input
+                  type="search"
+                  value={editBookQuery}
+                  onChange={(e) => setEditBookQuery(e.target.value)}
+                  placeholder="Buscar livro lido pelo clube…"
+                  aria-label="Buscar livro do clube"
+                  className="rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper placeholder:text-paperDim/60"
+                />
+                <div className="max-h-40 overflow-y-auto rounded-xl border border-line bg-card2">
+                  {editBookResults.map((b) => (
+                    <button
+                      key={b.id}
+                      type="button"
+                      onClick={() => setEditBookId(b.id)}
+                      className="flex w-full items-center gap-2.5 border-b border-line px-3 py-2 text-left last:border-b-0 hover:bg-card"
+                    >
+                      <BookCover book={b} width={26} />
+                      <span className="min-w-0 truncate text-sm">{b.title}</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+          <div className="mt-3 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setEditing(false)}
+              className="rounded-xl px-4 py-2.5 text-sm font-bold text-paperDim hover:text-paper"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={saveEdit}
+              className="rounded-xl bg-foil px-4 py-2.5 text-sm font-bold text-leather"
+            >
+              Salvar
+            </button>
+          </div>
+        </section>
+      )}
 
       {book && (
         <section className="mt-6">
@@ -244,9 +479,13 @@ export default function ClubPage({ params }: { params: { id: string } }) {
             </div>
           ))}
           {extraMembers > 0 && (
-            <p className="text-xs text-paperDim">
+            <button
+              type="button"
+              onClick={() => setMembersOpen(true)}
+              className="text-left text-xs font-bold text-foil hover:opacity-80"
+            >
               +{extraMembers} {extraMembers === 1 ? "outro membro" : "outros membros"}
-            </p>
+            </button>
           )}
         </div>
       </section>
@@ -254,7 +493,7 @@ export default function ClubPage({ params }: { params: { id: string } }) {
       <section className="mb-4 mt-6">
         <SectionTitle>Mural</SectionTitle>
 
-        <div className="mt-3 flex flex-col gap-3">
+        <div className="mt-3 flex max-h-[26rem] flex-col gap-3 overflow-y-auto">
           {club.feed.map((message) => (
             <Bubble
               key={message.id}
@@ -271,6 +510,7 @@ export default function ClubPage({ params }: { params: { id: string } }) {
               Ainda não há mensagens. Comece a conversa!
             </p>
           )}
+          <div ref={feedEndRef} />
         </div>
 
         {club.joined && (
@@ -334,6 +574,16 @@ export default function ClubPage({ params }: { params: { id: string } }) {
           </div>
         )}
       </section>
+
+      {membersOpen && (
+        <MembersModal
+          members={allMembers}
+          isOwner={isOwner}
+          me={me}
+          onClose={() => setMembersOpen(false)}
+          onRemove={removeMember}
+        />
+      )}
     </div>
   );
 }
