@@ -12,18 +12,23 @@ import { useStore } from "@/lib/store";
 const FEATURES = [
   {
     icon: "★",
-    title: "Precisão de meia estrela",
-    text: "Notas de 0,5 a 5 para registrar exatamente o que você achou de cada leitura.",
+    title: "Avalie!",
+    text: "Dê estrelas aos livros que você leu e compartilhe sua opinião com a comunidade.",
   },
   {
-    icon: "♥",
-    title: "Seu feed de leitura",
-    text: "Um feed de reviews para curtir, comentar e descobrir sua próxima leitura.",
+    icon: "❖",
+    title: "Organize!",
+    text: "Acompanhe seu progresso de leitura, registre seu avanço e destaque suas citações preferidas.",
   },
   {
     icon: "❋",
-    title: "Leia em clube",
-    text: "Leia junto: clubes com leitura do mês e mural para discutir cada capítulo.",
+    title: "Leia em conjunto!",
+    text: "Participe de clubes para compartilhar suas opiniões e seu progresso com seus amigos.",
+  },
+  {
+    icon: "✦",
+    title: "Descubra!",
+    text: "Encontre recomendações de novos livros com base no que você gosta e no que você já leu.",
   },
 ];
 

@@ -459,25 +459,29 @@ export default function ClubPage({ params }: { params: { id: string } }) {
       <section className="mt-6">
         <SectionTitle>Progresso dos membros</SectionTitle>
         <div className="mt-3 flex flex-col gap-2.5 rounded-2xl border border-line bg-card p-4">
-          {memberRows.map(({ user: memberUser, percent }) => (
-            <div key={memberUser} className="flex items-center gap-3">
-              <Avatar user={memberUser} size={28} />
-              <div className="min-w-0 flex-1">
-                <p className="flex items-baseline justify-between text-xs">
-                  <span className="truncate font-bold">
-                    {memberUser === me ? `${memberUser} (você)` : memberUser}
-                  </span>
-                  <span className="ml-2 shrink-0 text-paperDim">{percent}%</span>
-                </p>
-                <div className="mt-1 h-1 overflow-hidden rounded-full bg-card2">
-                  <div
-                    className={`h-full rounded-full ${memberUser === me ? "bg-ribbon" : "bg-foil/70"}`}
-                    style={{ width: `${percent}%` }}
-                  />
+          {memberRows.map(({ user: memberUser, percent }) => {
+            const isMe = memberUser === me;
+            const href = isMe ? "/profile" : `/u/${memberUser.replace("@", "")}`;
+            return (
+              <Link key={memberUser} href={href} className="flex items-center gap-3">
+                <Avatar user={memberUser} size={28} />
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-baseline justify-between text-xs">
+                    <span className="truncate font-bold">
+                      {isMe ? `${memberUser} (você)` : memberUser}
+                    </span>
+                    <span className="ml-2 shrink-0 text-paperDim">{percent}%</span>
+                  </p>
+                  <div className="mt-1 h-1 overflow-hidden rounded-full bg-card2">
+                    <div
+                      className={`h-full rounded-full ${isMe ? "bg-ribbon" : "bg-foil/70"}`}
+                      style={{ width: `${percent}%` }}
+                    />
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
+              </Link>
+            );
+          })}
           {extraMembers > 0 && (
             <button
               type="button"

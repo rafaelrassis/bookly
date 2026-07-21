@@ -35,6 +35,15 @@ export function formatShortDate(iso: string): string {
   return `${d.getDate()} ${SHORT_MONTHS[d.getMonth()]}`;
 }
 
+/** "Leu de 12 jul a 20 jul" / "Terminou em 20 jul" / "Começou em 12 jul". */
+export function readingDates(startedAt?: string, finishedAt?: string): string | null {
+  if (startedAt && finishedAt)
+    return `Leu de ${formatShortDate(startedAt)} a ${formatShortDate(finishedAt)}`;
+  if (finishedAt) return `Terminou em ${formatShortDate(finishedAt)}`;
+  if (startedAt) return `Começou em ${formatShortDate(startedAt)}`;
+  return null;
+}
+
 /** Data de hoje em ISO (YYYY-MM-DD). */
 export function todayISO(): string {
   return new Date().toISOString().slice(0, 10);

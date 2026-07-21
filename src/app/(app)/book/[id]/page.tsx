@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { useState } from "react";
 import { BackHeader } from "@/components/BackHeader";
@@ -8,7 +9,7 @@ import { ExpandableText } from "@/components/ExpandableText";
 import { RatingInput } from "@/components/RatingInput";
 import { SectionTitle } from "@/components/SectionTitle";
 import { Stars } from "@/components/Stars";
-import { formatCount, formatDecimal, formatShortDate, readingPercent } from "@/lib/format";
+import { formatCount, formatDecimal, readingDates, readingPercent } from "@/lib/format";
 import { useBook } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
 import type { Book, ShelfEntry, ShelfStatus } from "@/lib/types";
@@ -24,17 +25,6 @@ const STATUS_TOAST: Record<ShelfStatus, string> = {
   READING: "Marcado como Lendo 📖",
   READ: "Marcado como Lido 🎉",
 };
-
-/** "Leu de 12 jul a 20 jul" / "Terminou em 20 jul" / "Começou em 12 jul". */
-function readingDates(entry: ShelfEntry | undefined): string | null {
-  if (!entry) return null;
-  const { startedAt, finishedAt } = entry;
-  if (startedAt && finishedAt)
-    return `Leu de ${formatShortDate(startedAt)} a ${formatShortDate(finishedAt)}`;
-  if (finishedAt) return `Terminou em ${formatShortDate(finishedAt)}`;
-  if (startedAt) return `Começou em ${formatShortDate(startedAt)}`;
-  return null;
-}
 
 /** Atualização de progresso com unidade Páginas | % (preferência no estado). */
 function ProgressSection({ book, entry }: { book: Book; entry: ShelfEntry }) {
@@ -143,8 +133,11 @@ export default function BookPage({ params }: { params: { id: string } }) {
   const addQuote = useStore((s) => s.addQuote);
   const showToast = useStore((s) => s.showToast);
 
+  const myReviewTitle = useStore((s) => s.user.myReviewTitles?.[params.id]);
+
   const [editingReview, setEditingReview] = useState(false);
   const [reviewDraft, setReviewDraft] = useState("");
+  const [reviewTitleDraft, setReviewTitleDraft] = useState("");
   const [tagDraft, setTagDraft] = useState("");
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [quoteDraft, setQuoteDraft] = useState("");
@@ -174,7 +167,7 @@ export default function BookPage({ params }: { params: { id: string } }) {
   function publishReview() {
     const text = reviewDraft.trim();
     if (!text) return;
-    saveReview(book!.id, text);
+    saveReview(book!.id, text, reviewTitleDraft);
     setEditingReview(false);
     showToast("Review publicada!");
   }
@@ -209,15 +202,15 @@ export default function BookPage({ params }: { params: { id: string } }) {
           <p className="mt-1 text-sm text-paperDim">
             {book.authors} · {book.year} · {book.pages} pág. · {book.genre}
           </p>
-          <div className="mt-3 flex items-baseline gap-2">
+          <div className="mt-3 flex items-center gap-2">
             <span className="font-display text-4xl font-black text-foil">
               {formatDecimal(book.avg)}
             </span>
-            <div>
-              <Stars rating={book.avg} className="text-sm" />
-              <p className="text-xs text-paperDim">média · {formatCount(book.count)} avaliações</p>
-            </div>
+            <Stars rating={book.avg} className="text-sm" />
           </div>
+          <p className="mt-1 text-xs text-paperDim">
+            média · {formatCount(book.count)} avaliações
+          </p>
         </div>
       </section>
 
@@ -255,6 +248,15 @@ export default function BookPage({ params }: { params: { id: string } }) {
         <div className="mt-4 border-t border-line pt-4">
           {editingReview ? (
             <div>
+              <input
+                type="text"
+                value={reviewTitleDraft}
+                onChange={(e) => setReviewTitleDraft(e.target.value)}
+                maxLength={150}
+                placeholder="Título da resenha (opcional)"
+                aria-label="Título da sua review"
+                className="mb-2 w-full rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm font-bold text-paper placeholder:text-paperDim/60"
+              />
               <textarea
                 value={reviewDraft}
                 onChange={(e) => setReviewDraft(e.target.value)}
@@ -283,16 +285,27 @@ export default function BookPage({ params }: { params: { id: string } }) {
               </div>
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={() => {
-                setReviewDraft(myReview ?? "");
-                setEditingReview(true);
-              }}
-              className="w-full rounded-xl border border-line bg-card2 px-4 py-3 text-sm font-bold text-paper transition-colors hover:border-foil/50"
-            >
-              {myReview ? "Editar minha review" : "Escrever review"}
-            </button>
+            <>
+              {myReview && (
+                <Link href={`/review/me-${book.id}`} className="mb-3 block">
+                  {myReviewTitle && (
+                    <h3 className="font-display text-base font-bold">{myReviewTitle}</h3>
+                  )}
+                  <p className="mt-1 text-sm text-paperDim">{myReview}</p>
+                </Link>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setReviewDraft(myReview ?? "");
+                  setReviewTitleDraft(myReviewTitle ?? "");
+                  setEditingReview(true);
+                }}
+                className="w-full rounded-xl border border-line bg-card2 px-4 py-3 text-sm font-bold text-paper transition-colors hover:border-foil/50"
+              >
+                {myReview ? "Editar minha review" : "Escrever review"}
+              </button>
+            </>
           )}
         </div>
       </section>
@@ -424,8 +437,10 @@ export default function BookPage({ params }: { params: { id: string } }) {
                 @{username} <span className="font-medium text-foil">(você)</span>
               </p>
               {rating !== undefined && <Stars rating={rating} className="text-xs" />}
-              {readingDates(entry) && (
-                <p className="mt-1 text-xs text-paperDim">{readingDates(entry)}</p>
+              {readingDates(entry?.startedAt, entry?.finishedAt) && (
+                <p className="mt-1 text-xs text-paperDim">
+                  {readingDates(entry?.startedAt, entry?.finishedAt)}
+                </p>
               )}
               <ExpandableText text={myReview} className="mt-1.5 text-sm text-paperDim" />
             </article>

@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { FOLLOWED_USERS } from "@/data/users";
 import { BookCover } from "@/components/BookCover";
+import { DiscoverReaders } from "@/components/DiscoverReaders";
 import { FeedPost } from "@/components/FeedPost";
 import { Logo } from "@/components/Logo";
 import { SectionTitle } from "@/components/SectionTitle";
@@ -79,10 +79,11 @@ function ReadingCard({ item }: { item: ShelfBook }) {
 export default function HomePage() {
   const reading = useShelf("READING");
   const feed = useStore((s) => s.feed);
+  const followedUsers = useStore((s) => s.followedUsers);
   const [feedFilter, setFeedFilter] = useState<"all" | "following">("all");
 
   const visibleFeed =
-    feedFilter === "following" ? feed.filter((r) => FOLLOWED_USERS.includes(r.user)) : feed;
+    feedFilter === "following" ? feed.filter((r) => followedUsers.includes(r.user)) : feed;
 
   return (
     <div className="pt-5">
@@ -157,6 +158,8 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+
+      <DiscoverReaders />
     </div>
   );
 }
