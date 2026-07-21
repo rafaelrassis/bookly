@@ -1,14 +1,18 @@
 "use client";
 
 import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
 import { getBook } from "@/data/books";
 import { CLUBS } from "@/data/clubs";
 import { FEED_REVIEWS } from "@/data/feed";
+import { SEED_NOTIFICATIONS } from "@/data/notifications";
 import { FOLLOWED_USERS } from "@/data/users";
+import { withAt } from "@/lib/handle";
 import { nowTime, readingPercent, todayISO } from "@/lib/format";
 import type {
   Club,
   FeedReview,
+  Notification,
   ProgressUnit,
   ShelfEntry,
   ShelfStatus,
@@ -111,6 +115,21 @@ function randomCode(): string {
   return code;
 }
 
+const NOTIFICATION_ACTORS = ["@ana.estante", "@caio_reads", "@leituras.do.vale", "@rafa.books"];
+
+function mockLikeNotification(reviewId: string, bookId: string): Notification {
+  const actor = NOTIFICATION_ACTORS[Math.floor(Math.random() * NOTIFICATION_ACTORS.length)];
+  return {
+    id: `n-${Date.now()}`,
+    kind: "like",
+    actor,
+    reviewId,
+    bookId,
+    read: false,
+    time: new Date().toISOString(),
+  };
+}
+
 function slugify(name: string): string {
   return (
     name
@@ -128,6 +147,8 @@ type Store = {
   clubs: Club[];
   toast: Toast | null;
   theme: Theme;
+  /** true depois que o estado persistido em localStorage é aplicado (client-only). */
+  hasHydrated: boolean;
 
   showToast: (message: string) => void;
   clearToast: () => void;
@@ -162,6 +183,9 @@ type Store = {
   followedUsers: string[];
   toggleFollow: (user: string) => boolean;
 
+  notifications: Notification[];
+  markNotificationsRead: () => void;
+
   addTag: (bookId: string, tag: string) => void;
   removeTag: (bookId: string, tag: string) => void;
   addQuote: (bookId: string, text: string, page?: number) => void;
@@ -186,343 +210,383 @@ type Store = {
   removeBookFromList: (listId: string, bookId: string) => void;
 };
 
-export const useStore = create<Store>()((set, get) => ({
-  user: INITIAL_USER,
-  feed: FEED_REVIEWS,
-  clubs: CLUBS,
-  toast: null,
-  theme: "dark",
-  followedUsers: [...FOLLOWED_USERS],
+export const useStore = create<Store>()(
+  persist(
+    (set, get) => ({
+    user: INITIAL_USER,
+    feed: FEED_REVIEWS,
+    clubs: CLUBS,
+    toast: null,
+    theme: "dark",
+    followedUsers: [...FOLLOWED_USERS],
+    notifications: [...SEED_NOTIFICATIONS],
+    hasHydrated: false,
 
-  showToast: (message) => set({ toast: { id: Date.now(), message } }),
-  clearToast: () => set({ toast: null }),
-  setTheme: (theme) => set({ theme }),
+    showToast: (message) => set({ toast: { id: Date.now(), message } }),
+    clearToast: () => set({ toast: null }),
+    setTheme: (theme) => set({ theme }),
 
-  completeOnboarding: (name, username, bio, genres) =>
-    set((s) => ({ user: { ...s.user, loggedIn: true, name, username, bio, genres } })),
+    completeOnboarding: (name, username, bio, genres) =>
+      set((s) => ({ user: { ...s.user, loggedIn: true, name, username, bio, genres } })),
 
-  logout: () => set((s) => ({ user: { ...s.user, loggedIn: false } })),
+    logout: () =>
+      set({
+        user: { ...INITIAL_USER, loggedIn: false },
+        followedUsers: [...FOLLOWED_USERS],
+        notifications: [...SEED_NOTIFICATIONS],
+      }),
 
-  updateProfile: (username, avatar, bio, top4, avatarImage) =>
-    set((s) => ({
-      user: { ...s.user, username, avatar, bio, top4, avatarImage: avatarImage ?? s.user.avatarImage },
-    })),
+    updateProfile: (username, avatar, bio, top4, avatarImage) =>
+      set((s) => ({
+        user: { ...s.user, username, avatar, bio, top4, avatarImage: avatarImage ?? s.user.avatarImage },
+      })),
 
-  updateEmail: (email) => set((s) => ({ user: { ...s.user, email } })),
-  updatePhone: (phone) => set((s) => ({ user: { ...s.user, phone } })),
+    updateEmail: (email) => set((s) => ({ user: { ...s.user, email } })),
+    updatePhone: (phone) => set((s) => ({ user: { ...s.user, phone } })),
 
-  setShelfStatus: (bookId, status) =>
-    set((s) => {
-      const shelf = { ...s.user.shelf };
-      if (status === null) {
-        delete shelf[bookId];
-      } else {
-        const prev = shelf[bookId];
-        const today = todayISO();
-        if (status === "READING") {
-          shelf[bookId] = {
-            status,
-            currentPage: prev?.currentPage ?? 0,
-            lastPage: prev?.lastPage ?? 0,
-            startedAt: prev?.startedAt ?? today,
+    setShelfStatus: (bookId, status) =>
+      set((s) => {
+        const shelf = { ...s.user.shelf };
+        if (status === null) {
+          delete shelf[bookId];
+        } else {
+          const prev = shelf[bookId];
+          const today = todayISO();
+          if (status === "READING") {
+            shelf[bookId] = {
+              status,
+              currentPage: prev?.currentPage ?? 0,
+              lastPage: prev?.lastPage ?? 0,
+              startedAt: prev?.startedAt ?? today,
+            };
+          } else if (status === "READ") {
+            shelf[bookId] = {
+              status,
+              startedAt: prev?.startedAt ?? today,
+              finishedAt: today,
+            };
+          } else {
+            shelf[bookId] = { status };
+          }
+        }
+        return { user: { ...s.user, shelf } };
+      }),
+
+    setRating: (bookId, rating) => {
+      const markedAsRead = rating > 0 && get().user.shelf[bookId]?.status !== "READ";
+      set((s) => {
+        const ratings = { ...s.user.ratings };
+        const ratingOrder = s.user.ratingOrder.filter((id) => id !== bookId);
+        if (rating <= 0) {
+          delete ratings[bookId];
+          return {
+            user: { ...s.user, ratings, ratingOrder },
+            feed: s.feed.map((r) => (r.id === `me-${bookId}` ? { ...r, rating: 0 } : r)),
           };
-        } else if (status === "READ") {
+        }
+        ratings[bookId] = rating;
+        ratingOrder.unshift(bookId);
+        const shelf = { ...s.user.shelf };
+        const prev = shelf[bookId];
+        if (prev?.status !== "READ") {
+          const today = todayISO();
           shelf[bookId] = {
-            status,
+            status: "READ",
             startedAt: prev?.startedAt ?? today,
             finishedAt: today,
           };
-        } else {
-          shelf[bookId] = { status };
         }
-      }
-      return { user: { ...s.user, shelf } };
-    }),
-
-  setRating: (bookId, rating) => {
-    const markedAsRead = rating > 0 && get().user.shelf[bookId]?.status !== "READ";
-    set((s) => {
-      const ratings = { ...s.user.ratings };
-      const ratingOrder = s.user.ratingOrder.filter((id) => id !== bookId);
-      if (rating <= 0) {
-        delete ratings[bookId];
-        return { user: { ...s.user, ratings, ratingOrder } };
-      }
-      ratings[bookId] = rating;
-      ratingOrder.unshift(bookId);
-      const shelf = { ...s.user.shelf };
-      const prev = shelf[bookId];
-      if (prev?.status !== "READ") {
-        const today = todayISO();
-        shelf[bookId] = {
-          status: "READ",
-          startedAt: prev?.startedAt ?? today,
-          finishedAt: today,
+        return {
+          user: { ...s.user, ratings, ratingOrder, shelf },
+          feed: s.feed.map((r) => (r.id === `me-${bookId}` ? { ...r, rating } : r)),
         };
-      }
-      return { user: { ...s.user, ratings, ratingOrder, shelf } };
-    });
-    return { markedAsRead };
-  },
+      });
+      return { markedAsRead };
+    },
 
-  saveReview: (bookId, text, title) =>
-    set((s) => {
-      const myReviewTitles = { ...s.user.myReviewTitles };
-      if (title && title.trim()) myReviewTitles[bookId] = title.trim();
-      else delete myReviewTitles[bookId];
+    saveReview: (bookId, text, title) =>
+      set((s) => {
+        const myReviewTitles = { ...s.user.myReviewTitles };
+        if (title && title.trim()) myReviewTitles[bookId] = title.trim();
+        else delete myReviewTitles[bookId];
 
-      const id = `me-${bookId}`;
-      const handle = `@${s.user.username}`;
-      const entryShelf = s.user.shelf[bookId];
-      const existing = s.feed.find((r) => r.id === id);
-      const review: FeedReview = {
-        id,
-        user: handle,
-        bookId,
-        rating: s.user.ratings[bookId] ?? 0,
-        title: title?.trim() || undefined,
-        text: text.trim(),
-        startedAt: entryShelf?.startedAt,
-        finishedAt: entryShelf?.finishedAt,
-        likes: existing?.likes ?? 0,
-        comments: existing?.comments ?? [],
-      };
-      const feed = existing
-        ? s.feed.map((r) => (r.id === id ? review : r))
-        : [review, ...s.feed];
+        const id = `me-${bookId}`;
+        const handle = withAt(s.user.username);
+        const entryShelf = s.user.shelf[bookId];
+        const existing = s.feed.find((r) => r.id === id);
+        const review: FeedReview = {
+          id,
+          user: handle,
+          bookId,
+          rating: s.user.ratings[bookId] ?? 0,
+          title: title?.trim() || undefined,
+          text: text.trim(),
+          startedAt: entryShelf?.startedAt,
+          finishedAt: entryShelf?.finishedAt,
+          likes: existing?.likes ?? 0,
+          comments: existing?.comments ?? [],
+        };
+        const feed = existing
+          ? s.feed.map((r) => (r.id === id ? review : r))
+          : [review, ...s.feed];
 
-      return {
-        user: { ...s.user, myReviews: { ...s.user.myReviews, [bookId]: text }, myReviewTitles },
-        feed,
-      };
-    }),
+        const notifications = existing
+          ? s.notifications
+          : [mockLikeNotification(id, bookId), ...s.notifications];
 
-  setProgressUnit: (unit) => set((s) => ({ user: { ...s.user, progressUnit: unit } })),
+        return {
+          user: { ...s.user, myReviews: { ...s.user.myReviews, [bookId]: text }, myReviewTitles },
+          feed,
+          notifications,
+        };
+      }),
 
-  updateProgress: (bookId, page) => {
-    const state = get();
-    const entry: ShelfEntry | undefined = state.user.shelf[bookId];
-    const previous = entry?.currentPage ?? 0;
-    const book = getBook(bookId);
-    const percent = book ? readingPercent(page, book.pages) : 0;
-    const username = state.user.username;
-    set((s) => ({
-      user: {
-        ...s.user,
-        shelf: {
-          ...s.user.shelf,
-          [bookId]: {
-            ...s.user.shelf[bookId],
-            status: "READING",
-            currentPage: page,
-            lastPage: previous,
-            startedAt: s.user.shelf[bookId]?.startedAt ?? todayISO(),
+    setProgressUnit: (unit) => set((s) => ({ user: { ...s.user, progressUnit: unit } })),
+
+    updateProgress: (bookId, page) => {
+      const state = get();
+      const entry: ShelfEntry | undefined = state.user.shelf[bookId];
+      const previous = entry?.currentPage ?? 0;
+      const book = getBook(bookId);
+      const percent = book ? readingPercent(page, book.pages) : 0;
+      const username = state.user.username;
+      set((s) => ({
+        user: {
+          ...s.user,
+          shelf: {
+            ...s.user.shelf,
+            [bookId]: {
+              ...s.user.shelf[bookId],
+              status: "READING",
+              currentPage: page,
+              lastPage: previous,
+              startedAt: s.user.shelf[bookId]?.startedAt ?? todayISO(),
+            },
           },
         },
-      },
-      // notificação de leitura nos murais dos clubes que leem este livro
-      clubs: s.clubs.map((c) =>
-        c.joined && c.bookId === bookId && book
-          ? {
-              ...c,
-              feed: [
-                ...c.feed,
-                {
-                  id: `sys-${Date.now()}-${c.id}`,
-                  user: `@${username}`,
-                  text: `📖 @${username} avançou para ${percent}% de ${book.title}`,
-                  time: nowTime(),
-                  system: true,
-                },
-              ],
-            }
-          : c
-      ),
-    }));
-    return { delta: page - previous };
-  },
-
-  toggleLike: (reviewId) =>
-    set((s) => {
-      const liked = !s.user.likedReviews[reviewId];
-      const likedReviews = { ...s.user.likedReviews };
-      if (liked) likedReviews[reviewId] = true;
-      else delete likedReviews[reviewId];
-      return {
-        user: { ...s.user, likedReviews },
-        feed: s.feed.map((r) =>
-          r.id === reviewId ? { ...r, likes: r.likes + (liked ? 1 : -1) } : r
+        // notificação de leitura nos murais dos clubes que leem este livro
+        clubs: s.clubs.map((c) =>
+          c.joined && c.bookId === bookId && book
+            ? {
+                ...c,
+                feed: [
+                  ...c.feed,
+                  {
+                    id: `sys-${Date.now()}-${c.id}`,
+                    user: withAt(username),
+                    text: `📖 ${withAt(username)} avançou para ${percent}% de ${book.title}`,
+                    time: nowTime(),
+                    system: true,
+                  },
+                ],
+              }
+            : c
         ),
-      };
-    }),
+      }));
+      return { delta: page - previous };
+    },
 
-  addComment: (reviewId, text) =>
-    set((s) => ({
-      feed: s.feed.map((r) =>
-        r.id === reviewId
-          ? { ...r, comments: [...r.comments, { user: `@${s.user.username}`, text }] }
-          : r
-      ),
-    })),
-
-  toggleFollow: (user) => {
-    const following = !get().followedUsers.includes(user);
-    set((s) => ({
-      followedUsers: following
-        ? [...s.followedUsers, user]
-        : s.followedUsers.filter((u) => u !== user),
-    }));
-    return following;
-  },
-
-  addTag: (bookId, tag) =>
-    set((s) => {
-      const current = s.user.bookTags[bookId] ?? [];
-      if (current.includes(tag)) return s;
-      return {
-        user: { ...s.user, bookTags: { ...s.user.bookTags, [bookId]: [...current, tag] } },
-      };
-    }),
-
-  removeTag: (bookId, tag) =>
-    set((s) => {
-      const remaining = (s.user.bookTags[bookId] ?? []).filter((t) => t !== tag);
-      const bookTags = { ...s.user.bookTags };
-      if (remaining.length > 0) bookTags[bookId] = remaining;
-      else delete bookTags[bookId];
-      return { user: { ...s.user, bookTags } };
-    }),
-
-  addQuote: (bookId, text, page) =>
-    set((s) => ({
-      user: {
-        ...s.user,
-        quotes: {
-          ...s.user.quotes,
-          [bookId]: [...(s.user.quotes[bookId] ?? []), { text, page }],
-        },
-      },
-    })),
-
-  toggleClub: (clubId) => {
-    const joined = !get().clubs.find((c) => c.id === clubId)?.joined;
-    set((s) => ({
-      clubs: s.clubs.map((c) =>
-        c.id === clubId ? { ...c, joined, members: c.members + (joined ? 1 : -1) } : c
-      ),
-    }));
-    return { joined };
-  },
-
-  createClub: (name, bookId, desc, visibility) => {
-    const id = `${slugify(name)}-${Date.now().toString(36)}`;
-    const code = visibility === "private" ? randomCode() : undefined;
-    const creator = `@${get().user.username}`;
-    const club: Club = {
-      id,
-      name,
-      bookId,
-      desc,
-      visibility,
-      code,
-      members: 1,
-      joined: true,
-      feed: [],
-      memberProgress: {},
-      creator,
-    };
-    set((s) => ({ clubs: [...s.clubs, club] }));
-    return { id, code };
-  },
-
-  joinClubByCode: (code) => {
-    const normalized = code.trim().toUpperCase();
-    const club = get().clubs.find((c) => c.code === normalized);
-    if (!club) return null;
-    if (club.joined) return "already";
-    set((s) => ({
-      clubs: s.clubs.map((c) =>
-        c.id === club.id ? { ...c, joined: true, members: c.members + 1 } : c
-      ),
-    }));
-    return club.id;
-  },
-
-  postToClub: (clubId, text, replyTo) =>
-    set((s) => ({
-      clubs: s.clubs.map((c) =>
-        c.id === clubId
-          ? {
-              ...c,
-              feed: [
-                ...c.feed,
-                {
-                  id: `msg-${Date.now()}`,
-                  user: `@${s.user.username}`,
-                  text,
-                  time: nowTime(),
-                  replyTo,
-                },
-              ],
-            }
-          : c
-      ),
-    })),
-
-  updateClub: (clubId, name, bookId, desc) =>
-    set((s) => ({
-      clubs: s.clubs.map((c) => (c.id === clubId ? { ...c, name, bookId, desc } : c)),
-    })),
-
-  removeClubMember: (clubId, member) =>
-    set((s) => ({
-      clubs: s.clubs.map((c) => {
-        if (c.id !== clubId) return c;
-        const memberProgress = { ...c.memberProgress };
-        delete memberProgress[member];
-        return { ...c, memberProgress, members: Math.max(0, c.members - 1) };
+    toggleLike: (reviewId) =>
+      set((s) => {
+        const liked = !s.user.likedReviews[reviewId];
+        const likedReviews = { ...s.user.likedReviews };
+        if (liked) likedReviews[reviewId] = true;
+        else delete likedReviews[reviewId];
+        return {
+          user: { ...s.user, likedReviews },
+          feed: s.feed.map((r) =>
+            r.id === reviewId ? { ...r, likes: r.likes + (liked ? 1 : -1) } : r
+          ),
+        };
       }),
-    })),
 
-  createList: (name, visibility) => {
-    const id = `${slugify(name)}-${Date.now().toString(36)}`;
-    set((s) => ({
-      user: { ...s.user, lists: [...s.user.lists, { id, name, visibility, bookIds: [] }] },
-    }));
-    return id;
-  },
-
-  toggleListVisibility: (listId) =>
-    set((s) => ({
-      user: {
-        ...s.user,
-        lists: s.user.lists.map((l) =>
-          l.id === listId
-            ? { ...l, visibility: l.visibility === "public" ? "private" : "public" }
-            : l
+    addComment: (reviewId, text) =>
+      set((s) => ({
+        feed: s.feed.map((r) =>
+          r.id === reviewId
+            ? { ...r, comments: [...r.comments, { user: withAt(s.user.username), text }] }
+            : r
         ),
-      },
-    })),
+      })),
 
-  addBooksToList: (listId, bookIds) =>
-    set((s) => ({
-      user: {
-        ...s.user,
-        lists: s.user.lists.map((l) =>
-          l.id === listId
-            ? { ...l, bookIds: [...l.bookIds, ...bookIds.filter((id) => !l.bookIds.includes(id))] }
-            : l
-        ),
-      },
-    })),
+    toggleFollow: (user) => {
+      const following = !get().followedUsers.includes(user);
+      set((s) => ({
+        followedUsers: following
+          ? [...s.followedUsers, user]
+          : s.followedUsers.filter((u) => u !== user),
+      }));
+      return following;
+    },
 
-  removeBookFromList: (listId, bookId) =>
-    set((s) => ({
-      user: {
-        ...s.user,
-        lists: s.user.lists.map((l) =>
-          l.id === listId ? { ...l, bookIds: l.bookIds.filter((id) => id !== bookId) } : l
+    markNotificationsRead: () =>
+      set((s) => ({ notifications: s.notifications.map((n) => ({ ...n, read: true })) })),
+
+    addTag: (bookId, tag) =>
+      set((s) => {
+        const current = s.user.bookTags[bookId] ?? [];
+        if (current.includes(tag)) return s;
+        return {
+          user: { ...s.user, bookTags: { ...s.user.bookTags, [bookId]: [...current, tag] } },
+        };
+      }),
+
+    removeTag: (bookId, tag) =>
+      set((s) => {
+        const remaining = (s.user.bookTags[bookId] ?? []).filter((t) => t !== tag);
+        const bookTags = { ...s.user.bookTags };
+        if (remaining.length > 0) bookTags[bookId] = remaining;
+        else delete bookTags[bookId];
+        return { user: { ...s.user, bookTags } };
+      }),
+
+    addQuote: (bookId, text, page) =>
+      set((s) => ({
+        user: {
+          ...s.user,
+          quotes: {
+            ...s.user.quotes,
+            [bookId]: [...(s.user.quotes[bookId] ?? []), { text, page }],
+          },
+        },
+      })),
+
+    toggleClub: (clubId) => {
+      const joined = !get().clubs.find((c) => c.id === clubId)?.joined;
+      set((s) => ({
+        clubs: s.clubs.map((c) =>
+          c.id === clubId ? { ...c, joined, members: c.members + (joined ? 1 : -1) } : c
         ),
-      },
-    })),
-}));
+      }));
+      return { joined };
+    },
+
+    createClub: (name, bookId, desc, visibility) => {
+      const id = `${slugify(name)}-${Date.now().toString(36)}`;
+      const code = visibility === "private" ? randomCode() : undefined;
+      const creator = withAt(get().user.username);
+      const club: Club = {
+        id,
+        name,
+        bookId,
+        desc,
+        visibility,
+        code,
+        members: 1,
+        joined: true,
+        feed: [],
+        memberProgress: {},
+        creator,
+      };
+      set((s) => ({ clubs: [...s.clubs, club] }));
+      return { id, code };
+    },
+
+    joinClubByCode: (code) => {
+      const normalized = code.trim().toUpperCase();
+      const club = get().clubs.find((c) => c.code === normalized);
+      if (!club) return null;
+      if (club.joined) return "already";
+      set((s) => ({
+        clubs: s.clubs.map((c) =>
+          c.id === club.id ? { ...c, joined: true, members: c.members + 1 } : c
+        ),
+      }));
+      return club.id;
+    },
+
+    postToClub: (clubId, text, replyTo) =>
+      set((s) => ({
+        clubs: s.clubs.map((c) =>
+          c.id === clubId
+            ? {
+                ...c,
+                feed: [
+                  ...c.feed,
+                  {
+                    id: `msg-${Date.now()}`,
+                    user: withAt(s.user.username),
+                    text,
+                    time: nowTime(),
+                    replyTo,
+                  },
+                ],
+              }
+            : c
+        ),
+      })),
+
+    updateClub: (clubId, name, bookId, desc) =>
+      set((s) => ({
+        clubs: s.clubs.map((c) => (c.id === clubId ? { ...c, name, bookId, desc } : c)),
+      })),
+
+    removeClubMember: (clubId, member) =>
+      set((s) => ({
+        clubs: s.clubs.map((c) => {
+          if (c.id !== clubId) return c;
+          const memberProgress = { ...c.memberProgress };
+          delete memberProgress[member];
+          return { ...c, memberProgress, members: Math.max(0, c.members - 1) };
+        }),
+      })),
+
+    createList: (name, visibility) => {
+      const id = `${slugify(name)}-${Date.now().toString(36)}`;
+      set((s) => ({
+        user: { ...s.user, lists: [...s.user.lists, { id, name, visibility, bookIds: [] }] },
+      }));
+      return id;
+    },
+
+    toggleListVisibility: (listId) =>
+      set((s) => ({
+        user: {
+          ...s.user,
+          lists: s.user.lists.map((l) =>
+            l.id === listId
+              ? { ...l, visibility: l.visibility === "public" ? "private" : "public" }
+              : l
+          ),
+        },
+      })),
+
+    addBooksToList: (listId, bookIds) =>
+      set((s) => ({
+        user: {
+          ...s.user,
+          lists: s.user.lists.map((l) =>
+            l.id === listId
+              ? { ...l, bookIds: [...l.bookIds, ...bookIds.filter((id) => !l.bookIds.includes(id))] }
+              : l
+          ),
+        },
+      })),
+
+    removeBookFromList: (listId, bookId) =>
+      set((s) => ({
+        user: {
+          ...s.user,
+          lists: s.user.lists.map((l) =>
+            l.id === listId ? { ...l, bookIds: l.bookIds.filter((id) => id !== bookId) } : l
+          ),
+        },
+      })),
+  }),
+  {
+    name: "bookly-v5",
+    version: 1,
+    storage: createJSONStorage(() => localStorage),
+    // não persistir estado efêmero
+    partialize: (s) => ({
+      user: s.user,
+      feed: s.feed,
+      clubs: s.clubs,
+      followedUsers: s.followedUsers,
+      notifications: s.notifications,
+      theme: s.theme,
+    }),
+    skipHydration: true,
+  }
+  )
+);

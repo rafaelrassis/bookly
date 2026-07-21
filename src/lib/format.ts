@@ -44,6 +44,13 @@ export function readingDates(startedAt?: string, finishedAt?: string): string | 
   return null;
 }
 
+/** Data e hora curtas pt-BR para notificações ("20 jul, 18:10"). */
+export function formatNotificationTime(iso: string): string {
+  const d = new Date(iso);
+  const time = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  return `${formatShortDate(iso)}, ${time}`;
+}
+
 /** Data de hoje em ISO (YYYY-MM-DD). */
 export function todayISO(): string {
   return new Date().toISOString().slice(0, 10);

@@ -2,7 +2,7 @@
 
 Web app de avaliação e review de livros — um "Letterboxd de livros".
 
-**Protótipo v3 (dados mocados):** todo o frontend com estado em memória — sem banco, sem auth real, sem API externa. **Os dados não persistem após refresh**; isso é esperado nesta fase.
+**Protótipo v5 (dados mocados):** todo o frontend com estado em memória — sem banco, sem auth real, sem API externa. **Estado persiste localmente via `localStorage`**; use *Limpar dados de demonstração* em Configurações para resetar ao seed.
 
 📄 Especificação completa do produto (visão, fluxos, modelos de dados, roadmap, stack alvo): [`docs/ESPECIFICACAO.md`](docs/ESPECIFICACAO.md).
 

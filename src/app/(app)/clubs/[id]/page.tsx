@@ -9,6 +9,7 @@ import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
 import { CopyIcon, LockIcon } from "@/components/icons";
 import { SectionTitle } from "@/components/SectionTitle";
+import { withAt, withoutAt } from "@/lib/handle";
 import { readingPercent } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import type { ClubMessage } from "@/lib/types";
@@ -195,7 +196,7 @@ export default function ClubPage({ params }: { params: { id: string } }) {
   if (!club) notFound();
 
   const book = getBook(club.bookId);
-  const me = `@${user.username}`;
+  const me = withAt(user.username);
   const isOwner = club.creator === me;
 
   // membros conhecidos: progresso mocado + usuário logado com progresso real
@@ -461,9 +462,13 @@ export default function ClubPage({ params }: { params: { id: string } }) {
         <div className="mt-3 flex flex-col gap-2.5 rounded-2xl border border-line bg-card p-4">
           {memberRows.map(({ user: memberUser, percent }) => {
             const isMe = memberUser === me;
-            const href = isMe ? "/profile" : `/u/${memberUser.replace("@", "")}`;
+            const href = isMe ? "/profile" : `/u/${withoutAt(memberUser)}`;
             return (
-              <Link key={memberUser} href={href} className="flex items-center gap-3">
+              <Link
+                key={memberUser}
+                href={href}
+                className="flex min-h-11 items-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foil focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+              >
                 <Avatar user={memberUser} size={28} />
                 <div className="min-w-0 flex-1">
                   <p className="flex items-baseline justify-between text-xs">

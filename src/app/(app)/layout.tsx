@@ -8,12 +8,15 @@ import { useStore } from "@/lib/store";
 
 /** Rotas logadas: redireciona para a landing quando não há sessão. */
 export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const hasHydrated = useStore((s) => s.hasHydrated);
   const loggedIn = useStore((s) => s.user.loggedIn);
   const router = useRouter();
 
   useEffect(() => {
-    if (!loggedIn) router.replace("/");
-  }, [loggedIn, router]);
+    // só decide depois que o estado persistido é aplicado — senão o valor
+    // padrão (deslogado) de antes da reidratação chuta a sessão pra fora.
+    if (hasHydrated && !loggedIn) router.replace("/");
+  }, [hasHydrated, loggedIn, router]);
 
   if (!loggedIn) return null;
 

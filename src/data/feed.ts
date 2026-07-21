@@ -3,6 +3,17 @@ import type { FeedReview } from "@/lib/types";
 /** Reviews do feed social (mock). */
 export const FEED_REVIEWS: FeedReview[] = [
   {
+    id: "me-1984",
+    user: "@mari.leituras",
+    bookId: "1984",
+    rating: 4.5,
+    text: "Sufocante no melhor sentido. Cada releitura fica mais atual, e isso é o que assusta.",
+    startedAt: "2026-06-04",
+    finishedAt: "2026-06-18",
+    likes: 0,
+    comments: [],
+  },
+  {
     id: "fr1",
     user: "@ana.estante",
     bookId: "torto-arado",

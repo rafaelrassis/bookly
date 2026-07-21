@@ -79,6 +79,17 @@ export type UserList = {
 
 export type ProgressUnit = "pages" | "percent";
 
+export type Notification = {
+  id: string;
+  kind: "like" | "comment" | "follow";
+  actor: string;
+  reviewId?: string;
+  bookId?: string;
+  text?: string;
+  read: boolean;
+  time: string;
+};
+
 export type UserState = {
   loggedIn: boolean;
   name: string;

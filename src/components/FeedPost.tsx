@@ -6,6 +6,7 @@ import { getBook } from "@/data/books";
 import { Avatar } from "@/components/Avatar";
 import { BookCover } from "@/components/BookCover";
 import { Stars } from "@/components/Stars";
+import { withAt, withoutAt } from "@/lib/handle";
 import { useStore } from "@/lib/store";
 import type { FeedReview } from "@/lib/types";
 
@@ -70,12 +71,12 @@ export function FeedPost({ review }: { review: FeedReview }) {
   return (
     <article className="border-b border-line py-4">
       <div className="flex gap-3">
-        <Link href={`/u/${review.user.replace("@", "")}`} aria-label={review.user} className="rounded-full">
+        <Link href={`/u/${withoutAt(review.user)}`} aria-label={review.user} className="rounded-full">
           <Avatar user={review.user} />
         </Link>
         <div className="min-w-0 flex-1">
           <p className="text-sm leading-snug">
-            <Link href={`/u/${review.user.replace("@", "")}`} className="font-bold hover:text-foil">
+            <Link href={`/u/${withoutAt(review.user)}`} className="font-bold hover:text-foil">
               {review.user}
             </Link>{" "}
             <span className="text-paperDim">avaliou</span>{" "}
@@ -88,7 +89,10 @@ export function FeedPost({ review }: { review: FeedReview }) {
             <span className="text-paperDim">·</span>{" "}
             <Stars rating={review.rating} className="text-xs" />
           </p>
-          <Link href={`/review/${review.id}`} className="mt-1.5 block">
+          <Link
+            href={`/review/${review.id}`}
+            className="mt-1.5 block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foil focus-visible:ring-offset-2 focus-visible:ring-offset-leather"
+          >
             {review.title && (
               <span className="block font-display text-base font-bold leading-snug text-paper">
                 {review.title}
@@ -132,12 +136,12 @@ export function FeedPost({ review }: { review: FeedReview }) {
         <div className="ml-12 mt-3 flex flex-col gap-3">
           {review.comments.map((comment, i) => (
             <div key={i} className="flex gap-2.5">
-              <Link href={`/u/${comment.user.replace("@", "")}`} aria-label={comment.user}>
+              <Link href={`/u/${withoutAt(comment.user)}`} aria-label={comment.user}>
                 <Avatar user={comment.user} size={26} />
               </Link>
               <p className="min-w-0 text-sm text-paperDim">
                 <Link
-                  href={`/u/${comment.user.replace("@", "")}`}
+                  href={`/u/${withoutAt(comment.user)}`}
                   className="font-bold text-paper hover:text-foil"
                 >
                   {comment.user}
@@ -147,7 +151,7 @@ export function FeedPost({ review }: { review: FeedReview }) {
             </div>
           ))}
           <div className="flex items-center gap-2">
-            <Avatar user={`@${username}`} size={26} />
+            <Avatar user={withAt(username)} size={26} />
             <input
               type="text"
               value={draft}

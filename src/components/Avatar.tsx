@@ -1,6 +1,7 @@
 "use client";
 
 import { AVATAR_CHOICES, avatarGradient } from "@/data/users";
+import { withAt, withoutAt } from "@/lib/handle";
 import { useStore } from "@/lib/store";
 
 type AvatarProps = {
@@ -17,8 +18,8 @@ export function Avatar({ user, size = 36, className = "" }: AvatarProps) {
   const myAvatar = useStore((s) => s.user.avatar);
   const myAvatarImage = useStore((s) => s.user.avatarImage);
 
-  const isMe = user === `@${username}`;
-  const initial = user.replace("@", "").charAt(0).toUpperCase();
+  const isMe = user === withAt(username);
+  const initial = withoutAt(user).charAt(0).toUpperCase();
 
   if (isMe && myAvatarImage) {
     return (

@@ -2,8 +2,14 @@
 
 import { useMemo } from "react";
 import { BOOKS, getBook } from "@/data/books";
-import type { Book, ShelfEntry, ShelfStatus } from "@/lib/types";
+import type { Book, FeedReview, ShelfEntry, ShelfStatus } from "@/lib/types";
 import { useStore } from "./index";
+
+/** Resolve um id de review (comunidade ou própria "me-<bookId>").
+ * Ponto único de troca quando reviews e feed virarem endpoints separados. */
+export function useReview(id: string): FeedReview | undefined {
+  return useStore((s) => s.feed.find((r) => r.id === id));
+}
 
 export type ShelfBook = { book: Book; entry: ShelfEntry };
 

@@ -7,6 +7,7 @@ import { getBook } from "@/data/books";
 import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
 import { SectionTitle } from "@/components/SectionTitle";
+import { withoutAt } from "@/lib/handle";
 import { useStore } from "@/lib/store";
 
 export default function EditProfilePage() {
@@ -58,7 +59,7 @@ export default function EditProfilePage() {
   }
 
   function save() {
-    const name = username.trim().replace(/^@/, "");
+    const name = withoutAt(username.trim());
     if (!name) {
       showToast("Escolha um nome de usuário");
       return;
@@ -78,6 +79,7 @@ export default function EditProfilePage() {
         <SectionTitle>Foto</SectionTitle>
         <div className="mt-3 flex items-center gap-4">
           {avatarImage ? (
+            // eslint-disable-next-line @next/next/no-img-element -- preview de data URL local, next/image não se aplica
             <img
               src={avatarImage}
               alt=""
