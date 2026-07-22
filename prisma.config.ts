@@ -10,6 +10,9 @@ export default defineConfig({
     seed: "npx tsx prisma/seed.ts",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    // migrate/introspect precisam de conexão direta — a pooler do Neon
+    // (usada em runtime via DATABASE_URL) não suporta os advisory locks
+    // que o Prisma Migrate usa.
+    url: process.env["DIRECT_URL"] ?? process.env["DATABASE_URL"],
   },
 });
