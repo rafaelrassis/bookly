@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { BookCover } from "@/components/BookCover";
 import { Logo } from "@/components/Logo";
 import { SectionTitle } from "@/components/SectionTitle";
-import { topBooks } from "@/lib/store/hooks";
+import { useTopBooks } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
 
 const FEATURES = [
@@ -35,6 +35,7 @@ const FEATURES = [
 export default function LandingPage() {
   const loggedIn = useStore((s) => s.user.loggedIn);
   const router = useRouter();
+  const topBooks = useTopBooks(4);
 
   useEffect(() => {
     if (loggedIn) router.replace("/home");
@@ -71,7 +72,7 @@ export default function LandingPage() {
       <section className="mt-10">
         <SectionTitle>Top livros do mês</SectionTitle>
         <div className="no-scrollbar -mx-5 mt-3 flex gap-3 overflow-x-auto px-5">
-          {topBooks(4).map((book) => (
+          {topBooks.map((book) => (
             <BookCover key={book.id} book={book} width={96} />
           ))}
         </div>

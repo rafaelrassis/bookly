@@ -8,7 +8,7 @@ import { FeedPost } from "@/components/FeedPost";
 import { Logo } from "@/components/Logo";
 import { SectionTitle } from "@/components/SectionTitle";
 import { readingPercent } from "@/lib/format";
-import { trendingBooks, useFeed } from "@/lib/store/hooks";
+import { useFeed, useTrendingBooks } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
 import type { Book, ShelfEntry } from "@/lib/types";
 
@@ -103,6 +103,7 @@ export default function HomePage() {
   const [feedFilter, setFeedFilter] = useState<"all" | "following">("all");
   const { items: feed, loading: feedLoading, hasMore, loadingMore, loadMore, fellBackToAll } =
     useFeed(feedFilter);
+  const trending = useTrendingBooks(5);
 
   useEffect(() => {
     fetch("/api/shelf?status=READING")
@@ -154,7 +155,7 @@ export default function HomePage() {
       <section className="mt-7">
         <SectionTitle>Em alta esta semana</SectionTitle>
         <div className="no-scrollbar -mx-5 mt-3 flex gap-3 overflow-x-auto px-5">
-          {trendingBooks(5).map((book) => (
+          {trending.map((book) => (
             <Link key={book.id} href={`/book/${book.id}`} aria-label={book.title} className="rounded-md">
               <BookCover book={book} width={96} />
             </Link>

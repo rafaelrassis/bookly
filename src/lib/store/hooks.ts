@@ -127,12 +127,30 @@ export function useRecommendations(limit = 4): Book[] {
   }, [genres, shelfIds, limit]);
 }
 
-/** Livros "em alta": os mais avaliados pela comunidade mocada. */
-export function trendingBooks(limit = 5): Book[] {
-  return [...BOOKS].sort((a, b) => b.count - a.count).slice(0, limit);
+/** Livros "em alta": os mais avaliados (contagem real de reviews, vinda do banco). */
+export function useTrendingBooks(limit = 5): Book[] {
+  return useBooksBySort("trending", limit);
 }
 
-/** Melhores avaliados — "Top livros do mês" da landing. */
-export function topBooks(limit = 4): Book[] {
-  return [...BOOKS].sort((a, b) => b.avg - a.avg).slice(0, limit);
+/** Melhores avaliados — "Top livros do mês" da landing (avg real, vindo do banco). */
+export function useTopBooks(limit = 4): Book[] {
+  return useBooksBySort("top", limit);
+}
+
+function useBooksBySort(sort: "trending" | "top", limit: number): Book[] {
+  const [books, setBooks] = useState<Book[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/books?sort=${sort}&limit=${limit}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data) setBooks(data.items);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [sort, limit]);
+
+  return books;
 }

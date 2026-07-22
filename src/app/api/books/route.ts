@@ -10,8 +10,22 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const q = url.searchParams.get("q")?.trim() ?? "";
   const cursor = url.searchParams.get("cursor") ?? undefined;
+  const sort = url.searchParams.get("sort");
 
-  if (!q) return NextResponse.json({ items: [], nextCursor: null });
+  if (!q) {
+    if (sort === "trending" || sort === "top") {
+      const limit = Math.min(Number(url.searchParams.get("limit")) || 5, PAGE_SIZE);
+      const books = await db.book.findMany({
+        orderBy:
+          sort === "trending"
+            ? [{ count: "desc" }, { avg: "desc" }]
+            : [{ avg: "desc" }, { count: "desc" }],
+        take: limit,
+      });
+      return NextResponse.json({ items: books.map(serializeBook), nextCursor: null });
+    }
+    return NextResponse.json({ items: [], nextCursor: null });
+  }
 
   const books = await db.book.findMany({
     where: { OR: [{ title: { contains: q, mode: "insensitive" } }, { authors: { contains: q, mode: "insensitive" } }] },
