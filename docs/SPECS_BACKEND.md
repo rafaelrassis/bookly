@@ -317,6 +317,8 @@ model VerificationCode {
 }
 ```
 
+> Os quatro enums são **enums Postgres reais** (não texto+Zod). `ShelfStatus` já nasceu assim; `Visibility`/`ProgressUnit`/`VerificationType` foram migrados no Patch 1c. Validação passa a existir no banco, não só na API.
+
 ---
 
 ## Setup (comandos)
@@ -348,15 +350,14 @@ npx prisma db seed
 
 Reaproveitar os arrays de `src/data` — sem redigitar dados:
 
-1. **Books** → de `src/data/books`. `gradient: [a,b]` vira `gradientFrom/gradientTo`. `avg`/`count` entram como 0 e são recalculados no passo 5.
-2. **Usuário Marina** (`INITIAL_USER`) → cria `User` com `passwordHash` de uma senha dev (ex.: `bcrypt("bookly123")`). `email`/`username` do mock.
-   - `shelf` (map) → linhas `ShelfEntry`.
-   - `ratings` + `myReviews` → merge em `Review` (rating obrigatório; text quando existir).
-   - `bookTags`, `quotes`, `lists` → seus models.
+1. **Books** → de `src/data/books`. `gradient: [a,b]` vira `gradientFrom/gradientTo`. `avg`/`count` entram como **0** e são **recalculados no passo final** a partir dos `Review` semeados (fórmula da Spec 3a). Os números decorativos de `src/data/books.ts` são **ignorados** no seed — não representam dados reais.
+2. **Community users (6)** de `src/data/users` → `User` reais com `passwordHash` dev; suas reviews (`FEED_REVIEWS`) + comments + likes. São a fonte do feed.
+
+   **Usuário demo (`@demo`)** — conta logável de dev/QA (`demo@bookly.dev` / `bookly123`, `emailVerified`). Recebe estante (1 READING + 1 READ), 1 review, 1 clube público (como criador) e 1 mensagem. **Não** é a Marina: o `INITIAL_USER` do store é apenas placeholder de UI pré-login e **não** é semeado.
 3. **Demais usuários** de `src/data/users` (autores do feed/comentários referenciados por `@username`) → criar como `User` para as FKs fecharem.
 4. **Feed** (`FEED_REVIEWS`) → `Review` + `Comment` + `ReviewLike` (de `likedReviews`).
 5. **Clubs** (`src/data/clubs`) → `Club` + `ClubMember` (com `memberProgress`→`progress`) + `Message` (de `feed[]`, `system` e `replyTo` mapeados).
-6. **Recalcular cache**: para cada livro, `avg`/`count` a partir dos `Review`.
+6. **Recalcular cache**: para cada livro, `avg`/`count` a partir dos `Review`. Este passo deixa de ser opcional — é o que dá verdade a `avg`/`count`.
 
 > Ponto de atenção do seed: no store os autores do feed são strings `@username`. O seed precisa **resolver username→userId**; qualquer username citado que não exista em `src/data/users` tem que virar um User stub, senão a FK quebra. Vou checar isso ao escrever o seed.
 
@@ -366,7 +367,9 @@ Reaproveitar os arrays de `src/data` — sem redigitar dados:
 
 - [ ] `npx prisma migrate dev` roda limpo.
 - [ ] `npx prisma db seed` popula sem erro de FK.
-- [ ] `npx prisma studio` mostra Marina com estante, reviews, listas e ao menos 1 clube com mensagens.
+- [ ] `npx prisma studio` mostra `@demo` logável com estante (1 READING + 1 READ), 1 review, e 1 clube público com mensagem.
+- [ ] Os 6 community users existem com suas reviews (fonte do feed).
+- [ ] Nenhum registro "Marina/INITIAL_USER" foi semeado (é placeholder de UI).
 - [ ] `avg`/`count` dos livros batem com os ratings semeados.
 - [ ] Client Prisma gerado e importável em `src/lib/db.ts` (singleton).
 
