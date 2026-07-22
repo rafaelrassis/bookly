@@ -2,50 +2,44 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { BOOKS } from "@/data/books";
 import { BackHeader } from "@/components/BackHeader";
-import { BookCover } from "@/components/BookCover";
+import { BookPicker } from "@/components/BookPicker";
 import { LockIcon } from "@/components/icons";
 import { SectionTitle } from "@/components/SectionTitle";
 import { useStore } from "@/lib/store";
-import type { Visibility } from "@/lib/types";
-
-/** Busca case-insensitive; acentos também são ignorados. */
-function normalize(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
+import type { Book, Visibility } from "@/lib/types";
 
 export default function NewClubPage() {
-  const createClub = useStore((s) => s.createClub);
   const showToast = useStore((s) => s.showToast);
   const router = useRouter();
 
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [visibility, setVisibility] = useState<Visibility>("public");
-  const [bookQuery, setBookQuery] = useState("");
-  const [bookId, setBookId] = useState<string | null>(null);
+  const [book, setBook] = useState<Book | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  const q = normalize(bookQuery.trim());
-  const bookResults = q
-    ? BOOKS.filter(
-        (b) => normalize(b.title).includes(q) || normalize(b.authors).includes(q)
-      )
-    : BOOKS;
-  const selectedBook = BOOKS.find((b) => b.id === bookId);
+  const valid = name.trim().length > 0 && book !== null;
 
-  const valid = name.trim().length > 0 && bookId !== null;
-
-  function create() {
-    if (!valid || !bookId) return;
-    const { id, code } = createClub(name.trim(), bookId, desc.trim(), visibility);
-    showToast(
-      visibility === "private" ? `Clube criado! Código: ${code}` : "Clube criado! 🎉"
-    );
-    router.push(`/clubs/${id}`);
+  async function create() {
+    if (!valid || !book || saving) return;
+    setSaving(true);
+    try {
+      const res = await fetch("/api/clubs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), bookId: book.id, desc: desc.trim(), visibility }),
+      });
+      if (!res.ok) {
+        showToast("Não foi possível criar o clube");
+        return;
+      }
+      const { id, code } = await res.json();
+      showToast(visibility === "private" ? `Clube criado! Código: ${code}` : "Clube criado! 🎉");
+      router.push(`/clubs/${id}`);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -79,56 +73,9 @@ export default function NewClubPage() {
 
       <section className="mt-6">
         <SectionTitle>Leitura do clube</SectionTitle>
-        {selectedBook ? (
-          <div className="mt-3 flex items-center gap-3 rounded-2xl border border-foil/40 bg-card p-3">
-            <BookCover book={selectedBook} width={40} />
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-display text-sm font-bold">{selectedBook.title}</p>
-              <p className="truncate text-xs text-paperDim">{selectedBook.authors}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setBookId(null)}
-              className="rounded-full px-2 text-sm text-paperDim hover:text-ribbon"
-              aria-label="Trocar livro"
-            >
-              ✕
-            </button>
-          </div>
-        ) : (
-          <>
-            <input
-              type="search"
-              value={bookQuery}
-              onChange={(e) => setBookQuery(e.target.value)}
-              placeholder="Buscar no catálogo…"
-              aria-label="Buscar livro para o clube"
-              className="mt-3 w-full rounded-xl border border-line bg-card px-4 py-2.5 text-sm text-paper placeholder:text-paperDim/60"
-            />
-            <div className="mt-2 max-h-56 overflow-y-auto rounded-2xl border border-line bg-card">
-              {bookResults.length === 0 ? (
-                <p className="p-4 text-sm text-paperDim">Nenhum livro encontrado.</p>
-              ) : (
-                bookResults.map((book) => (
-                  <button
-                    key={book.id}
-                    type="button"
-                    onClick={() => setBookId(book.id)}
-                    className="flex w-full items-center gap-3 border-b border-line px-3 py-2.5 text-left last:border-b-0 hover:bg-card2"
-                  >
-                    <BookCover book={book} width={32} />
-                    <span className="min-w-0">
-                      <span className="block truncate font-display text-sm font-bold">
-                        {book.title}
-                      </span>
-                      <span className="block truncate text-xs text-paperDim">{book.authors}</span>
-                    </span>
-                  </button>
-                ))
-              )}
-            </div>
-          </>
-        )}
+        <div className="mt-3">
+          <BookPicker selected={book} onSelect={setBook} onClear={() => setBook(null)} />
+        </div>
       </section>
 
       <section className="mt-6">
@@ -166,7 +113,7 @@ export default function NewClubPage() {
       <button
         type="button"
         onClick={create}
-        disabled={!valid}
+        disabled={!valid || saving}
         className="mb-4 mt-8 w-full rounded-xl bg-foil px-5 py-3.5 font-bold text-leather transition-opacity hover:opacity-90 disabled:opacity-40"
       >
         Criar clube

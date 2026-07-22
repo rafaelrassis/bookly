@@ -56,9 +56,9 @@ export function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-/** Hora atual "HH:mm" para as mensagens do chat. */
-export function nowTime(): string {
-  return new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+/** Hora "HH:mm" de um ISO, pro mural do clube. */
+export function formatClockTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 }
 
 /** Código de verificação numérico de 6 dígitos (mock — sem envio real). */

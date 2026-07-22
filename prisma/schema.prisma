@@ -1,5 +1,5 @@
-// Prisma schema — auth (Spec 0/1), perfil (Spec 2) e catálogo/estante/reviews
-// (Spec 3a). Club/Message ficam para a Spec 4.
+// Prisma schema — auth (Spec 0/1), perfil (Spec 2), catálogo/estante/reviews
+// (Spec 3a) e clubes/chat (Spec 4).
 
 generator client {
   provider = "prisma-client"
@@ -35,6 +35,10 @@ model User {
   reviews      Review[]
   bookTags     BookTag[]
   quotes       Quote[]
+
+  createdClubs Club[]       @relation("clubCreator")
+  clubMembers  ClubMember[]
+  messages     Message[]
 }
 
 model Follow {
@@ -89,6 +93,7 @@ model Book {
   reviews      Review[]
   tags         BookTag[]
   quotes       Quote[]
+  clubs        Club[]
 
   @@index([genre])
 }
@@ -155,4 +160,58 @@ model Quote {
   createdAt DateTime @default(now())
 
   @@index([userId, bookId])
+}
+
+/// Clube do livro (Spec 4). `visibility`: "public" | "private". `code`
+/// (6 chars, só privados) é único e visível apenas ao criador.
+model Club {
+  id         String   @id @default(cuid())
+  name       String   @db.VarChar(80)
+  desc       String   @default("") @db.VarChar(500)
+  visibility String
+  code       String?  @unique
+  bookId     String
+  book       Book     @relation(fields: [bookId], references: [id])
+  creatorId  String
+  creator    User     @relation("clubCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  members  ClubMember[]
+  messages Message[]
+}
+
+/// Vínculo de membro; `progress` guarda o último percentual publicado no
+/// mural (para detectar mudança e emitir a mensagem de sistema uma só vez).
+model ClubMember {
+  id       String   @id @default(cuid())
+  clubId   String
+  club     Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// "creator" | "member"
+  role     String   @default("member")
+  progress Int?
+  joinedAt DateTime @default(now())
+
+  @@unique([clubId, userId])
+  @@index([userId])
+}
+
+/// Mural em formato de chat. `system` marca mensagens automáticas de
+/// progresso; `replyTo` é a citação de outra mensagem do mesmo clube.
+model Message {
+  id        String    @id @default(cuid())
+  clubId    String
+  club      Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text      String    @db.VarChar(500)
+  system    Boolean   @default(false)
+  replyToId String?
+  replyTo   Message?  @relation("messageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies   Message[] @relation("messageReplies")
+  createdAt DateTime  @default(now())
+
+  @@index([clubId, createdAt])
 }

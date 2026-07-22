@@ -35,27 +35,48 @@ export type Visibility = "public" | "private";
 export type ClubMessage = {
   id: string;
   user: string;
+  name: string;
+  avatar: number;
   text: string;
   time: string;
   system?: boolean;
-  replyTo?: { user: string; text: string };
+  replyTo?: { user: string; text: string } | null;
 };
 
-export type Club = {
+export type ClubMember = {
+  userId: string;
+  user: string;
+  name: string;
+  avatar: number;
+  role: string;
+  percent: number;
+};
+
+export type ClubSummary = {
   id: string;
   name: string;
+  desc: string;
   bookId: string;
+  book: Book;
   members: number;
   joined: boolean;
-  desc: string;
   visibility: Visibility;
-  /** Código de acesso (somente clubes privados). */
-  code?: string;
-  feed: ClubMessage[];
-  /** Progresso mocado dos outros membros (0–100). */
-  memberProgress: Record<string, number>;
-  /** Username (com @) de quem criou o clube. */
-  creator: string;
+  progress: number;
+};
+
+export type ClubDetail = {
+  id: string;
+  name: string;
+  desc: string;
+  bookId: string;
+  book: Book;
+  visibility: Visibility;
+  joined: boolean;
+  isCreator: boolean;
+  /** Só presente quando o viewer é o criador de um clube privado. */
+  code?: string | null;
+  members: ClubMember[];
+  progress: number;
 };
 
 export type ShelfStatus = "WANT_TO_READ" | "READING" | "READ";

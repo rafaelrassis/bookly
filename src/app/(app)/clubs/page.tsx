@@ -1,23 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getBook } from "@/data/books";
 import { BookCover } from "@/components/BookCover";
 import { SectionTitle } from "@/components/SectionTitle";
 import { LockIcon } from "@/components/icons";
 import { useStore } from "@/lib/store";
-import type { Club } from "@/lib/types";
+import type { ClubSummary } from "@/lib/types";
 
-function ClubCard({ club }: { club: Club }) {
-  const book = getBook(club.bookId);
+function ClubCard({ club }: { club: ClubSummary }) {
   return (
     <Link
       href={`/clubs/${club.id}`}
       className="flex gap-4 rounded-2xl border border-line bg-card p-4 transition-colors hover:bg-card2"
     >
-      {book && <BookCover book={book} width={56} />}
+      <BookCover book={club.book} width={56} />
       <div className="min-w-0 flex-1">
         <h3 className="flex items-center gap-1.5 font-display text-base font-bold">
           {club.visibility === "private" && (
@@ -38,32 +36,48 @@ function ClubCard({ club }: { club: Club }) {
 }
 
 export default function ClubsPage() {
-  const clubs = useStore((s) => s.clubs);
-  const joinClubByCode = useStore((s) => s.joinClubByCode);
   const showToast = useStore((s) => s.showToast);
   const router = useRouter();
 
+  const [clubs, setClubs] = useState<ClubSummary[] | null>(null);
   const [codeOpen, setCodeOpen] = useState(false);
   const [code, setCode] = useState("");
+  const [joining, setJoining] = useState(false);
 
-  const minePublic = clubs.filter((c) => c.joined && c.visibility === "public");
-  const minePrivate = clubs.filter((c) => c.joined && c.visibility === "private");
-  const discover = clubs.filter((c) => !c.joined && c.visibility === "public");
+  useEffect(() => {
+    fetch("/api/clubs")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => data && setClubs(data.items));
+  }, []);
 
-  function submitCode() {
-    const result = joinClubByCode(code);
-    if (result === null) {
-      showToast("Código inválido 😕");
-      return;
+  const minePublic = (clubs ?? []).filter((c) => c.joined && c.visibility === "public");
+  const minePrivate = (clubs ?? []).filter((c) => c.joined && c.visibility === "private");
+  const discover = (clubs ?? []).filter((c) => !c.joined && c.visibility === "public");
+
+  async function submitCode() {
+    setJoining(true);
+    try {
+      const res = await fetch("/api/clubs/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      if (!res.ok) {
+        showToast(res.status === 404 ? "Código inválido 😕" : "Não foi possível entrar");
+        return;
+      }
+      const data = await res.json();
+      if (data.status === "already") {
+        showToast("Você já participa desse clube");
+      } else {
+        showToast("Você entrou no clube! 🎉");
+      }
+      setCode("");
+      setCodeOpen(false);
+      router.push(`/clubs/${data.id}`);
+    } finally {
+      setJoining(false);
     }
-    if (result === "already") {
-      showToast("Você já participa desse clube");
-      return;
-    }
-    setCode("");
-    setCodeOpen(false);
-    showToast("Você entrou no clube! 🎉");
-    router.push(`/clubs/${result}`);
   }
 
   return (
@@ -103,7 +117,7 @@ export default function ClubsPage() {
           <button
             type="button"
             onClick={submitCode}
-            disabled={code.length !== 6}
+            disabled={code.length !== 6 || joining}
             className="rounded-xl bg-foil px-4 py-2.5 text-sm font-bold text-leather disabled:opacity-40"
           >
             Entrar
@@ -111,45 +125,57 @@ export default function ClubsPage() {
         </div>
       )}
 
-      {(minePublic.length > 0 || minePrivate.length > 0) && (
-        <section className="mt-6">
-          <SectionTitle>Seus clubes</SectionTitle>
-          {minePublic.length > 0 && (
-            <>
-              <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.14em] text-paperDim/70">
-                Públicos
-              </p>
-              <div className="mt-2 flex flex-col gap-3">
-                {minePublic.map((club) => (
-                  <ClubCard key={club.id} club={club} />
-                ))}
-              </div>
-            </>
+      {clubs === null ? (
+        <p className="mt-8 text-center text-sm text-paperDim">Carregando clubes…</p>
+      ) : (
+        <>
+          {(minePublic.length > 0 || minePrivate.length > 0) && (
+            <section className="mt-6">
+              <SectionTitle>Seus clubes</SectionTitle>
+              {minePublic.length > 0 && (
+                <>
+                  <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.14em] text-paperDim/70">
+                    Públicos
+                  </p>
+                  <div className="mt-2 flex flex-col gap-3">
+                    {minePublic.map((club) => (
+                      <ClubCard key={club.id} club={club} />
+                    ))}
+                  </div>
+                </>
+              )}
+              {minePrivate.length > 0 && (
+                <>
+                  <p className="mt-4 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-paperDim/70">
+                    <LockIcon size={10} /> Privados
+                  </p>
+                  <div className="mt-2 flex flex-col gap-3">
+                    {minePrivate.map((club) => (
+                      <ClubCard key={club.id} club={club} />
+                    ))}
+                  </div>
+                </>
+              )}
+            </section>
           )}
-          {minePrivate.length > 0 && (
-            <>
-              <p className="mt-4 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-paperDim/70">
-                <LockIcon size={10} /> Privados
-              </p>
-              <div className="mt-2 flex flex-col gap-3">
-                {minePrivate.map((club) => (
-                  <ClubCard key={club.id} club={club} />
-                ))}
-              </div>
-            </>
-          )}
-        </section>
-      )}
 
-      {discover.length > 0 && (
-        <section className="mb-4 mt-6">
-          <SectionTitle>Descubra clubes</SectionTitle>
-          <div className="mt-3 flex flex-col gap-3">
-            {discover.map((club) => (
-              <ClubCard key={club.id} club={club} />
-            ))}
-          </div>
-        </section>
+          {discover.length > 0 && (
+            <section className="mb-4 mt-6">
+              <SectionTitle>Descubra clubes</SectionTitle>
+              <div className="mt-3 flex flex-col gap-3">
+                {discover.map((club) => (
+                  <ClubCard key={club.id} club={club} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {minePublic.length === 0 && minePrivate.length === 0 && discover.length === 0 && (
+            <p className="mt-8 text-center text-sm text-paperDim">
+              Nenhum clube ainda. Crie o primeiro!
+            </p>
+          )}
+        </>
       )}
     </div>
   );

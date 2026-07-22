@@ -2,19 +2,17 @@
 
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { CLUBS } from "@/data/clubs";
 import { FEED_REVIEWS } from "@/data/feed";
 import { SEED_NOTIFICATIONS } from "@/data/notifications";
 import { FOLLOWED_USERS } from "@/data/users";
 import { withAt } from "@/lib/handle";
-import { nowTime } from "@/lib/format";
-import type { Club, FeedReview, Notification, UserState, Visibility } from "@/lib/types";
+import type { FeedReview, Notification, UserState, Visibility } from "@/lib/types";
 
 /**
  * Estado local (Zustand + localStorage) pro que ainda não é servidor: feed
- * social, clubes e listas (Spec 3b/4). Identidade/perfil (Spec 2) e
- * estante/notas/reviews da página do livro (Spec 3a) já vêm da API —
- * ver AuthSync e src/app/(app)/book, /shelf.
+ * social e listas (Spec 3b). Identidade/perfil (Spec 2), estante/notas/
+ * reviews da página do livro (Spec 3a) e clubes/chat (Spec 4) já vêm da
+ * API — ver AuthSync, src/app/(app)/book, /shelf e /clubs.
  */
 const INITIAL_USER: UserState = {
   loggedIn: false,
@@ -92,13 +90,6 @@ const INITIAL_USER: UserState = {
 type Toast = { id: number; message: string };
 type Theme = "dark" | "light";
 
-function randomCode(): string {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let code = "";
-  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  return code;
-}
-
 function slugify(name: string): string {
   return (
     name
@@ -113,7 +104,6 @@ function slugify(name: string): string {
 type Store = {
   user: UserState;
   feed: FeedReview[];
-  clubs: Club[];
   toast: Toast | null;
   theme: Theme;
   /** true depois que o estado persistido em localStorage é aplicado (client-only). */
@@ -141,20 +131,6 @@ type Store = {
   notifications: Notification[];
   markNotificationsRead: () => void;
 
-  toggleClub: (clubId: string) => { joined: boolean };
-  createClub: (
-    name: string,
-    bookId: string,
-    desc: string,
-    visibility: Visibility
-  ) => { id: string; code?: string };
-  /** Retorna o id do clube ao entrar; "already" se já participa; null se inválido. */
-  joinClubByCode: (code: string) => string | "already" | null;
-  postToClub: (clubId: string, text: string, replyTo?: { user: string; text: string }) => void;
-  /** Só o criador do clube deve poder chamar (checagem fica na UI). */
-  updateClub: (clubId: string, name: string, bookId: string, desc: string) => void;
-  removeClubMember: (clubId: string, member: string) => void;
-
   createList: (name: string, visibility: Visibility) => string;
   toggleListVisibility: (listId: string) => void;
   addBooksToList: (listId: string, bookIds: string[]) => void;
@@ -166,7 +142,6 @@ export const useStore = create<Store>()(
     (set, get) => ({
     user: INITIAL_USER,
     feed: FEED_REVIEWS,
-    clubs: CLUBS,
     toast: null,
     theme: "dark",
     followedUsers: [...FOLLOWED_USERS],
@@ -235,86 +210,6 @@ export const useStore = create<Store>()(
     markNotificationsRead: () =>
       set((s) => ({ notifications: s.notifications.map((n) => ({ ...n, read: true })) })),
 
-    toggleClub: (clubId) => {
-      const joined = !get().clubs.find((c) => c.id === clubId)?.joined;
-      set((s) => ({
-        clubs: s.clubs.map((c) =>
-          c.id === clubId ? { ...c, joined, members: c.members + (joined ? 1 : -1) } : c
-        ),
-      }));
-      return { joined };
-    },
-
-    createClub: (name, bookId, desc, visibility) => {
-      const id = `${slugify(name)}-${Date.now().toString(36)}`;
-      const code = visibility === "private" ? randomCode() : undefined;
-      const creator = withAt(get().user.username);
-      const club: Club = {
-        id,
-        name,
-        bookId,
-        desc,
-        visibility,
-        code,
-        members: 1,
-        joined: true,
-        feed: [],
-        memberProgress: {},
-        creator,
-      };
-      set((s) => ({ clubs: [...s.clubs, club] }));
-      return { id, code };
-    },
-
-    joinClubByCode: (code) => {
-      const normalized = code.trim().toUpperCase();
-      const club = get().clubs.find((c) => c.code === normalized);
-      if (!club) return null;
-      if (club.joined) return "already";
-      set((s) => ({
-        clubs: s.clubs.map((c) =>
-          c.id === club.id ? { ...c, joined: true, members: c.members + 1 } : c
-        ),
-      }));
-      return club.id;
-    },
-
-    postToClub: (clubId, text, replyTo) =>
-      set((s) => ({
-        clubs: s.clubs.map((c) =>
-          c.id === clubId
-            ? {
-                ...c,
-                feed: [
-                  ...c.feed,
-                  {
-                    id: `msg-${Date.now()}`,
-                    user: withAt(s.user.username),
-                    text,
-                    time: nowTime(),
-                    replyTo,
-                  },
-                ],
-              }
-            : c
-        ),
-      })),
-
-    updateClub: (clubId, name, bookId, desc) =>
-      set((s) => ({
-        clubs: s.clubs.map((c) => (c.id === clubId ? { ...c, name, bookId, desc } : c)),
-      })),
-
-    removeClubMember: (clubId, member) =>
-      set((s) => ({
-        clubs: s.clubs.map((c) => {
-          if (c.id !== clubId) return c;
-          const memberProgress = { ...c.memberProgress };
-          delete memberProgress[member];
-          return { ...c, memberProgress, members: Math.max(0, c.members - 1) };
-        }),
-      })),
-
     createList: (name, visibility) => {
       const id = `${slugify(name)}-${Date.now().toString(36)}`;
       set((s) => ({
@@ -365,7 +260,6 @@ export const useStore = create<Store>()(
     partialize: (s) => ({
       user: s.user,
       feed: s.feed,
-      clubs: s.clubs,
       followedUsers: s.followedUsers,
       notifications: s.notifications,
       theme: s.theme,
