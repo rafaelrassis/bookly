@@ -2,8 +2,10 @@
  * Popula o catálogo (Spec 0/3a) e, além disso, transforma os perfis mocados
  * da comunidade (data/users.ts) em contas reais com reviews/curtidas/
  * comentários (Spec 3b) — assim feed, listas e perfis públicos têm conteúdo
- * de verdade sem depender de cadastro manual. Idempotente: upsert por id/
- * username, sem sobrescrever avg/count reais de Book.
+ * de verdade sem depender de cadastro manual. Também semeia um usuário demo
+ * (demo@bookly.dev / bookly123) com estante, review e clube pra dev/QA e
+ * smoke E2E. Idempotente: upsert por id/username. avg/count de Book nascem
+ * zerados e são recalculados no fim a partir das reviews semeadas.
  */
 import "dotenv/config";
 import bcrypt from "bcryptjs";
@@ -12,6 +14,7 @@ import { PrismaClient } from "../src/generated/prisma/client";
 import { BOOKS } from "../src/data/books";
 import { MOCK_USERS } from "../src/data/users";
 import { withoutAt } from "../src/lib/handle";
+import { recomputeBookRating } from "../src/lib/books";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const db = new PrismaClient({ adapter });
@@ -31,8 +34,7 @@ async function seedBooks() {
         gradientFrom,
         gradientTo,
         synopsis: book.synopsis,
-        avg: book.avg,
-        count: book.count,
+        // avg / count: NÃO setar aqui — recalculado a partir das reviews no fim do seed.
       },
       update: {
         title: book.title,
@@ -155,10 +157,101 @@ async function seedReviews(usernameByHandle: Record<string, string>) {
   console.log(`Reviews da comunidade: ${i} seeded (com curtidas e comentários).`);
 }
 
+/** Usuário demo pra dev/QA e pro smoke E2E rodarem com dados reais
+ * (estante, review e clube com mensagem) sem depender de cadastro manual. */
+async function seedDemoUser() {
+  const demo = await db.user.upsert({
+    where: { email: "demo@bookly.dev" },
+    create: {
+      email: "demo@bookly.dev",
+      username: "demo",
+      name: "Leitor Demo",
+      passwordHash: await bcrypt.hash("bookly123", 10),
+      emailVerified: new Date(),
+      bio: "Conta de demonstração.",
+      genres: ["Fantasia", "Thriller"],
+    },
+    update: {},
+  });
+
+  await db.shelfEntry.upsert({
+    where: { userId_bookId: { userId: demo.id, bookId: "o-nome-do-vento" } },
+    create: {
+      userId: demo.id,
+      bookId: "o-nome-do-vento",
+      status: "READING",
+      currentPage: 200,
+      lastPage: 0,
+      startedAt: new Date(),
+    },
+    update: {},
+  });
+  await db.shelfEntry.upsert({
+    where: { userId_bookId: { userId: demo.id, bookId: "duna" } },
+    create: {
+      userId: demo.id,
+      bookId: "duna",
+      status: "READ",
+      startedAt: new Date("2026-03-01"),
+      finishedAt: new Date("2026-04-06"),
+    },
+    update: {},
+  });
+
+  await db.review.upsert({
+    where: { userId_bookId: { userId: demo.id, bookId: "duna" } },
+    create: {
+      userId: demo.id,
+      bookId: "duna",
+      rating: 4.5,
+      text: "Épico. A construção de mundo é impecável.",
+    },
+    update: {},
+  });
+
+  const club = await db.club.upsert({
+    where: { id: "demo-o-nome-do-vento" },
+    create: {
+      id: "demo-o-nome-do-vento",
+      name: "Quem lê O Nome do Vento",
+      bookId: "o-nome-do-vento",
+      desc: "Clube demo.",
+      visibility: "public",
+      creatorId: demo.id,
+      members: { create: { userId: demo.id, role: "creator" } },
+    },
+    update: {},
+  });
+  await db.message.upsert({
+    where: { id: "demo-welcome-message" },
+    create: {
+      id: "demo-welcome-message",
+      clubId: club.id,
+      userId: demo.id,
+      text: "Bem-vindos! Onde vocês estão na leitura?",
+    },
+    update: {},
+  });
+
+  console.log("🌱 demo user + shelf + club seeded (demo@bookly.dev / bookly123)");
+}
+
+/** Recomputa avg/count a partir das reviews semeadas — substitui os números
+ * decorativos de data/books.ts pelos reais, mesma fórmula da Spec 0. */
+async function recomputeAllBookRatings() {
+  const seededBooks = await db.book.findMany({ select: { id: true } });
+  for (const { id } of seededBooks) {
+    await recomputeBookRating(db, id);
+  }
+  console.log(`↻ recomputed avg/count for ${seededBooks.length} books`);
+}
+
 async function main() {
   await seedBooks();
   const usernameByHandle = await seedCommunityUsers();
   await seedReviews(usernameByHandle);
+  await seedDemoUser();
+  await recomputeAllBookRatings();
 }
 
 main()

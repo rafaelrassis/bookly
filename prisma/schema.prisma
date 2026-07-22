@@ -11,22 +11,21 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  username      String    @unique
+  id            String       @id @default(cuid())
+  email         String       @unique
+  username      String       @unique
   name          String
   passwordHash  String
   emailVerified DateTime?
-  bio           String?   @db.VarChar(500)
+  bio           String?      @db.VarChar(500)
   /// Índice do gradiente de avatar escolhido (AVATAR_CHOICES no front).
-  avatar        Int       @default(0)
-  genres        String[]  @default([])
+  avatar        Int          @default(0)
+  genres        String[]     @default([])
   /// Até 4 bookIds em destaque no perfil (catálogo mocado até a Spec 3).
-  top4          String[]  @default([])
-  /// "pages" | "percent"
-  progressUnit  String    @default("pages")
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  top4          String[]     @default([])
+  progressUnit  ProgressUnit @default(pages)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
   followedBy Follow[] @relation("following")
   following  Follow[] @relation("follower")
@@ -46,26 +45,25 @@ model User {
 }
 
 model Follow {
-  id          String   @id @default(cuid())
-  followerId  String
-  follower    User     @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
-  followingId String
-  followingUser User   @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
+  id            String   @id @default(cuid())
+  followerId    String
+  follower      User     @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId   String
+  followingUser User     @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
 
   @@unique([followerId, followingId])
   @@index([followingId])
 }
 
 model VerificationCode {
-  id        String    @id @default(cuid())
+  id        String           @id @default(cuid())
   email     String
   code      String
-  /// "email" | "password"
-  type      String
+  type      VerificationType
   expiresAt DateTime
   usedAt    DateTime?
-  createdAt DateTime  @default(now())
+  createdAt DateTime         @default(now())
 
   @@index([email, type])
 }
@@ -74,6 +72,22 @@ enum ShelfStatus {
   WANT_TO_READ
   READING
   READ
+}
+
+enum Visibility {
+  public
+  private
+}
+
+enum ProgressUnit {
+  pages
+  percent
+}
+
+enum VerificationType {
+  email
+  phone
+  password
 }
 
 /// Catálogo semeado (Spec 0 previa Google Books; adiado como enriquecimento
@@ -172,15 +186,15 @@ model Comment {
   @@index([reviewId, createdAt])
 }
 
-/// Lista de livros do usuário (Spec 3b). `visibility`: "public" | "private".
+/// Lista de livros do usuário (Spec 3b).
 model List {
-  id         String   @id @default(cuid())
+  id         String     @id @default(cuid())
   userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name       String   @db.VarChar(80)
-  visibility String   @default("public")
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String     @db.VarChar(80)
+  visibility Visibility @default(public)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 
   books ListBook[]
 }
@@ -223,20 +237,20 @@ model Quote {
   @@index([userId, bookId])
 }
 
-/// Clube do livro (Spec 4). `visibility`: "public" | "private". `code`
-/// (6 chars, só privados) é único e visível apenas ao criador.
+/// Clube do livro (Spec 4). `code` (6 chars, só privados) é único e
+/// visível apenas ao criador.
 model Club {
-  id         String   @id @default(cuid())
-  name       String   @db.VarChar(80)
-  desc       String   @default("") @db.VarChar(500)
-  visibility String
-  code       String?  @unique
+  id         String     @id @default(cuid())
+  name       String     @db.VarChar(80)
+  desc       String     @default("") @db.VarChar(500)
+  visibility Visibility
+  code       String?    @unique
   bookId     String
-  book       Book     @relation(fields: [bookId], references: [id])
+  book       Book       @relation(fields: [bookId], references: [id])
   creatorId  String
-  creator    User     @relation("clubCreator", fields: [creatorId], references: [id], onDelete: Cascade)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  creator    User       @relation("clubCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 
   members  ClubMember[]
   messages Message[]
