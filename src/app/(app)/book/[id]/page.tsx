@@ -2,6 +2,7 @@
 
 import { notFound } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { Avatar } from "@/components/Avatar";
 import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
@@ -19,6 +20,7 @@ type CommunityReview = {
   id: string;
   user: { username: string; name: string; avatar: number };
   rating: number;
+  title?: string;
   text: string;
   startedAt: string | null;
   finishedAt: string | null;
@@ -28,6 +30,7 @@ type BookPayload = {
   book: Book;
   entry: ShelfEntry | null;
   rating: number | null;
+  myReviewTitle: string | null;
   myReview: string | null;
   tags: string[];
   quotes: BookQuote[];
@@ -173,6 +176,7 @@ export default function BookPage({ params }: { params: { id: string } }) {
   const [book, setBook] = useState<Book | null>(null);
   const [entry, setEntry] = useState<ShelfEntry | null>(null);
   const [rating, setRatingState] = useState<number | null>(null);
+  const [myReviewTitle, setMyReviewTitle] = useState<string | null>(null);
   const [myReview, setMyReview] = useState<string | null>(null);
   const [tags, setTags] = useState<string[]>([]);
   const [quotes, setQuotes] = useState<BookQuote[]>([]);
@@ -181,6 +185,7 @@ export default function BookPage({ params }: { params: { id: string } }) {
   const [reviewsCursor, setReviewsCursor] = useState<string | null>(null);
 
   const [editingReview, setEditingReview] = useState(false);
+  const [titleDraft, setTitleDraft] = useState("");
   const [reviewDraft, setReviewDraft] = useState("");
   const [tagDraft, setTagDraft] = useState("");
   const [quoteOpen, setQuoteOpen] = useState(false);
@@ -221,6 +226,7 @@ export default function BookPage({ params }: { params: { id: string } }) {
       setBook(data.book);
       setEntry(data.entry);
       setRatingState(data.rating);
+      setMyReviewTitle(data.myReviewTitle);
       setMyReview(data.myReview);
       setTags(data.tags);
       setQuotes(data.quotes);
@@ -273,7 +279,7 @@ export default function BookPage({ params }: { params: { id: string } }) {
     const res = await fetch(`/api/books/${bookId}/review`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ rating: value, text: myReview ?? "" }),
+      body: JSON.stringify({ rating: value, title: myReviewTitle ?? undefined, text: myReview ?? "" }),
     });
     if (!res.ok) {
       showToast("Não foi possível salvar a avaliação");
@@ -282,6 +288,7 @@ export default function BookPage({ params }: { params: { id: string } }) {
     const data = await res.json();
     const markedAsRead = value > 0 && entry?.status !== "READ";
     setRatingState(data.rating);
+    setMyReviewTitle(data.myReviewTitle);
     setMyReview(data.myReview);
     setEntry(data.entry);
     if (value === 0) showToast("Avaliação removida");
@@ -299,13 +306,14 @@ export default function BookPage({ params }: { params: { id: string } }) {
     const res = await fetch(`/api/books/${bookId}/review`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ rating, text }),
+      body: JSON.stringify({ rating, title: titleDraft.trim() || undefined, text }),
     });
     if (!res.ok) {
       showToast("Não foi possível publicar a review");
       return;
     }
     const data = await res.json();
+    setMyReviewTitle(data.myReviewTitle);
     setMyReview(data.myReview);
     setEntry(data.entry);
     setEditingReview(false);
@@ -429,6 +437,14 @@ export default function BookPage({ params }: { params: { id: string } }) {
         <div className="mt-4 border-t border-line pt-4">
           {editingReview ? (
             <div>
+              <input
+                type="text"
+                value={titleDraft}
+                onChange={(e) => setTitleDraft(e.target.value)}
+                placeholder="Título (opcional)"
+                aria-label="Título da sua review"
+                className="mb-2 w-full rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm font-bold text-paper placeholder:font-normal placeholder:text-paperDim/60"
+              />
               <textarea
                 value={reviewDraft}
                 onChange={(e) => setReviewDraft(e.target.value)}
@@ -459,11 +475,15 @@ export default function BookPage({ params }: { params: { id: string } }) {
           ) : (
             <>
               {myReview && (
-                <p className="mb-3 text-sm text-paperDim">{myReview}</p>
+                <div className="mb-3">
+                  {myReviewTitle && <p className="text-sm font-bold">{myReviewTitle}</p>}
+                  <p className="mt-1 text-sm text-paperDim">{myReview}</p>
+                </div>
               )}
               <button
                 type="button"
                 onClick={() => {
+                  setTitleDraft(myReviewTitle ?? "");
                   setReviewDraft(myReview ?? "");
                   setEditingReview(true);
                 }}
@@ -613,7 +633,8 @@ export default function BookPage({ params }: { params: { id: string } }) {
                   {readingDates(entry?.startedAt ?? undefined, entry?.finishedAt ?? undefined)}
                 </p>
               )}
-              <ExpandableText text={myReview} className="mt-1.5 text-sm text-paperDim" />
+              {myReviewTitle && <p className="mt-1.5 text-sm font-bold">{myReviewTitle}</p>}
+              <ExpandableText text={myReview} className="mt-1 text-sm text-paperDim" />
             </article>
           )}
           {communityReviews.length === 0 && !myReview && (
@@ -622,7 +643,11 @@ export default function BookPage({ params }: { params: { id: string } }) {
             </p>
           )}
           {communityReviews.map((review) => (
-            <article key={review.id} className="rounded-2xl border border-line bg-card p-4">
+            <Link
+              key={review.id}
+              href={`/review/${review.id}`}
+              className="block rounded-2xl border border-line bg-card p-4 transition-colors hover:bg-card2"
+            >
               <div className="flex items-center gap-2.5">
                 <Avatar user={`@${review.user.username}`} avatarIndex={review.user.avatar} size={28} />
                 <div>
@@ -635,8 +660,9 @@ export default function BookPage({ params }: { params: { id: string } }) {
                   {readingDates(review.startedAt ?? undefined, review.finishedAt ?? undefined)}
                 </p>
               )}
-              <ExpandableText text={review.text} className="mt-1.5 text-sm text-paperDim" />
-            </article>
+              {review.title && <p className="mt-1.5 text-sm font-bold">{review.title}</p>}
+              <p className="mt-1 line-clamp-3 text-sm text-paperDim">{review.text}</p>
+            </Link>
           ))}
           {reviewsCursor && (
             <button

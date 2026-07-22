@@ -6,6 +6,7 @@ import { recomputeBookRating } from "@/lib/books";
 
 const schema = z.object({
   rating: z.number().min(0).max(5).multipleOf(0.5),
+  title: z.string().max(150).optional(),
   text: z.string().max(5000).optional(),
 });
 
@@ -20,7 +21,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  const { rating, text } = parsed.data;
+  const { rating, title, text } = parsed.data;
 
   const book = await db.book.findUnique({ where: { id: bookId }, select: { id: true } });
   if (!book) return NextResponse.json({ error: "não encontrado" }, { status: 404 });
@@ -32,7 +33,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       const entry = await tx.shelfEntry.findUnique({
         where: { userId_bookId: { userId: uid, bookId } },
       });
-      return { rating: null, myReview: null, entry };
+      return { rating: null, myReview: null, myReviewTitle: null, entry };
     }
 
     const prevEntry = await tx.shelfEntry.findUnique({
@@ -61,15 +62,22 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
         userId: uid,
         bookId,
         rating,
+        title: title?.trim() || null,
         text: text ?? "",
         startedAt: entry.startedAt,
         finishedAt: entry.finishedAt,
       },
-      update: { rating, text: text ?? "", startedAt: entry.startedAt, finishedAt: entry.finishedAt },
+      update: {
+        rating,
+        title: title?.trim() || null,
+        text: text ?? "",
+        startedAt: entry.startedAt,
+        finishedAt: entry.finishedAt,
+      },
     });
 
     await recomputeBookRating(tx, bookId);
-    return { rating: review.rating, myReview: review.text, entry };
+    return { rating: review.rating, myReview: review.text, myReviewTitle: review.title, entry };
   });
 
   return NextResponse.json(result);

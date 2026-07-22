@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { getBook } from "@/data/books";
 import { BookCover } from "@/components/BookCover";
 import { LockIcon } from "@/components/icons";
 import { SectionTitle } from "@/components/SectionTitle";
 import { Stars } from "@/components/Stars";
 import { useStore } from "@/lib/store";
-import type { Book, ShelfEntry, ShelfStatus, Visibility } from "@/lib/types";
+import type { ApiList, Book, ShelfEntry, ShelfStatus, Visibility } from "@/lib/types";
 
 type ShelfItem = { book: Book; entry: ShelfEntry; tags: string[]; rating: number | null };
 
@@ -27,22 +26,43 @@ const STATUS_BADGE: Record<ShelfStatus, { label: string; className: string }> = 
 
 /** Seção "Minhas listas": cards das listas + criação inline. */
 function MyLists() {
-  const lists = useStore((s) => s.user.lists);
-  const createList = useStore((s) => s.createList);
   const showToast = useStore((s) => s.showToast);
+  const [lists, setLists] = useState<ApiList[]>([]);
 
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
   const [visibility, setVisibility] = useState<Visibility>("public");
+  const [saving, setSaving] = useState(false);
 
-  function create() {
+  useEffect(() => {
+    fetch("/api/lists")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => setLists(data ?? []));
+  }, []);
+
+  async function create() {
     const trimmed = name.trim();
-    if (!trimmed) return;
-    createList(trimmed, visibility);
-    setName("");
-    setVisibility("public");
-    setCreating(false);
-    showToast("Lista criada ✦");
+    if (!trimmed || saving) return;
+    setSaving(true);
+    try {
+      const res = await fetch("/api/lists", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmed, visibility }),
+      });
+      if (!res.ok) {
+        showToast("Não foi possível criar a lista");
+        return;
+      }
+      const list: ApiList = await res.json();
+      setLists((current) => [list, ...current]);
+      setName("");
+      setVisibility("public");
+      setCreating(false);
+      showToast("Lista criada ✦");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -98,7 +118,7 @@ function MyLists() {
             <button
               type="button"
               onClick={create}
-              disabled={!name.trim()}
+              disabled={!name.trim() || saving}
               className="ml-auto rounded-xl bg-foil px-4 py-1.5 text-xs font-bold text-leather disabled:opacity-40"
             >
               Criar
@@ -116,10 +136,9 @@ function MyLists() {
               className="w-44 shrink-0 rounded-2xl border border-line bg-card p-3.5 transition-colors hover:bg-card2"
             >
               <div className="flex gap-1.5">
-                {list.bookIds.slice(0, 3).map((id) => {
-                  const book = getBook(id);
-                  return book ? <BookCover key={id} book={book} width={28} /> : null;
-                })}
+                {list.books.slice(0, 3).map((book) => (
+                  <BookCover key={book.id} book={book} width={28} />
+                ))}
                 {list.bookIds.length === 0 && (
                   <span className="text-xs text-paperDim">Lista vazia</span>
                 )}

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getBook } from "@/data/books";
 import { Avatar } from "@/components/Avatar";
 import { BookCover } from "@/components/BookCover";
@@ -10,8 +10,9 @@ import { SectionTitle } from "@/components/SectionTitle";
 import { Stars } from "@/components/Stars";
 import { withAt } from "@/lib/handle";
 import { formatCount, formatDecimal } from "@/lib/format";
-import { useMyStats, useRecommendations } from "@/lib/store/hooks";
+import { useFeed, useMyStats, useRecommendations } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
+import type { ApiList } from "@/lib/types";
 
 const HISTOGRAM_LABELS: Record<number, string> = { 0.5: "½★", 5: "★★★★★" };
 
@@ -44,21 +45,21 @@ function GearIcon() {
 
 export default function ProfilePage() {
   const user = useStore((s) => s.user);
-  const feed = useStore((s) => s.feed);
-  const followingCount = useStore((s) => s.followedUsers.length);
-  const { readCount, pagesRead, reviewCount, avgRating, histogram, maxCount, ratedBooks } =
+  const { readCount, pagesRead, reviewCount, avgRating, histogram, maxCount, ratedBooks, reviewEntries } =
     useMyStats();
   const recommended = useRecommendations(6);
+  const { items: likedFeedReviews } = useFeed("liked");
 
   const [tab, setTab] = useState<ActivityTab>("ratings");
+  const [lists, setLists] = useState<ApiList[]>([]);
 
-  const likedFeedReviews = feed.filter((r) => user.likedReviews[r.id]);
-  const myReviewEntries = Object.entries(user.myReviews)
-    .map(([bookId, text]) => ({ book: getBook(bookId), text }))
-    .filter((e): e is { book: NonNullable<ReturnType<typeof getBook>>; text: string } =>
-      Boolean(e.book)
-    );
-  const publicLists = user.lists.filter((l) => l.visibility === "public");
+  useEffect(() => {
+    fetch("/api/lists")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: ApiList[]) => setLists(data ?? []));
+  }, []);
+
+  const publicLists = lists.filter((l) => l.visibility === "public");
 
   const stats = [
     { label: "lidos", value: String(readCount) },
@@ -93,7 +94,7 @@ export default function ProfilePage() {
           <p className="text-sm text-paperDim">@{user.username}</p>
           <p className="mt-1 text-xs text-paperDim">
             <span className="font-bold text-paper">{user.followers}</span> seguidores ·{" "}
-            <span className="font-bold text-paper">{followingCount}</span> seguindo
+            <span className="font-bold text-paper">{user.following}</span> seguindo
           </p>
         </div>
       </section>
@@ -184,10 +185,9 @@ export default function ProfilePage() {
                   </p>
                 </div>
                 <div className="flex shrink-0 gap-1.5">
-                  {list.bookIds.slice(0, 3).map((id) => {
-                    const book = getBook(id);
-                    return book ? <BookCover key={id} book={book} width={28} /> : null;
-                  })}
+                  {list.books.slice(0, 3).map((book) => (
+                    <BookCover key={book.id} book={book} width={28} />
+                  ))}
                 </div>
               </Link>
             ))}
@@ -236,25 +236,20 @@ export default function ProfilePage() {
           ))}
 
         {tab === "reviews" &&
-          (myReviewEntries.length === 0 ? (
+          (reviewEntries.length === 0 ? (
             <p className="mt-4 text-sm text-paperDim">Você ainda não escreveu reviews.</p>
           ) : (
             <div className="mt-4 flex flex-col gap-3">
-              {myReviewEntries.map(({ book, text }) => (
+              {reviewEntries.map(({ book, title, text }) => (
                 <article key={book.id} className="flex gap-3.5 rounded-2xl border border-line bg-card p-3.5">
                   <Link href={`/book/${book.id}`} aria-label={book.title} className="self-start rounded-md">
                     <BookCover book={book} width={48} />
                   </Link>
-                  <Link href={`/review/me-${book.id}`} className="min-w-0 flex-1">
+                  <div className="min-w-0 flex-1">
                     <p className="truncate font-display text-sm font-bold">{book.title}</p>
-                    {user.ratings[book.id] !== undefined && (
-                      <Stars rating={user.ratings[book.id]} className="text-xs" />
-                    )}
-                    {user.myReviewTitles?.[book.id] && (
-                      <p className="mt-1 text-sm font-bold">{user.myReviewTitles[book.id]}</p>
-                    )}
+                    {title && <p className="mt-1 text-sm font-bold">{title}</p>}
                     <p className="mt-1 line-clamp-3 text-sm text-paperDim">{text}</p>
-                  </Link>
+                  </div>
                 </article>
               ))}
             </div>

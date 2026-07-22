@@ -1,39 +1,86 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import { notFound } from "next/navigation";
-import { getBook } from "@/data/books";
+import { useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
 import { Stars } from "@/components/Stars";
-import { withAt, withoutAt } from "@/lib/handle";
+import { withAt } from "@/lib/handle";
 import { readingDates } from "@/lib/format";
 import { useStore } from "@/lib/store";
-import { useReview } from "@/lib/store/hooks";
+import type { ApiComment, ApiReview } from "@/lib/types";
 
 export default function ReviewPage({ params }: { params: { id: string } }) {
-  const review = useReview(params.id);
-  const liked = useStore((s) => Boolean(s.user.likedReviews[params.id]));
   const username = useStore((s) => s.user.username);
-  const toggleLike = useStore((s) => s.toggleLike);
-  const addComment = useStore((s) => s.addComment);
   const showToast = useStore((s) => s.showToast);
+
+  const [status, setStatus] = useState<"loading" | "ok" | "notfound">("loading");
+  const [review, setReview] = useState<ApiReview | null>(null);
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [likeBusy, setLikeBusy] = useState(false);
+  const [comments, setComments] = useState<ApiComment[]>([]);
   const [draft, setDraft] = useState("");
 
-  if (!review) notFound();
-  const book = getBook(review.bookId);
-  if (!book) notFound();
+  useEffect(() => {
+    fetch(`/api/reviews/${params.id}`).then(async (res) => {
+      if (res.status === 404) {
+        setStatus("notfound");
+        return;
+      }
+      if (!res.ok) return;
+      const data: ApiReview = await res.json();
+      setReview(data);
+      setLiked(data.likedByMe);
+      setLikeCount(data.likes);
+      setStatus("ok");
+    });
+    fetch(`/api/reviews/${params.id}/comments`)
+      .then((res) => (res.ok ? res.json() : { items: [] }))
+      .then((data) => setComments(data.items ?? []));
+  }, [params.id]);
 
-  const profileHref = `/u/${withoutAt(review.user)}`;
+  if (status === "notfound") notFound();
+  if (status === "loading" || !review) return null;
+
+  const profileHref = `/u/${review.user.username}`;
+  const authorHandle = withAt(review.user.username);
   const dates = readingDates(review.startedAt, review.finishedAt);
 
-  function publishComment() {
+  async function toggleLike() {
+    if (likeBusy) return;
+    setLikeBusy(true);
+    const next = !liked;
+    setLiked(next);
+    setLikeCount((c) => c + (next ? 1 : -1));
+    try {
+      const res = await fetch(`/api/reviews/${review!.id}/like`, { method: next ? "POST" : "DELETE" });
+      if (!res.ok) throw new Error();
+    } catch {
+      setLiked(!next);
+      setLikeCount((c) => c + (next ? -1 : 1));
+    } finally {
+      setLikeBusy(false);
+    }
+  }
+
+  async function publishComment() {
     const text = draft.trim();
     if (!text) return;
-    addComment(review!.id, text);
     setDraft("");
+    const res = await fetch(`/api/reviews/${review!.id}/comments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    if (!res.ok) {
+      showToast("Não foi possível comentar");
+      return;
+    }
+    const comment: ApiComment = await res.json();
+    setComments((current) => [...current, comment]);
     showToast("Comentário publicado!");
   }
 
@@ -45,22 +92,22 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
 
       <article className="mt-4">
         <div className="flex items-center gap-3">
-          <Link href={profileHref} aria-label={review.user} className="rounded-full">
-            <Avatar user={review.user} />
+          <Link href={profileHref} aria-label={authorHandle} className="rounded-full">
+            <Avatar user={authorHandle} avatarIndex={review.user.avatar} />
           </Link>
           <div className="min-w-0">
             <Link href={profileHref} className="text-sm font-bold hover:text-foil">
-              {review.user}
+              {authorHandle}
             </Link>
             <p className="text-xs text-paperDim">
-              avaliou <span className="font-display font-bold italic">{book.title}</span>
+              avaliou <span className="font-display font-bold italic">{review.book.title}</span>
             </p>
           </div>
         </div>
 
         <div className="mt-4 flex items-start gap-4">
-          <Link href={`/book/${book.id}`} aria-label={book.title} className="rounded-md">
-            <BookCover book={book} width={72} />
+          <Link href={`/book/${review.book.id}`} aria-label={review.book.title} className="rounded-md">
+            <BookCover book={review.book} width={72} />
           </Link>
           <div className="min-w-0">
             <Stars rating={review.rating} className="text-sm" />
@@ -78,33 +125,37 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
         <div className="mt-5 flex items-center gap-5 border-y border-line py-3 text-sm text-paperDim">
           <button
             type="button"
-            onClick={() => toggleLike(review!.id)}
+            onClick={toggleLike}
+            disabled={likeBusy}
             aria-pressed={liked}
             className={`transition-colors ${liked ? "text-ribbon" : "hover:text-paper"}`}
           >
-            ♥ {review.likes}
+            ♥ {likeCount}
           </button>
-          <span>{review.comments.length} comentários</span>
+          <span>{comments.length} comentários</span>
         </div>
       </article>
 
       <section className="mt-4 flex flex-col gap-3 pb-8">
-        {review.comments.map((comment, i) => (
-          <div key={i} className="flex gap-2.5">
-            <Link href={`/u/${withoutAt(comment.user)}`} aria-label={comment.user}>
-              <Avatar user={comment.user} size={26} />
-            </Link>
-            <p className="min-w-0 text-sm text-paperDim">
-              <Link
-                href={`/u/${withoutAt(comment.user)}`}
-                className="font-bold text-paper hover:text-foil"
-              >
-                {comment.user}
-              </Link>{" "}
-              {comment.text}
-            </p>
-          </div>
-        ))}
+        {comments.map((comment) => {
+          const handle = withAt(comment.user.username);
+          return (
+            <div key={comment.id} className="flex gap-2.5">
+              <Link href={`/u/${comment.user.username}`} aria-label={handle}>
+                <Avatar user={handle} avatarIndex={comment.user.avatar} size={26} />
+              </Link>
+              <p className="min-w-0 text-sm text-paperDim">
+                <Link
+                  href={`/u/${comment.user.username}`}
+                  className="font-bold text-paper hover:text-foil"
+                >
+                  {handle}
+                </Link>{" "}
+                {comment.text}
+              </p>
+            </div>
+          );
+        })}
         <div className="mt-1 flex items-center gap-2">
           <Avatar user={withAt(username)} size={26} />
           <input

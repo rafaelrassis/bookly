@@ -8,7 +8,7 @@ import { FeedPost } from "@/components/FeedPost";
 import { Logo } from "@/components/Logo";
 import { SectionTitle } from "@/components/SectionTitle";
 import { readingPercent } from "@/lib/format";
-import { trendingBooks } from "@/lib/store/hooks";
+import { trendingBooks, useFeed } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
 import type { Book, ShelfEntry } from "@/lib/types";
 
@@ -99,10 +99,10 @@ function ReadingCard({ item }: { item: ReadingItem }) {
 
 export default function HomePage() {
   const [reading, setReading] = useState<ReadingItem[]>([]);
-  const feed = useStore((s) => s.feed);
-  const followedUsers = useStore((s) => s.followedUsers);
   const unread = useStore((s) => s.notifications.filter((n) => !n.read).length);
   const [feedFilter, setFeedFilter] = useState<"all" | "following">("all");
+  const { items: feed, loading: feedLoading, hasMore, loadingMore, loadMore, fellBackToAll } =
+    useFeed(feedFilter);
 
   useEffect(() => {
     fetch("/api/shelf?status=READING")
@@ -111,9 +111,6 @@ export default function HomePage() {
         if (data) setReading(data.items);
       });
   }, []);
-
-  const visibleFeed =
-    feedFilter === "following" ? feed.filter((r) => followedUsers.includes(r.user)) : feed;
 
   return (
     <div className="pt-5">
@@ -195,9 +192,27 @@ export default function HomePage() {
           </div>
         </div>
         <div className="mt-1">
-          {visibleFeed.map((review) => (
+          {feedFilter === "following" && fellBackToAll && (
+            <p className="py-3 text-xs text-paperDim">
+              Você ainda não segue ninguém — mostrando o feed geral.
+            </p>
+          )}
+          {!feedLoading && feed.length === 0 && (
+            <p className="py-6 text-center text-sm text-paperDim">Nenhuma review por aqui ainda.</p>
+          )}
+          {feed.map((review) => (
             <FeedPost key={review.id} review={review} />
           ))}
+          {hasMore && (
+            <button
+              type="button"
+              onClick={loadMore}
+              disabled={loadingMore}
+              className="mt-2 w-full rounded-xl border border-line bg-card px-4 py-2.5 text-sm font-bold text-paperDim transition-colors hover:text-paper disabled:opacity-50"
+            >
+              {loadingMore ? "Carregando…" : "Carregar mais"}
+            </button>
+          )}
         </div>
       </section>
 

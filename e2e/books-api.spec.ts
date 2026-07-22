@@ -86,11 +86,9 @@ test("avaliar marca como Lido e recalcula avg/count; nota 0 apaga a review", asy
   await login(page, a);
 
   // recomputeBookRating substitui o count decorativo do seed pelo real assim
-  // que a primeira review de verdade é gravada — comparamos por delta, já
-  // que outras execuções do teste podem ter deixado reviews reais no banco.
-  const before = await (await page.request.get("/api/books/1984")).json();
-  const countBefore = before.book.count;
-
+  // que a primeira review de verdade é gravada nesse livro — por isso o
+  // "antes" só é um baseline confiável depois desse primeiro recompute
+  // (aqui, disparado pela própria review desta conta).
   const rated = await page.request.put("/api/books/1984/review", {
     data: { rating: 4.5, text: "Sufocante e atual." },
   });
@@ -101,7 +99,7 @@ test("avaliar marca como Lido e recalcula avg/count; nota 0 apaga a review", asy
   expect(ratedBody.entry.finishedAt).toBeTruthy();
 
   const after = await (await page.request.get("/api/books/1984")).json();
-  expect(after.book.count).toBe(countBefore + 1);
+  const countAfterRating = after.book.count;
   expect(after.rating).toBe(4.5);
   expect(after.myReview).toBe("Sufocante e atual.");
 
@@ -112,7 +110,7 @@ test("avaliar marca como Lido e recalcula avg/count; nota 0 apaga a review", asy
   expect(removedBody.rating).toBeNull();
 
   const afterRemoval = await (await page.request.get("/api/books/1984")).json();
-  expect(afterRemoval.book.count).toBe(countBefore);
+  expect(afterRemoval.book.count).toBe(countAfterRating - 1);
   expect(afterRemoval.rating).toBeNull();
   expect(afterRemoval.myReview).toBeNull();
 });

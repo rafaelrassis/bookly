@@ -1,5 +1,5 @@
 // Prisma schema — auth (Spec 0/1), perfil (Spec 2), catálogo/estante/reviews
-// (Spec 3a) e clubes/chat (Spec 4).
+// (Spec 3a), clubes/chat (Spec 4) e feed social/listas (Spec 3b).
 
 generator client {
   provider = "prisma-client"
@@ -39,6 +39,10 @@ model User {
   createdClubs Club[]       @relation("clubCreator")
   clubMembers  ClubMember[]
   messages     Message[]
+
+  reviewLikes ReviewLike[]
+  comments    Comment[]
+  lists       List[]
 }
 
 model Follow {
@@ -94,6 +98,7 @@ model Book {
   tags         BookTag[]
   quotes       Quote[]
   clubs        Club[]
+  listBooks    ListBook[]
 
   @@index([genre])
 }
@@ -119,7 +124,8 @@ model ShelfEntry {
 }
 
 /// Rating e review são a mesma entidade (1 por usuário+livro). Nota <= 0
-/// apaga a linha inteira (espelha o "remover nota" do protótipo).
+/// apaga a linha inteira (espelha o "remover nota" do protótipo). `title`
+/// é opcional — sem ele, a review some no feed como um post de texto puro.
 model Review {
   id         String    @id @default(cuid())
   userId     String
@@ -127,14 +133,69 @@ model Review {
   bookId     String
   book       Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
   rating     Float
+  title      String?   @db.VarChar(150)
   text       String    @default("")
   startedAt  DateTime?
   finishedAt DateTime?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
+  likes    ReviewLike[]
+  comments Comment[]
+
   @@unique([userId, bookId])
   @@index([bookId, createdAt])
+}
+
+/// Curtida em review (Spec 3b) — 1 por usuário+review.
+model ReviewLike {
+  id        String   @id @default(cuid())
+  reviewId  String
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([reviewId, userId])
+}
+
+/// Comentário em review (Spec 3b) — thread flat, sem resposta a comentário.
+model Comment {
+  id        String   @id @default(cuid())
+  reviewId  String
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text      String   @db.VarChar(500)
+  createdAt DateTime @default(now())
+
+  @@index([reviewId, createdAt])
+}
+
+/// Lista de livros do usuário (Spec 3b). `visibility`: "public" | "private".
+model List {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String   @db.VarChar(80)
+  visibility String   @default("public")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  books ListBook[]
+}
+
+model ListBook {
+  id        String   @id @default(cuid())
+  listId    String
+  list      List     @relation(fields: [listId], references: [id], onDelete: Cascade)
+  bookId    String
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  order     Int
+  createdAt DateTime @default(now())
+
+  @@unique([listId, bookId])
+  @@index([listId, order])
 }
 
 model BookTag {

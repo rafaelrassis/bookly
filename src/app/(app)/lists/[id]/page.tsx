@@ -1,37 +1,40 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { notFound } from "next/navigation";
-import { useState } from "react";
-import { getBook } from "@/data/books";
 import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
 import { LockIcon } from "@/components/icons";
 import { SectionTitle } from "@/components/SectionTitle";
 import { useStore } from "@/lib/store";
+import type { ApiList, Book } from "@/lib/types";
 
 export default function ListPage({ params }: { params: { id: string } }) {
-  const list = useStore((s) => s.user.lists.find((l) => l.id === params.id));
-  const shelf = useStore((s) => s.user.shelf);
-  const toggleListVisibility = useStore((s) => s.toggleListVisibility);
-  const addBooksToList = useStore((s) => s.addBooksToList);
-  const removeBookFromList = useStore((s) => s.removeBookFromList);
   const showToast = useStore((s) => s.showToast);
 
+  const [list, setList] = useState<ApiList | null | undefined>(undefined);
+  const [shelfBooks, setShelfBooks] = useState<Book[]>([]);
   const [adding, setAdding] = useState(false);
   const [picked, setPicked] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
 
-  if (!list) notFound();
+  useEffect(() => {
+    fetch(`/api/lists/${params.id}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then(setList);
+    fetch("/api/shelf")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => data && setShelfBooks(data.items.map((i: { book: Book }) => i.book)));
+  }, [params.id]);
 
-  const books = list.bookIds
-    .map((id) => getBook(id))
-    .filter((b): b is NonNullable<ReturnType<typeof getBook>> => Boolean(b));
+  if (list === null) notFound();
+  if (list === undefined) return null;
+
+  const books = list.books;
 
   // candidatos: livros da estante que ainda não estão na lista
-  const candidates = Object.keys(shelf)
-    .filter((id) => !list.bookIds.includes(id))
-    .map((id) => getBook(id))
-    .filter((b): b is NonNullable<ReturnType<typeof getBook>> => Boolean(b));
+  const candidates = shelfBooks.filter((b) => !list!.bookIds.includes(b.id));
 
   function togglePick(bookId: string) {
     setPicked((current) =>
@@ -39,21 +42,58 @@ export default function ListPage({ params }: { params: { id: string } }) {
     );
   }
 
-  function confirmAdd() {
-    if (picked.length === 0) return;
-    addBooksToList(list!.id, picked);
-    showToast(`${picked.length} ${picked.length === 1 ? "livro adicionado" : "livros adicionados"}`);
-    setPicked([]);
-    setAdding(false);
+  async function confirmAdd() {
+    if (picked.length === 0 || busy) return;
+    setBusy(true);
+    try {
+      for (const bookId of picked) {
+        await fetch(`/api/lists/${list!.id}/books`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ bookId }),
+        });
+      }
+      const res = await fetch(`/api/lists/${list!.id}`);
+      if (res.ok) setList(await res.json());
+      showToast(`${picked.length} ${picked.length === 1 ? "livro adicionado" : "livros adicionados"}`);
+      setPicked([]);
+      setAdding(false);
+    } finally {
+      setBusy(false);
+    }
   }
 
-  function toggleVisibility() {
-    toggleListVisibility(list!.id);
-    showToast(
-      list!.visibility === "public"
-        ? "Lista agora é privada 🔒"
-        : "Lista agora é pública 🌐"
-    );
+  async function removeBook(bookId: string) {
+    const res = await fetch(`/api/lists/${list!.id}/books`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bookId }),
+    });
+    if (res.ok) {
+      setList((current) =>
+        current
+          ? {
+              ...current,
+              bookIds: current.bookIds.filter((id) => id !== bookId),
+              books: current.books.filter((b) => b.id !== bookId),
+            }
+          : current
+      );
+      showToast("Removido da lista");
+    }
+  }
+
+  async function toggleVisibility() {
+    const nextVisibility = list!.visibility === "public" ? "private" : "public";
+    const res = await fetch(`/api/lists/${list!.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ visibility: nextVisibility }),
+    });
+    if (res.ok) {
+      setList((current) => (current ? { ...current, visibility: nextVisibility } : current));
+      showToast(nextVisibility === "private" ? "Lista agora é privada 🔒" : "Lista agora é pública 🌐");
+    }
   }
 
   return (
@@ -73,7 +113,7 @@ export default function ListPage({ params }: { params: { id: string } }) {
             key={key}
             type="button"
             aria-pressed={list.visibility === key}
-            onClick={() => list.visibility !== key && toggleVisibility()}
+            onClick={() => list!.visibility !== key && toggleVisibility()}
             className={`flex items-center gap-1 rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors ${
               list.visibility === key
                 ? "bg-foil text-leather"
@@ -107,10 +147,7 @@ export default function ListPage({ params }: { params: { id: string } }) {
               </Link>
               <button
                 type="button"
-                onClick={() => {
-                  removeBookFromList(list!.id, book.id);
-                  showToast("Removido da lista");
-                }}
+                onClick={() => removeBook(book.id)}
                 aria-label={`Remover ${book.title} da lista`}
                 className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-card2 text-[10px] font-bold text-paperDim ring-1 ring-line hover:text-ribbon"
               >
@@ -170,7 +207,7 @@ export default function ListPage({ params }: { params: { id: string } }) {
             <button
               type="button"
               onClick={confirmAdd}
-              disabled={picked.length === 0}
+              disabled={picked.length === 0 || busy}
               className="mt-4 w-full rounded-xl bg-foil px-5 py-3 font-bold text-leather transition-opacity hover:opacity-90 disabled:opacity-40"
             >
               Adicionar ({picked.length})

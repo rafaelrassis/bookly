@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AVATAR_CHOICES } from "@/data/users";
 import { getBook } from "@/data/books";
@@ -9,6 +9,7 @@ import { BookCover } from "@/components/BookCover";
 import { SectionTitle } from "@/components/SectionTitle";
 import { withoutAt } from "@/lib/handle";
 import { useStore } from "@/lib/store";
+import type { Book } from "@/lib/types";
 
 export default function EditProfilePage() {
   const user = useStore((s) => s.user);
@@ -23,6 +24,13 @@ export default function EditProfilePage() {
   const [bio, setBio] = useState(user.bio);
   const [top4, setTop4] = useState<string[]>(user.top4);
   const [saving, setSaving] = useState(false);
+  const [readShelfBooks, setReadShelfBooks] = useState<Book[]>([]);
+
+  useEffect(() => {
+    fetch("/api/shelf?status=READ")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => data && setReadShelfBooks(data.items.map((i: { book: Book }) => i.book)));
+  }, []);
 
   function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -36,17 +44,13 @@ export default function EditProfilePage() {
     reader.readAsDataURL(file);
   }
 
-  // favoritos escolhidos entre os livros lidos (+ os já favoritos)
-  const readBooks = Array.from(
-    new Set([
-      ...Object.entries(user.shelf)
-        .filter(([, e]) => e.status === "READ")
-        .map(([id]) => id),
-      ...user.top4,
-    ])
-  )
+  // favoritos escolhidos entre os livros lidos (+ os já favoritos, mesmo que
+  // não estejam mais marcados como lidos)
+  const extraFavorites = top4
+    .filter((id) => !readShelfBooks.some((b) => b.id === id))
     .map((id) => getBook(id))
-    .filter((b): b is NonNullable<ReturnType<typeof getBook>> => Boolean(b));
+    .filter((b): b is Book => Boolean(b));
+  const readBooks = [...readShelfBooks, ...extraFavorites];
 
   function toggleFavorite(bookId: string) {
     setTop4((current) => {

@@ -76,10 +76,10 @@ test("cadastro completo leva ao /home", async ({ page }) => {
 // C3: clicar numa review da comunidade leva à página /review/[id]
 test("review da comunidade abre a página do post", async ({ page }) => {
   await loginAsSeedUser(page);
-  const firstReviewLink = page.locator('article a[href^="/review/fr"]').first();
+  const firstReviewLink = page.locator('article a[href^="/review/"]').first();
   await expect(firstReviewLink).toBeVisible();
   await firstReviewLink.click();
-  await page.waitForURL(/\/review\/fr/);
+  await page.waitForURL(/\/review\/.+/);
   await expect(page.getByText("Resenha")).toBeVisible();
 });
 

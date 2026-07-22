@@ -28,6 +28,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     book: serializeBook(book),
     entry,
     rating: review?.rating ?? null,
+    myReviewTitle: review?.title ?? null,
     myReview: review?.text ?? null,
     tags: tags.map((t) => t.tag),
     quotes: quotes.map((q) => ({ id: q.id, text: q.text, page: q.page ?? undefined })),
