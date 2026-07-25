@@ -11,7 +11,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   const review = await db.review.findUnique({
     where: { id: params.id },
     include: {
-      user: { select: { username: true, name: true, avatar: true } },
+      user: { select: { username: true, name: true, avatar: true, avatarUrl: true } },
       book: true,
       _count: { select: { likes: true, comments: true } },
       likes: { where: { userId: uid }, select: { userId: true } },

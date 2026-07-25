@@ -14,7 +14,9 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     where: { id: params.id },
     include: {
       book: true,
-      members: { include: { user: { select: { username: true, name: true, avatar: true } } } },
+      members: {
+        include: { user: { select: { username: true, name: true, avatar: true, avatarUrl: true } } },
+      },
     },
   });
   if (!club) return NextResponse.json({ error: "não encontrado" }, { status: 404 });
@@ -36,6 +38,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     user: `@${m.user.username}`,
     name: m.user.name,
     avatar: m.user.avatar,
+    avatarUrl: m.user.avatarUrl,
     role: m.role,
     percent: shelfPercent(byUser.get(m.userId), club.book.pages),
   }));

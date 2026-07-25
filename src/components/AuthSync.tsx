@@ -38,6 +38,7 @@ export function AuthSync() {
             bio: profile.bio,
             genres: profile.genres,
             avatar: profile.avatar,
+            avatarUrl: profile.avatarUrl,
             top4: profile.top4,
             top4Books: profile.top4Books,
             followers: profile.followers,

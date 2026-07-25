@@ -53,7 +53,13 @@ function Bubble({
   return (
     <div className={`flex gap-2.5 ${own ? "flex-row-reverse" : ""}`}>
       {!own && (
-        <Avatar user={message.user} avatarIndex={message.avatar} size={30} className="mt-0.5" />
+        <Avatar
+          user={message.user}
+          avatarIndex={message.avatar}
+          avatarUrl={message.avatarUrl}
+          size={30}
+          className="mt-0.5"
+        />
       )}
       <div
         className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 ${
@@ -124,7 +130,7 @@ function MembersModal({
         <div className="mt-4 flex flex-col gap-3">
           {club.members.map((m) => (
             <div key={m.userId} className="flex items-center gap-3">
-              <Avatar user={m.user} avatarIndex={m.avatar} size={30} />
+              <Avatar user={m.user} avatarIndex={m.avatar} avatarUrl={m.avatarUrl} size={30} />
               <div className="min-w-0 flex-1">
                 <p className="flex items-baseline justify-between text-xs">
                   <span className="truncate font-bold">
@@ -282,7 +288,7 @@ export default function ClubPage({ params }: { params: { id: string } }) {
 
   // sugestões de menção ao digitar @
   const mentionMatch = draft.match(/@([\w.\-]*)$/);
-  const avatarByHandle = new Map(club.members.map((m) => [m.user, m.avatar]));
+  const avatarByHandle = new Map(club.members.map((m) => [m.user, m]));
   const mentionables = club.members.map((m) => m.user);
   const suggestions = mentionMatch
     ? mentionables.filter((u) =>
@@ -566,7 +572,7 @@ export default function ClubPage({ params }: { params: { id: string } }) {
                 href={href}
                 className="flex min-h-11 items-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foil focus-visible:ring-offset-2 focus-visible:ring-offset-card"
               >
-                <Avatar user={m.user} avatarIndex={m.avatar} size={28} />
+                <Avatar user={m.user} avatarIndex={m.avatar} avatarUrl={m.avatarUrl} size={28} />
                 <div className="min-w-0 flex-1">
                   <p className="flex items-baseline justify-between text-xs">
                     <span className="truncate font-bold">
@@ -647,7 +653,12 @@ export default function ClubPage({ params }: { params: { id: string } }) {
                       onClick={() => applyMention(s)}
                       className="flex w-full items-center gap-2 border-b border-line px-3 py-2 text-left text-sm last:border-b-0 hover:bg-card2"
                     >
-                      <Avatar user={s} avatarIndex={avatarByHandle.get(s)} size={22} />
+                      <Avatar
+                        user={s}
+                        avatarIndex={avatarByHandle.get(s)?.avatar}
+                        avatarUrl={avatarByHandle.get(s)?.avatarUrl}
+                        size={22}
+                      />
                       <span className="font-bold text-foil">{s}</span>
                     </button>
                   ))}

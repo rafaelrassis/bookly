@@ -20,7 +20,7 @@ export async function GET() {
     where: { id: { notIn: excluded } },
     orderBy: { createdAt: "asc" },
     take: LIMIT,
-    select: { username: true, name: true, avatar: true },
+    select: { username: true, name: true, avatar: true, avatarUrl: true },
   });
 
   return NextResponse.json({ items: users });

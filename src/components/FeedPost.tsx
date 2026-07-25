@@ -120,7 +120,7 @@ export function FeedPost({ review }: { review: ApiReview }) {
     <article className="border-b border-line py-4">
       <div className="flex gap-3">
         <Link href={`/u/${review.user.username}`} aria-label={authorHandle} className="rounded-full">
-          <Avatar user={authorHandle} avatarIndex={review.user.avatar} />
+          <Avatar user={authorHandle} avatarIndex={review.user.avatar} avatarUrl={review.user.avatarUrl} />
         </Link>
         <div className="min-w-0 flex-1">
           <p className="text-sm leading-snug">
@@ -188,7 +188,12 @@ export function FeedPost({ review }: { review: ApiReview }) {
             return (
               <div key={comment.id} className="flex gap-2.5">
                 <Link href={`/u/${comment.user.username}`} aria-label={handle}>
-                  <Avatar user={handle} avatarIndex={comment.user.avatar} size={26} />
+                  <Avatar
+                    user={handle}
+                    avatarIndex={comment.user.avatar}
+                    avatarUrl={comment.user.avatarUrl}
+                    size={26}
+                  />
                 </Link>
                 <p className="min-w-0 text-sm text-paperDim">
                   <Link

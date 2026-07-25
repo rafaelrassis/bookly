@@ -18,7 +18,7 @@ type BookQuote = { id: string; text: string; page?: number };
 
 type CommunityReview = {
   id: string;
-  user: { username: string; name: string; avatar: number };
+  user: { username: string; name: string; avatar: number; avatarUrl: string | null };
   rating: number;
   title?: string;
   text: string;
@@ -679,7 +679,12 @@ export default function BookPage({ params }: { params: { id: string } }) {
               className="block rounded-2xl border border-line bg-card p-4 transition-colors hover:bg-card2"
             >
               <div className="flex items-center gap-2.5">
-                <Avatar user={`@${review.user.username}`} avatarIndex={review.user.avatar} size={28} />
+                <Avatar
+                  user={`@${review.user.username}`}
+                  avatarIndex={review.user.avatar}
+                  avatarUrl={review.user.avatarUrl}
+                  size={28}
+                />
                 <div>
                   <p className="text-sm font-bold">{review.user.name}</p>
                   <Stars rating={review.rating} className="text-xs" />

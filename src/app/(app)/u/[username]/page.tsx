@@ -21,6 +21,7 @@ type Profile = {
   name: string;
   bio: string;
   avatar: number;
+  avatarUrl: string | null;
   top4: string[];
   followers: number;
   following: number;
@@ -139,7 +140,7 @@ export default function PublicProfilePage({ params }: { params: { username: stri
       </BackHeader>
 
       <section className="mt-4 flex items-center gap-4">
-        <Avatar user={handle} avatarIndex={profile.avatar} size={72} />
+        <Avatar user={handle} avatarIndex={profile.avatar} avatarUrl={profile.avatarUrl} size={72} />
         <div className="min-w-0 flex-1">
           <h2 className="font-display text-xl font-bold">{profile.name}</h2>
           <p className="text-sm text-paperDim">{handle}</p>

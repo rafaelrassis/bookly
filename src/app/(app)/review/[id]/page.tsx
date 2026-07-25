@@ -129,7 +129,7 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
       <article className="mt-4">
         <div className="flex items-center gap-3">
           <Link href={profileHref} aria-label={authorHandle} className="rounded-full">
-            <Avatar user={authorHandle} avatarIndex={review.user.avatar} />
+            <Avatar user={authorHandle} avatarIndex={review.user.avatar} avatarUrl={review.user.avatarUrl} />
           </Link>
           <div className="min-w-0">
             <Link href={profileHref} className="text-sm font-bold hover:text-foil">
@@ -178,7 +178,12 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
           return (
             <div key={comment.id} className="flex gap-2.5">
               <Link href={`/u/${comment.user.username}`} aria-label={handle}>
-                <Avatar user={handle} avatarIndex={comment.user.avatar} size={26} />
+                <Avatar
+                  user={handle}
+                  avatarIndex={comment.user.avatar}
+                  avatarUrl={comment.user.avatarUrl}
+                  size={26}
+                />
               </Link>
               <p className="min-w-0 text-sm text-paperDim">
                 <Link

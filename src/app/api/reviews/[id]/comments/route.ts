@@ -15,7 +15,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     orderBy: { createdAt: "asc" },
     take: PAGE + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-    include: { user: { select: { username: true, name: true, avatar: true } } },
+    include: { user: { select: { username: true, name: true, avatar: true, avatarUrl: true } } },
   });
 
   const hasMore = comments.length > PAGE;
@@ -47,7 +47,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   const comment = await db.comment.create({
     data: { reviewId: params.id, userId: session.user.id, text: parsed.data.text },
-    include: { user: { select: { username: true, name: true, avatar: true } } },
+    include: { user: { select: { username: true, name: true, avatar: true, avatarUrl: true } } },
   });
 
   return NextResponse.json(

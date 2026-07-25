@@ -47,7 +47,7 @@ export function DiscoverReaders() {
             className="w-40 shrink-0 rounded-2xl border border-line bg-card p-4 text-center"
           >
             <Link href={`/u/${u.username}`} className="flex flex-col items-center gap-2">
-              <Avatar user={withAt(u.username)} avatarIndex={u.avatar} size={48} />
+              <Avatar user={withAt(u.username)} avatarIndex={u.avatar} avatarUrl={u.avatarUrl} size={48} />
               <div className="min-w-0">
                 <p className="truncate font-display text-sm font-bold">{u.name}</p>
                 <p className="truncate text-xs text-paperDim">{withAt(u.username)}</p>

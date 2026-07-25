@@ -12,7 +12,7 @@ function serializeMessage(m: {
   text: string;
   system: boolean;
   createdAt: Date;
-  user: { username: string; name: string; avatar: number };
+  user: { username: string; name: string; avatar: number; avatarUrl: string | null };
   replyTo: { text: string; user: { username: string } } | null;
 }) {
   return {
@@ -20,6 +20,7 @@ function serializeMessage(m: {
     user: `@${m.user.username}`,
     name: m.user.name,
     avatar: m.user.avatar,
+    avatarUrl: m.user.avatarUrl,
     text: m.text,
     system: m.system,
     time: m.createdAt.toISOString(),
@@ -48,7 +49,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
         cursor: { id: after },
         skip: 1,
         include: {
-          user: { select: { username: true, name: true, avatar: true } },
+          user: { select: { username: true, name: true, avatar: true, avatarUrl: true } },
           replyTo: { include: { user: { select: { username: true } } } },
         },
       })
@@ -57,7 +58,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
         orderBy: [{ createdAt: "asc" }, { id: "asc" }],
         take: -limit,
         include: {
-          user: { select: { username: true, name: true, avatar: true } },
+          user: { select: { username: true, name: true, avatar: true, avatarUrl: true } },
           replyTo: { include: { user: { select: { username: true } } } },
         },
       });
@@ -92,7 +93,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const message = await db.message.create({
     data: { clubId: params.id, userId: session.user.id, text, replyToId },
     include: {
-      user: { select: { username: true, name: true, avatar: true } },
+      user: { select: { username: true, name: true, avatar: true, avatarUrl: true } },
       replyTo: { include: { user: { select: { username: true } } } },
     },
   });

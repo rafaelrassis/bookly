@@ -29,6 +29,7 @@ export type ClubMessage = {
   user: string;
   name: string;
   avatar: number;
+  avatarUrl?: string | null;
   text: string;
   time: string;
   system?: boolean;
@@ -40,6 +41,7 @@ export type ClubMember = {
   user: string;
   name: string;
   avatar: number;
+  avatarUrl?: string | null;
   role: string;
   percent: number;
 };
@@ -84,7 +86,7 @@ export type ShelfEntry = {
 export type ProgressUnit = "pages" | "percent";
 
 /** Autor mínimo retornado pelas APIs sociais (feed/comentários/listas). */
-export type ApiAuthor = { username: string; name: string; avatar: number };
+export type ApiAuthor = { username: string; name: string; avatar: number; avatarUrl?: string | null };
 
 /** Review real (Spec 3b) — usada no feed, na página de review e nas reviews do livro. */
 export type ApiReview = {
@@ -150,9 +152,9 @@ export type UserState = {
   top4: string[];
   /** Livros resolvidos de `top4` (mesma ordem), vindos de /api/users/me. */
   top4Books: Book[];
-  /** Índice do gradiente de avatar escolhido (AVATAR_CHOICES). */
+  /** Índice do gradiente de avatar escolhido (AVATAR_CHOICES); usado como fallback quando avatarUrl não está definido. */
   avatar: number;
-  /** Foto de perfil enviada pelo usuário (data URL); sobrepõe o gradiente quando presente. */
-  avatarImage?: string;
+  /** Foto de perfil enviada pelo usuário (Vercel Blob); sobrepõe o gradiente quando presente. */
+  avatarUrl?: string | null;
   progressUnit: ProgressUnit;
 };

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AVATAR_CHOICES } from "@/lib/avatars";
+import { AvatarUpload } from "@/components/AvatarUpload";
 import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
 import { SectionTitle } from "@/components/SectionTitle";
@@ -16,11 +17,9 @@ export default function EditProfilePage() {
   const applyProfile = useStore((s) => s.applyProfile);
   const showToast = useStore((s) => s.showToast);
   const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [username, setUsername] = useState(user.username);
   const [avatar, setAvatar] = useState(user.avatar);
-  const [avatarImage, setAvatarImage] = useState(user.avatarImage);
   const [bio, setBio] = useState(user.bio);
   const [top4, setTop4] = useState<string[]>(user.top4);
   const [saving, setSaving] = useState(false);
@@ -31,18 +30,6 @@ export default function EditProfilePage() {
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => data && setReadShelfBooks(data.items.map((i: { book: Book }) => i.book)));
   }, []);
-
-  function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      showToast("Escolha um arquivo de imagem");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => setAvatarImage(reader.result as string);
-    reader.readAsDataURL(file);
-  }
 
   // favoritos escolhidos entre os livros lidos (+ os já favoritos, mesmo que
   // não estejam mais marcados como lidos)
@@ -85,7 +72,6 @@ export default function EditProfilePage() {
       avatar: profile.avatar,
       bio: profile.bio,
       top4: profile.top4,
-      avatarImage,
     });
     showToast("Perfil atualizado ✦");
     router.push("/profile");
@@ -99,52 +85,11 @@ export default function EditProfilePage() {
 
       <section className="mt-4">
         <SectionTitle>Foto</SectionTitle>
-        <div className="mt-3 flex items-center gap-4">
-          {avatarImage ? (
-            // eslint-disable-next-line @next/next/no-img-element -- preview de data URL local, next/image não se aplica
-            <img
-              src={avatarImage}
-              alt=""
-              aria-hidden="true"
-              className="h-16 w-16 rounded-full object-cover"
-            />
-          ) : (
-            <span
-              aria-hidden="true"
-              className="h-16 w-16 rounded-full"
-              style={{
-                backgroundImage: `linear-gradient(135deg, ${AVATAR_CHOICES[avatar][0]}, ${AVATAR_CHOICES[avatar][1]})`,
-              }}
-            />
-          )}
-          <div className="flex flex-col gap-1.5">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoUpload}
-              className="hidden"
-            />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="rounded-full border border-line bg-card px-4 py-2 text-xs font-bold text-paper transition-colors hover:bg-card2"
-            >
-              Enviar foto
-            </button>
-            {avatarImage && (
-              <button
-                type="button"
-                onClick={() => setAvatarImage(undefined)}
-                className="text-xs font-bold text-paperDim hover:text-ribbon"
-              >
-                Remover foto
-              </button>
-            )}
-          </div>
+        <div className="mt-3">
+          <AvatarUpload />
         </div>
 
-        {!avatarImage && (
+        {!user.avatarUrl && (
           <div className="mt-3 flex flex-wrap gap-3">
             {AVATAR_CHOICES.map(([from, to], i) => (
               <button

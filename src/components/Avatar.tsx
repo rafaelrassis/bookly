@@ -12,24 +12,29 @@ type AvatarProps = {
   /** Índice em AVATAR_CHOICES pra usuários reais (vindos da API), que não
    * estão no mock MOCK_USERS. Ignorado para o próprio usuário logado. */
   avatarIndex?: number;
+  /** Foto de perfil (Vercel Blob) de usuários reais, vinda da API. Ignorada
+   * para o próprio usuário logado, que usa o avatarUrl do store. */
+  avatarUrl?: string | null;
 };
 
-/** Avatar circular com gradiente. O usuário logado usa o gradiente escolhido
- * em Editar perfil; demais usam avatarIndex (real) ou o gradiente mocado. */
-export function Avatar({ user, size = 36, className = "", avatarIndex }: AvatarProps) {
+/** Avatar circular: usa a foto enviada (Blob) quando disponível, senão o
+ * gradiente escolhido em Editar perfil (usuário logado) ou avatarIndex/hash
+ * (demais usuários). */
+export function Avatar({ user, size = 36, className = "", avatarIndex, avatarUrl }: AvatarProps) {
   const username = useStore((s) => s.user.username);
   const myAvatar = useStore((s) => s.user.avatar);
-  const myAvatarImage = useStore((s) => s.user.avatarImage);
+  const myAvatarUrl = useStore((s) => s.user.avatarUrl);
 
   const isMe = user === withAt(username);
   const initial = withoutAt(user).charAt(0).toUpperCase();
+  const resolvedUrl = isMe ? myAvatarUrl : avatarUrl;
 
-  if (isMe && myAvatarImage) {
+  if (resolvedUrl) {
     return (
       <span
         aria-hidden="true"
         className={`inline-block shrink-0 overflow-hidden rounded-full bg-cover bg-center ${className}`}
-        style={{ width: size, height: size, backgroundImage: `url(${myAvatarImage})` }}
+        style={{ width: size, height: size, backgroundImage: `url(${resolvedUrl})` }}
       />
     );
   }

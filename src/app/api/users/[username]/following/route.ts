@@ -16,7 +16,9 @@ export async function GET(req: Request, { params }: { params: { username: string
     orderBy: { createdAt: "desc" },
     take: PAGE_SIZE + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-    include: { followingUser: { select: { id: true, username: true, name: true, avatar: true } } },
+    include: {
+      followingUser: { select: { id: true, username: true, name: true, avatar: true, avatarUrl: true } },
+    },
   });
 
   const hasMore = rows.length > PAGE_SIZE;

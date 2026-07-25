@@ -34,7 +34,7 @@ export async function GET(req: Request) {
     take: PAGE + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     include: {
-      user: { select: { username: true, name: true, avatar: true } },
+      user: { select: { username: true, name: true, avatar: true, avatarUrl: true } },
       book: true,
       _count: { select: { likes: true, comments: true } },
       likes: { where: { userId: uid }, select: { userId: true } },

@@ -17,7 +17,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   const reviews = await db.review.findMany({
     where: { bookId: params.id, NOT: { userId: uid } },
     include: {
-      user: { select: { username: true, name: true, avatar: true } },
+      user: { select: { username: true, name: true, avatar: true, avatarUrl: true } },
       _count: { select: { likes: true, comments: true } },
       likes: { where: { userId: uid }, select: { userId: true } },
     },

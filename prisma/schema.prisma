@@ -18,8 +18,12 @@ model User {
   passwordHash  String
   emailVerified DateTime?
   bio           String?      @db.VarChar(500)
-  /// Índice do gradiente de avatar escolhido (AVATAR_CHOICES no front).
+  /// Índice do gradiente de avatar escolhido (AVATAR_CHOICES no front); usado
+  /// como fallback quando avatarUrl não está definido.
   avatar        Int          @default(0)
+  /// Foto de perfil enviada pelo usuário (Vercel Blob, WebP 400x400); nula
+  /// até o primeiro upload, quando o gradiente (avatar) é usado.
+  avatarUrl     String?
   genres        String[]     @default([])
   /// Até 4 bookIds em destaque no perfil (catálogo mocado até a Spec 3).
   top4          String[]     @default([])
