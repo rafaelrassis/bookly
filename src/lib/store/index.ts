@@ -22,6 +22,7 @@ const EMPTY_USER: UserState = {
   followers: 0,
   following: 0,
   top4: [],
+  top4Books: [],
   avatar: 0,
   progressUnit: "pages",
 };
