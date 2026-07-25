@@ -11,8 +11,19 @@ export async function GET(req: Request) {
   const q = url.searchParams.get("q")?.trim() ?? "";
   const cursor = url.searchParams.get("cursor") ?? undefined;
   const sort = url.searchParams.get("sort");
+  const genre = url.searchParams.get("genre");
 
   if (!q) {
+    if (genre) {
+      const genres = genre.split(",").filter(Boolean);
+      const limit = Math.min(Number(url.searchParams.get("limit")) || 20, PAGE_SIZE);
+      const books = await db.book.findMany({
+        where: { genre: { in: genres } },
+        orderBy: [{ avg: "desc" }, { count: "desc" }],
+        take: limit,
+      });
+      return NextResponse.json({ items: books.map(serializeBook), nextCursor: null });
+    }
     if (sort === "trending" || sort === "top") {
       const limit = Math.min(Number(url.searchParams.get("limit")) || 5, PAGE_SIZE);
       const books = await db.book.findMany({

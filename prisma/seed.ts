@@ -11,8 +11,7 @@ import "dotenv/config";
 import bcrypt from "bcryptjs";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
-import { BOOKS } from "../src/data/books";
-import { MOCK_USERS } from "../src/data/users";
+import { SEED_BOOKS as BOOKS, SEED_COMMUNITY_USERS as MOCK_USERS } from "./seed-data";
 import { withoutAt } from "../src/lib/handle";
 import { recomputeBookRating } from "../src/lib/books";
 

@@ -1,30 +1,31 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BOOKS } from "@/data/books";
 import { BookCover } from "@/components/BookCover";
 import type { Book } from "@/lib/types";
 
-/** Sem query, lista o catálogo semeado (estático, idêntico ao que o seed
- * grava no banco); com query, busca com debounce em /api/books?q=. */
+/** Sem query, lista os livros em alta do catálogo real; com query, busca
+ * com debounce em /api/books?q=. */
 function useBookSearch() {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<Book[]>(BOOKS);
+  const [results, setResults] = useState<Book[]>([]);
 
   useEffect(() => {
     const q = query.trim();
-    if (!q) {
-      setResults(BOOKS);
-      return;
-    }
     let cancelled = false;
-    const handle = setTimeout(() => {
-      fetch(`/api/books?q=${encodeURIComponent(q)}`)
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data) => {
-          if (!cancelled && data) setResults(data.items);
-        });
-    }, 200);
+    const url = q
+      ? `/api/books?q=${encodeURIComponent(q)}`
+      : `/api/books?sort=trending&limit=8`;
+    const handle = setTimeout(
+      () => {
+        fetch(url)
+          .then((res) => (res.ok ? res.json() : null))
+          .then((data) => {
+            if (!cancelled && data) setResults(data.items);
+          });
+      },
+      q ? 200 : 0
+    );
     return () => {
       cancelled = true;
       clearTimeout(handle);

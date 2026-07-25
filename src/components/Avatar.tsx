@@ -1,6 +1,6 @@
 "use client";
 
-import { AVATAR_CHOICES, avatarGradient } from "@/data/users";
+import { AVATAR_CHOICES } from "@/data/users";
 import { withAt, withoutAt } from "@/lib/handle";
 import { useStore } from "@/lib/store";
 
@@ -9,13 +9,13 @@ type AvatarProps = {
   user: string;
   size?: number;
   className?: string;
-  /** Índice em AVATAR_CHOICES pra usuários reais (vindos da API), que não
-   * estão no mock MOCK_USERS. Ignorado para o próprio usuário logado. */
+  /** Índice em AVATAR_CHOICES pra usuários reais (vindos da API). Ignorado
+   * para o próprio usuário logado. */
   avatarIndex?: number;
 };
 
 /** Avatar circular com gradiente. O usuário logado usa o gradiente escolhido
- * em Editar perfil; demais usam avatarIndex (real) ou o gradiente mocado. */
+ * em Editar perfil; demais usam avatarIndex (real) ou o gradiente padrão. */
 export function Avatar({ user, size = 36, className = "", avatarIndex }: AvatarProps) {
   const username = useStore((s) => s.user.username);
   const myAvatar = useStore((s) => s.user.avatar);
@@ -36,9 +36,7 @@ export function Avatar({ user, size = 36, className = "", avatarIndex }: AvatarP
 
   const [from, to] = isMe
     ? AVATAR_CHOICES[myAvatar] ?? AVATAR_CHOICES[0]
-    : avatarIndex !== undefined
-      ? AVATAR_CHOICES[avatarIndex] ?? AVATAR_CHOICES[0]
-      : avatarGradient(user);
+    : AVATAR_CHOICES[avatarIndex ?? 0] ?? AVATAR_CHOICES[0];
 
   return (
     <span

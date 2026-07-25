@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { userStats } from "@/lib/stats";
+import { serializeBook } from "@/lib/books";
 
 export async function serializeProfile(targetId: string, viewerId?: string) {
   const [target, followers, following, followRow, stats] = await Promise.all([
@@ -15,6 +16,11 @@ export async function serializeProfile(targetId: string, viewerId?: string) {
   ]);
   if (!target) return null;
 
+  const top4Books = target.top4.length
+    ? await db.book.findMany({ where: { id: { in: target.top4 } } })
+    : [];
+  const byId = new Map(top4Books.map((b) => [b.id, serializeBook(b)]));
+
   return {
     id: target.id,
     username: target.username,
@@ -23,6 +29,7 @@ export async function serializeProfile(targetId: string, viewerId?: string) {
     genres: target.genres,
     avatar: target.avatar,
     top4: target.top4,
+    top4Books: target.top4.map((id) => byId.get(id)).filter((b): b is NonNullable<typeof b> => Boolean(b)),
     progressUnit: target.progressUnit,
     followers,
     following,

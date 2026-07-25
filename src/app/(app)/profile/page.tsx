@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { getBook } from "@/data/books";
 import { Avatar } from "@/components/Avatar";
 import { BookCover } from "@/components/BookCover";
 import { FeedPost } from "@/components/FeedPost";
@@ -101,19 +100,15 @@ export default function ProfilePage() {
 
       {user.bio && <p className="mt-4 text-sm text-paperDim">{user.bio}</p>}
 
-      {user.top4.length > 0 && (
+      {user.top4Books.length > 0 && (
         <section className="mt-6">
           <SectionTitle>Favoritos</SectionTitle>
           <div className="mt-3 grid grid-cols-4 gap-3">
-            {user.top4.map((id) => {
-              const book = getBook(id);
-              if (!book) return null;
-              return (
-                <Link key={id} href={`/book/${id}`} aria-label={book.title} className="rounded-md">
-                  <BookCover book={book} width={88} />
-                </Link>
-              );
-            })}
+            {user.top4Books.map((book) => (
+              <Link key={book.id} href={`/book/${book.id}`} aria-label={book.title} className="rounded-md">
+                <BookCover book={book} width={88} />
+              </Link>
+            ))}
           </div>
         </section>
       )}

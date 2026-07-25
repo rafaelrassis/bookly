@@ -2,15 +2,14 @@
 
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { SEED_NOTIFICATIONS } from "@/data/notifications";
 import type { Notification, UserState } from "@/lib/types";
 
 /**
  * Estado local (Zustand + localStorage) pro que ainda não é servidor:
- * notificações (mock) e efêmero de UI (toast/tema). Identidade/perfil
- * (Spec 2), estante/notas/reviews (Spec 3a), feed social/likes/comentários/
- * listas (Spec 3b) e clubes/chat (Spec 4) já vêm da API — ver AuthSync e
- * src/app/(app)/book, /shelf, /home, /clubs.
+ * notificações (sem backend ainda — lista começa vazia) e efêmero de UI
+ * (toast/tema). Identidade/perfil (Spec 2), estante/notas/reviews (Spec 3a),
+ * feed social/likes/comentários/listas (Spec 3b) e clubes/chat (Spec 4) já
+ * vêm da API — ver AuthSync e src/app/(app)/book, /shelf, /home, /clubs.
  */
 const INITIAL_USER: UserState = {
   loggedIn: false,
@@ -22,6 +21,7 @@ const INITIAL_USER: UserState = {
   followers: 0,
   following: 0,
   top4: [],
+  top4Books: [],
   avatar: 0,
   progressUnit: "pages",
 };
@@ -59,7 +59,7 @@ export const useStore = create<Store>()(
       user: INITIAL_USER,
       toast: null,
       theme: "dark",
-      notifications: [...SEED_NOTIFICATIONS],
+      notifications: [],
       hasHydrated: false,
 
       showToast: (message) => set({ toast: { id: Date.now(), message } }),
@@ -82,7 +82,7 @@ export const useStore = create<Store>()(
       logout: () =>
         set({
           user: { ...INITIAL_USER, loggedIn: false },
-          notifications: [...SEED_NOTIFICATIONS],
+          notifications: [],
         }),
 
       updatePhone: (phone) => set((s) => ({ user: { ...s.user, phone } })),

@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { BOOKS } from "@/data/books";
+import { useEffect, useState } from "react";
 import type { ApiReview, ApiUserReview, Book } from "@/lib/types";
 import { useStore } from "./index";
 
@@ -109,10 +108,13 @@ export function useMyStats() {
   return { readCount, pagesRead, reviewCount, avgRating, histogram, maxCount, ratedBooks, reviewEntries };
 }
 
-/** Recomendações: livros dos gêneros do usuário fora da estante (fallback: primeiros 4). */
+/** Recomendações: livros dos gêneros do usuário fora da estante (catálogo
+ * real via /api/books; sem gêneros preferidos ou sem match, cai pros mais
+ * bem avaliados). */
 export function useRecommendations(limit = 4): Book[] {
   const genres = useStore((s) => s.user.genres);
   const [shelfIds, setShelfIds] = useState<string[]>([]);
+  const [pool, setPool] = useState<Book[]>([]);
 
   useEffect(() => {
     fetch("/api/shelf")
@@ -120,11 +122,30 @@ export function useRecommendations(limit = 4): Book[] {
       .then((data) => data && setShelfIds(data.items.map((i: { book: { id: string } }) => i.book.id)));
   }, []);
 
-  return useMemo(() => {
-    const picks = BOOKS.filter((b) => genres.includes(b.genre) && !shelfIds.includes(b.id));
-    const result = picks.length > 0 ? picks : BOOKS.filter((b) => !shelfIds.includes(b.id));
-    return (result.length > 0 ? result : BOOKS).slice(0, limit);
-  }, [genres, shelfIds, limit]);
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      const wanted = limit * 3;
+      const byGenre = genres.length
+        ? await fetch(`/api/books?genre=${encodeURIComponent(genres.join(","))}&limit=${wanted}`)
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data) => data?.items ?? [])
+        : [];
+      const items =
+        byGenre.length > 0
+          ? byGenre
+          : await fetch(`/api/books?sort=top&limit=${wanted}`)
+              .then((res) => (res.ok ? res.json() : null))
+              .then((data) => data?.items ?? []);
+      if (!cancelled) setPool(items);
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [genres, limit]);
+
+  return pool.filter((b) => !shelfIds.includes(b.id)).slice(0, limit);
 }
 
 /** Livros "em alta": os mais avaliados (contagem real de reviews, vinda do banco). */

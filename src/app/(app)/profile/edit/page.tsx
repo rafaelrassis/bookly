@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AVATAR_CHOICES } from "@/data/users";
-import { getBook } from "@/data/books";
 import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
 import { SectionTitle } from "@/components/SectionTitle";
@@ -48,7 +47,7 @@ export default function EditProfilePage() {
   // não estejam mais marcados como lidos)
   const extraFavorites = top4
     .filter((id) => !readShelfBooks.some((b) => b.id === id))
-    .map((id) => getBook(id))
+    .map((id) => user.top4Books.find((b) => b.id === id))
     .filter((b): b is Book => Boolean(b));
   const readBooks = [...readShelfBooks, ...extraFavorites];
 
@@ -87,6 +86,7 @@ export default function EditProfilePage() {
       avatar: profile.avatar,
       bio: profile.bio,
       top4: profile.top4,
+      top4Books: profile.top4Books,
       avatarImage,
     });
     showToast("Perfil atualizado ✦");

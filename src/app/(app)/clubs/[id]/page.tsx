@@ -258,10 +258,9 @@ export default function ClubPage({ params }: { params: { id: string } }) {
 
   // sugestões de menção ao digitar @
   const mentionMatch = draft.match(/@([\w.\-]*)$/);
-  const mentionables = club.members.map((m) => m.user);
   const suggestions = mentionMatch
-    ? mentionables.filter((u) =>
-        u.slice(1).toLowerCase().startsWith(mentionMatch[1].toLowerCase())
+    ? club.members.filter((m) =>
+        m.user.slice(1).toLowerCase().startsWith(mentionMatch[1].toLowerCase())
       )
     : [];
 
@@ -617,13 +616,13 @@ export default function ClubPage({ params }: { params: { id: string } }) {
                 <div className="mb-2 overflow-hidden rounded-xl border border-line bg-card">
                   {suggestions.map((s) => (
                     <button
-                      key={s}
+                      key={s.user}
                       type="button"
-                      onClick={() => applyMention(s)}
+                      onClick={() => applyMention(s.user)}
                       className="flex w-full items-center gap-2 border-b border-line px-3 py-2 text-left text-sm last:border-b-0 hover:bg-card2"
                     >
-                      <Avatar user={s} size={22} />
-                      <span className="font-bold text-foil">{s}</span>
+                      <Avatar user={s.user} avatarIndex={s.avatar} size={22} />
+                      <span className="font-bold text-foil">{s.user}</span>
                     </button>
                   ))}
                 </div>
