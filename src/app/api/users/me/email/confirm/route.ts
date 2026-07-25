@@ -27,7 +27,10 @@ export async function POST(req: Request) {
       data: { email: newEmail, emailVerified: new Date() },
     });
     return NextResponse.json({ ok: true, email: user.email });
-  } catch {
-    return NextResponse.json({ error: "e-mail em uso" }, { status: 409 });
+  } catch (err) {
+    const isUniqueClash = err instanceof Error && "code" in err && (err as { code?: string }).code === "P2002";
+    if (isUniqueClash) return NextResponse.json({ error: "e-mail em uso" }, { status: 409 });
+    console.error("[users/me/email/confirm] falha ao atualizar e-mail:", err);
+    throw err;
   }
 }

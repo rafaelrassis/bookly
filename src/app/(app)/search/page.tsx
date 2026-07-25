@@ -31,6 +31,7 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const [communityLists, setCommunityLists] = useState<ApiCommunityList[]>([]);
+  const [retryCount, setRetryCount] = useState(0);
   const recommended = useRecommendations(4);
 
   const q = query.trim();
@@ -69,7 +70,7 @@ export default function SearchPage() {
       controller.abort();
       clearTimeout(handle);
     };
-  }, [q]);
+  }, [q, retryCount]);
 
   return (
     <div className="pt-4">
@@ -125,9 +126,16 @@ export default function SearchPage() {
       ) : loading ? (
         <p className="mt-10 text-center text-paperDim">Buscando…</p>
       ) : error ? (
-        <p className="mt-10 text-center text-paperDim">
-          Não foi possível buscar agora. Tente novamente em instantes.
-        </p>
+        <div className="mt-10 flex flex-col items-center gap-3 text-center">
+          <p className="text-paperDim">Não foi possível buscar agora. Tente novamente em instantes.</p>
+          <button
+            type="button"
+            onClick={() => setRetryCount((n) => n + 1)}
+            className="rounded-xl border border-line bg-card px-4 py-2.5 text-sm font-bold text-paper hover:border-foil/50"
+          >
+            Tentar de novo
+          </button>
+        </div>
       ) : results.length === 0 ? (
         <p className="mt-10 text-center text-paperDim">Nenhum livro encontrado.</p>
       ) : (

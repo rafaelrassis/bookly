@@ -101,8 +101,16 @@ export default function HomePage() {
   const [reading, setReading] = useState<ReadingItem[]>([]);
   const unread = useStore((s) => s.notifications.filter((n) => !n.read).length);
   const [feedFilter, setFeedFilter] = useState<"all" | "following">("all");
-  const { items: feed, loading: feedLoading, hasMore, loadingMore, loadMore, fellBackToAll } =
-    useFeed(feedFilter);
+  const {
+    items: feed,
+    loading: feedLoading,
+    hasMore,
+    loadingMore,
+    loadMore,
+    fellBackToAll,
+    error: feedError,
+    retry: retryFeed,
+  } = useFeed(feedFilter);
   const trending = useTrendingBooks(5);
 
   useEffect(() => {
@@ -198,8 +206,38 @@ export default function HomePage() {
               Você ainda não segue ninguém — mostrando o feed geral.
             </p>
           )}
-          {!feedLoading && feed.length === 0 && (
-            <p className="py-6 text-center text-sm text-paperDim">Nenhuma review por aqui ainda.</p>
+          {feedError ? (
+            <div className="flex flex-col items-center gap-3 py-6 text-center">
+              <p className="text-sm text-paperDim">Não foi possível carregar o feed. Tente de novo.</p>
+              <button
+                type="button"
+                onClick={retryFeed}
+                className="rounded-xl border border-line bg-card px-4 py-2.5 text-sm font-bold text-paper hover:border-foil/50"
+              >
+                Tentar de novo
+              </button>
+            </div>
+          ) : (
+            !feedLoading &&
+            feed.length === 0 && (
+              <div className="flex flex-col items-center gap-3 py-6 text-center">
+                <p className="text-sm text-paperDim">Nenhuma review por aqui ainda.</p>
+                <div className="flex gap-2">
+                  <Link
+                    href="/search"
+                    className="rounded-xl bg-foil px-4 py-2 text-xs font-bold text-leather transition-opacity hover:opacity-90"
+                  >
+                    Avaliar um livro
+                  </Link>
+                  <Link
+                    href="#discover-readers"
+                    className="rounded-xl border border-line bg-card px-4 py-2 text-xs font-bold text-paper transition-colors hover:bg-card2"
+                  >
+                    Seguir leitores
+                  </Link>
+                </div>
+              </div>
+            )
           )}
           {feed.map((review) => (
             <FeedPost key={review.id} review={review} />

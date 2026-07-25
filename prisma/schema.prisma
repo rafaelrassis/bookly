@@ -108,6 +108,9 @@ model Book {
   avg          Float    @default(0)
   count        Int      @default(0)
   createdAt    DateTime @default(now())
+  /// Toca só nos campos voláteis (título/autores/sinopse/capa) refrescados
+  /// do Google Books; usada pela política de staleness em getOrCreateBook().
+  updatedAt    DateTime @updatedAt
 
   shelfEntries ShelfEntry[]
   reviews      Review[]

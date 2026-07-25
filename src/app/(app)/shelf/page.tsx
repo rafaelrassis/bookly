@@ -185,11 +185,13 @@ export default function ShelfPage() {
   const [genres, setGenres] = useState<string[]>([]);
   const [allTags, setAllTags] = useState<string[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
 
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<ShelfStatus | "ALL">("ALL");
   const [genre, setGenre] = useState<string>("ALL");
   const [tag, setTag] = useState<string>("ALL");
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     const handle = setTimeout(() => {
@@ -199,18 +201,19 @@ export default function ShelfPage() {
       if (genre !== "ALL") params.set("genre", genre);
       if (tag !== "ALL") params.set("tag", tag);
 
+      setError(false);
       fetch(`/api/shelf?${params.toString()}`)
-        .then((res) => (res.ok ? res.json() : null))
+        .then((res) => (res.ok ? res.json() : Promise.reject(res)))
         .then((data) => {
-          if (!data) return;
           setItems(data.items);
           setGenres(data.genres);
           setAllTags(data.tags);
           setLoaded(true);
-        });
+        })
+        .catch(() => setError(true));
     }, 200);
     return () => clearTimeout(handle);
-  }, [query, status, genre, tag]);
+  }, [query, status, genre, tag, retryCount]);
 
   const isEmptyShelf = useMemo(
     () => loaded && items.length === 0 && query === "" && status === "ALL" && genre === "ALL" && tag === "ALL",
@@ -268,7 +271,18 @@ export default function ShelfPage() {
         {items.length} {items.length === 1 ? "livro" : "livros"}
       </p>
 
-      {items.length === 0 ? (
+      {error ? (
+        <div className="mt-12 flex flex-col items-center gap-3 text-center">
+          <p className="text-paperDim">Não foi possível carregar sua estante. Tente de novo.</p>
+          <button
+            type="button"
+            onClick={() => setRetryCount((n) => n + 1)}
+            className="rounded-xl border border-line bg-card px-4 py-2.5 text-sm font-bold text-paper hover:border-foil/50"
+          >
+            Tentar de novo
+          </button>
+        </div>
+      ) : items.length === 0 ? (
         loaded && (
           <div className="mt-12 flex flex-col items-center text-center">
             <p className="font-bold">Nada por aqui</p>

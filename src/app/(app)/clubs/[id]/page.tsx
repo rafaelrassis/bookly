@@ -162,8 +162,9 @@ export default function ClubPage({ params }: { params: { id: string } }) {
   const showToast = useStore((s) => s.showToast);
 
   const [club, setClub] = useState<ClubDetail | null>(null);
-  const [status, setStatus] = useState<"loading" | "ok" | "notfound">("loading");
+  const [status, setStatus] = useState<"loading" | "ok" | "notfound" | "error">("loading");
   const [messages, setMessages] = useState<ClubMessage[]>([]);
+  const [retryCount, setRetryCount] = useState(0);
 
   const [draft, setDraft] = useState("");
   const [replyTo, setReplyTo] = useState<ClubMessage | null>(null);
@@ -179,10 +180,15 @@ export default function ClubPage({ params }: { params: { id: string } }) {
   const me = withAt(username);
 
   const loadClub = useCallback(() => {
+    setStatus((s) => (s === "ok" ? s : "loading"));
     fetch(`/api/clubs/${params.id}`)
       .then((res) => {
         if (res.status === 404) {
           setStatus("notfound");
+          return null;
+        }
+        if (!res.ok) {
+          setStatus("error");
           return null;
         }
         return res.json();
@@ -192,12 +198,13 @@ export default function ClubPage({ params }: { params: { id: string } }) {
           setClub(data);
           setStatus("ok");
         }
-      });
+      })
+      .catch(() => setStatus("error"));
   }, [params.id]);
 
   useEffect(() => {
     loadClub();
-  }, [loadClub]);
+  }, [loadClub, retryCount]);
 
   // polling do mural: ~4s enquanto a aba está visível, pausa quando some.
   useEffect(() => {
@@ -244,6 +251,23 @@ export default function ClubPage({ params }: { params: { id: string } }) {
       <div className="pt-4">
         <BackHeader />
         <p className="mt-10 text-center text-paperDim">Clube não encontrado.</p>
+      </div>
+    );
+  }
+  if (status === "error") {
+    return (
+      <div className="pt-4">
+        <BackHeader />
+        <div className="mt-10 flex flex-col items-center gap-3 text-center">
+          <p className="text-paperDim">Não foi possível carregar o clube. Tente de novo.</p>
+          <button
+            type="button"
+            onClick={() => setRetryCount((n) => n + 1)}
+            className="rounded-xl border border-line bg-card px-4 py-2.5 text-sm font-bold text-paper hover:border-foil/50"
+          >
+            Tentar de novo
+          </button>
+        </div>
       </div>
     );
   }

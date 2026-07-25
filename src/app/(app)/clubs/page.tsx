@@ -43,12 +43,16 @@ export default function ClubsPage() {
   const [codeOpen, setCodeOpen] = useState(false);
   const [code, setCode] = useState("");
   const [joining, setJoining] = useState(false);
+  const [error, setError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
+    setError(false);
     fetch("/api/clubs")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => data && setClubs(data.items));
-  }, []);
+      .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+      .then((data) => setClubs(data.items))
+      .catch(() => setError(true));
+  }, [retryCount]);
 
   const minePublic = (clubs ?? []).filter((c) => c.joined && c.visibility === "public");
   const minePrivate = (clubs ?? []).filter((c) => c.joined && c.visibility === "private");
@@ -125,7 +129,18 @@ export default function ClubsPage() {
         </div>
       )}
 
-      {clubs === null ? (
+      {error ? (
+        <div className="mt-8 flex flex-col items-center gap-3 text-center">
+          <p className="text-sm text-paperDim">Não foi possível carregar os clubes. Tente de novo.</p>
+          <button
+            type="button"
+            onClick={() => setRetryCount((n) => n + 1)}
+            className="rounded-xl border border-line bg-card px-4 py-2.5 text-sm font-bold text-paper hover:border-foil/50"
+          >
+            Tentar de novo
+          </button>
+        </div>
+      ) : clubs === null ? (
         <p className="mt-8 text-center text-sm text-paperDim">Carregando clubes…</p>
       ) : (
         <>
