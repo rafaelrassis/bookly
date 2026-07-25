@@ -43,25 +43,25 @@ export default function SearchPage() {
       setError(false);
       return;
     }
-    let cancelled = false;
+    const controller = new AbortController();
     setLoading(true);
     setError(false);
     const handle = setTimeout(() => {
-      fetch(`/api/books?q=${encodeURIComponent(q)}`)
+      fetch(`/api/books/search?q=${encodeURIComponent(q)}`, { signal: controller.signal })
         .then((res) => (res.ok ? res.json() : Promise.reject(res)))
         .then((data) => {
-          if (cancelled) return;
-          setResults(data.items);
+          setResults(data.books);
         })
-        .catch(() => {
-          if (!cancelled) setError(true);
+        .catch((err) => {
+          if (err?.name === "AbortError") return;
+          if (!controller.signal.aborted) setError(true);
         })
         .finally(() => {
-          if (!cancelled) setLoading(false);
+          if (!controller.signal.aborted) setLoading(false);
         });
-    }, 200);
+    }, 350);
     return () => {
-      cancelled = true;
+      controller.abort();
       clearTimeout(handle);
     };
   }, [q]);
@@ -126,9 +126,7 @@ export default function SearchPage() {
           Não foi possível buscar agora. Tente novamente em instantes.
         </p>
       ) : results.length === 0 ? (
-        <p className="mt-10 text-center text-paperDim">
-          Nenhum livro encontrado no catálogo.
-        </p>
+        <p className="mt-10 text-center text-paperDim">Nenhum livro encontrado.</p>
       ) : (
         <ul className="mt-4 flex flex-col">
           {results.map((book) => (

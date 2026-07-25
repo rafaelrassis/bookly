@@ -173,6 +173,8 @@ export default function BookPage({ params }: { params: { id: string } }) {
 
   const [loading, setLoading] = useState(true);
   const [notFoundFlag, setNotFoundFlag] = useState(false);
+  const [errorFlag, setErrorFlag] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const [book, setBook] = useState<Book | null>(null);
   const [entry, setEntry] = useState<ShelfEntry | null>(null);
   const [rating, setRatingState] = useState<number | null>(null);
@@ -211,34 +213,61 @@ export default function BookPage({ params }: { params: { id: string } }) {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetch(`/api/books/${bookId}`).then(async (res) => {
-      if (cancelled) return;
-      if (res.status === 404) {
-        setNotFoundFlag(true);
+    setErrorFlag(false);
+    fetch(`/api/books/${bookId}`)
+      .then(async (res) => {
+        if (cancelled) return;
+        if (res.status === 404) {
+          setNotFoundFlag(true);
+          setLoading(false);
+          return;
+        }
+        if (!res.ok) {
+          setErrorFlag(true);
+          setLoading(false);
+          return;
+        }
+        const data: BookPayload = await res.json();
+        setBook(data.book);
+        setEntry(data.entry);
+        setRatingState(data.rating);
+        setMyReviewTitle(data.myReviewTitle);
+        setMyReview(data.myReview);
+        setTags(data.tags);
+        setQuotes(data.quotes);
         setLoading(false);
-        return;
-      }
-      if (!res.ok) {
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setErrorFlag(true);
         setLoading(false);
-        return;
-      }
-      const data: BookPayload = await res.json();
-      setBook(data.book);
-      setEntry(data.entry);
-      setRatingState(data.rating);
-      setMyReviewTitle(data.myReviewTitle);
-      setMyReview(data.myReview);
-      setTags(data.tags);
-      setQuotes(data.quotes);
-      setLoading(false);
-    });
+      });
     loadReviews();
     return () => {
       cancelled = true;
     };
-  }, [bookId, loadReviews]);
+  }, [bookId, loadReviews, retryCount]);
 
   if (notFoundFlag) notFound();
+
+  if (errorFlag) {
+    return (
+      <div className="pt-4">
+        <BackHeader />
+        <div className="mt-10 flex flex-col items-center gap-3 text-center">
+          <p className="text-paperDim">Não foi possível carregar o livro. Tente de novo.</p>
+          <button
+            type="button"
+            onClick={() => setRetryCount((n) => n + 1)}
+            className="rounded-xl border border-line bg-card px-4 py-2.5 text-sm font-bold text-paper hover:border-foil/50"
+          >
+            Tentar de novo
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (loading || !book) return null;
 
   async function handleStatusTap(status: ShelfStatus) {
@@ -387,7 +416,8 @@ export default function BookPage({ params }: { params: { id: string } }) {
         <div className="min-w-0 self-center">
           <h1 className="font-display text-xl font-bold leading-snug">{book.title}</h1>
           <p className="mt-1 text-sm text-paperDim">
-            {book.authors} · {book.year} · {book.pages} pág. · {book.genre}
+            {book.authors} · {book.year}
+            {book.pages > 0 ? ` · ${book.pages} pág.` : ""} · {book.genre}
           </p>
           <div className="mt-3 flex items-center gap-2">
             <span className="font-display text-4xl font-black text-foil">
@@ -424,7 +454,7 @@ export default function BookPage({ params }: { params: { id: string } }) {
         </div>
       </section>
 
-      {entry?.status === "READING" && (
+      {entry?.status === "READING" && book.pages > 0 && (
         <ProgressSection book={book} entry={entry} onProgress={handleProgress} />
       )}
 

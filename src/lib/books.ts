@@ -30,5 +30,6 @@ export function serializeBook(book: Book) {
     avg: book.avg,
     count: book.count,
     synopsis: book.synopsis,
+    coverUrl: book.coverUrl ?? undefined,
   };
 }
