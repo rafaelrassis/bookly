@@ -6,9 +6,8 @@ import { useStore } from "@/lib/store";
 
 /** Mantém o store em sincronia com a sessão NextAuth e, uma vez logado, com
  * o perfil real vindo de /api/users/me (identidade, bio, gêneros, avatar,
- * top4, seguidores, progressUnit). Estante/notas/reviews da página do livro
- * e da estante já são reais (Spec 3a, ver /book e /shelf); feed social e
- * listas continuam mocados. */
+ * top4 + livros resolvidos, seguidores, progressUnit). Estante/notas/reviews,
+ * feed social e listas já vêm da API — ver /book, /shelf, /home, /clubs. */
 export function AuthSync() {
   const { data: session, status } = useSession();
   const hasHydrated = useStore((s) => s.hasHydrated);
@@ -40,6 +39,7 @@ export function AuthSync() {
             genres: profile.genres,
             avatar: profile.avatar,
             top4: profile.top4,
+            top4Books: profile.top4Books,
             followers: profile.followers,
             progressUnit: profile.progressUnit,
           });

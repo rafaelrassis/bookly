@@ -121,6 +121,8 @@ export type ApiList = {
   visibility: Visibility;
   bookIds: string[];
   books: Book[];
+  /** Username do dono (sem @) — só presente em `GET /api/lists?community=true`. */
+  by?: string;
 };
 
 export type Notification = {
@@ -146,6 +148,8 @@ export type UserState = {
   followers: number;
   following: number;
   top4: string[];
+  /** Livros resolvidos de `top4` (mesma ordem), vindos de /api/users/me. */
+  top4Books: Book[];
   /** Índice do gradiente de avatar escolhido (AVATAR_CHOICES). */
   avatar: number;
   /** Foto de perfil enviada pelo usuário (data URL); sobrepõe o gradiente quando presente. */

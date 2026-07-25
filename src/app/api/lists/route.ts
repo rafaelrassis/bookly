@@ -8,7 +8,32 @@ export async function GET(req: Request) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "unauth" }, { status: 401 });
 
-  const targetId = new URL(req.url).searchParams.get("userId") ?? session.user.id;
+  const url = new URL(req.url);
+
+  if (url.searchParams.get("community") === "true") {
+    const lists = await db.list.findMany({
+      where: { visibility: "public", books: { some: {} } },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      include: {
+        user: { select: { username: true } },
+        books: { orderBy: { order: "asc" }, take: 4, include: { book: true } },
+      },
+    });
+
+    return NextResponse.json(
+      lists.map((l) => ({
+        id: l.id,
+        name: l.name,
+        visibility: l.visibility,
+        by: l.user.username,
+        bookIds: l.books.map((b) => b.bookId),
+        books: l.books.map((b) => serializeBook(b.book)),
+      }))
+    );
+  }
+
+  const targetId = url.searchParams.get("userId") ?? session.user.id;
   const isOwner = targetId === session.user.id;
 
   const lists = await db.list.findMany({
