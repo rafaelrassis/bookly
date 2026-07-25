@@ -70,7 +70,7 @@ function requireApiKey(): string {
 export async function searchGoogleBooks(q: string): Promise<Book[]> {
   const url = `${GOOGLE_BOOKS_API}?q=${encodeURIComponent(q)}&maxResults=20&key=${requireApiKey()}`;
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`Google Books search failed: ${res.status}`);
+  if (!res.ok) throw new Error(`Google Books search failed: ${res.status} ${await res.text()}`);
   const data = (await res.json()) as { items?: GoogleVolume[] };
   return (data.items ?? []).map(mapVolume).filter((b): b is Book => b !== null);
 }
@@ -81,7 +81,7 @@ export async function getGoogleBook(id: string): Promise<Book | null> {
   const url = `${GOOGLE_BOOKS_API}/${encodeURIComponent(id)}?key=${requireApiKey()}`;
   const res = await fetch(url);
   if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`Google Books get failed: ${res.status}`);
+  if (!res.ok) throw new Error(`Google Books get failed: ${res.status} ${await res.text()}`);
   const item = (await res.json()) as GoogleVolume;
   return mapVolume(item);
 }
