@@ -103,6 +103,8 @@ model Book {
   gradientFrom String
   gradientTo   String
   synopsis     String
+  /// Capa real (Google Books); nula pro catálogo semeado, que usa o gradiente.
+  coverUrl     String?
   avg          Float    @default(0)
   count        Int      @default(0)
   createdAt    DateTime @default(now())

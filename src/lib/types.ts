@@ -9,6 +9,8 @@ export type Book = {
   avg: number;
   count: number;
   synopsis: string;
+  /** Capa real (Google Books); ausente nos livros do catálogo semeado, que usam o gradiente. */
+  coverUrl?: string;
 };
 
 export type CommunityList = {
