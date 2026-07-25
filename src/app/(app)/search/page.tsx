@@ -2,13 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { COMMUNITY_LISTS } from "@/data/community";
-import { getBook } from "@/data/books";
 import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
 import { SectionTitle } from "@/components/SectionTitle";
 import { useRecommendations } from "@/lib/store/hooks";
-import type { Book } from "@/lib/types";
+import type { ApiCommunityList, Book } from "@/lib/types";
 
 function BookRow({ book }: { book: Book }) {
   return (
@@ -32,9 +30,16 @@ export default function SearchPage() {
   const [results, setResults] = useState<Book[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+  const [communityLists, setCommunityLists] = useState<ApiCommunityList[]>([]);
   const recommended = useRecommendations(4);
 
   const q = query.trim();
+
+  useEffect(() => {
+    fetch("/api/lists/community")
+      .then((res) => (res.ok ? res.json() : { items: [] }))
+      .then((data) => setCommunityLists(data.items ?? []));
+  }, []);
 
   useEffect(() => {
     if (!q) {
@@ -91,33 +96,31 @@ export default function SearchPage() {
             </div>
           </section>
 
-          <section className="mt-6">
-            <SectionTitle>Listas da comunidade</SectionTitle>
-            <div className="mt-3 flex flex-col gap-3">
-              {COMMUNITY_LISTS.map((list) => (
-                <div key={list.name} className="rounded-2xl border border-line bg-card p-4">
-                  <p className="font-bold">{list.name}</p>
-                  <p className="text-xs text-paperDim">por {list.by}</p>
-                  <div className="mt-3 flex gap-2.5">
-                    {list.bookIds.map((id) => {
-                      const book = getBook(id);
-                      if (!book) return null;
-                      return (
+          {communityLists.length > 0 && (
+            <section className="mt-6">
+              <SectionTitle>Listas da comunidade</SectionTitle>
+              <div className="mt-3 flex flex-col gap-3">
+                {communityLists.map((list) => (
+                  <div key={list.id} className="rounded-2xl border border-line bg-card p-4">
+                    <p className="font-bold">{list.name}</p>
+                    <p className="text-xs text-paperDim">por {list.by}</p>
+                    <div className="mt-3 flex gap-2.5">
+                      {list.books.map((book) => (
                         <Link
-                          key={id}
-                          href={`/book/${id}`}
+                          key={book.id}
+                          href={`/book/${book.id}`}
                           aria-label={book.title}
                           className="rounded-md"
                         >
                           <BookCover book={book} width={52} />
                         </Link>
-                      );
-                    })}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </section>
+                ))}
+              </div>
+            </section>
+          )}
         </>
       ) : loading ? (
         <p className="mt-10 text-center text-paperDim">Buscando…</p>

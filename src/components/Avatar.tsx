@@ -1,6 +1,6 @@
 "use client";
 
-import { AVATAR_CHOICES, avatarGradient } from "@/data/users";
+import { AVATAR_CHOICES, hashAvatarIndex } from "@/lib/avatars";
 import { withAt, withoutAt } from "@/lib/handle";
 import { useStore } from "@/lib/store";
 
@@ -36,9 +36,7 @@ export function Avatar({ user, size = 36, className = "", avatarIndex }: AvatarP
 
   const [from, to] = isMe
     ? AVATAR_CHOICES[myAvatar] ?? AVATAR_CHOICES[0]
-    : avatarIndex !== undefined
-      ? AVATAR_CHOICES[avatarIndex] ?? AVATAR_CHOICES[0]
-      : avatarGradient(user);
+    : AVATAR_CHOICES[avatarIndex ?? hashAvatarIndex(user)] ?? AVATAR_CHOICES[0];
 
   return (
     <span

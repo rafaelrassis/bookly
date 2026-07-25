@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { getBook } from "@/data/books";
 import { serializeProfile } from "@/lib/users";
 
 export async function GET() {
@@ -45,8 +44,8 @@ export async function PATCH(req: Request) {
     if (taken) return NextResponse.json({ error: "username em uso" }, { status: 409 });
   }
   if (data.top4?.length) {
-    const missing = data.top4.filter((id) => !getBook(id));
-    if (missing.length > 0) {
+    const found = await db.book.count({ where: { id: { in: data.top4 } } });
+    if (found !== data.top4.length) {
       return NextResponse.json({ error: "top4 com livro inexistente" }, { status: 400 });
     }
   }

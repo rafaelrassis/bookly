@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { SEED_NOTIFICATIONS } from "@/data/notifications";
+import { SEED_NOTIFICATIONS } from "@/lib/notifications-seed";
 import type { Notification, UserState } from "@/lib/types";
 
 /**
@@ -12,13 +12,13 @@ import type { Notification, UserState } from "@/lib/types";
  * listas (Spec 3b) e clubes/chat (Spec 4) já vêm da API — ver AuthSync e
  * src/app/(app)/book, /shelf, /home, /clubs.
  */
-const INITIAL_USER: UserState = {
+const EMPTY_USER: UserState = {
   loggedIn: false,
-  name: "Marina Souza",
-  username: "mari.leituras",
-  email: "mari.leituras@gmail.com",
-  bio: "Um capítulo por noite antes de dormir. Fantasia, thrillers e o que a estante mandar 💛",
-  genres: ["Fantasia", "Romance", "Thriller"],
+  name: "",
+  username: "",
+  email: "",
+  bio: "",
+  genres: [],
   followers: 0,
   following: 0,
   top4: [],
@@ -42,9 +42,9 @@ type Store = {
 
   /** Sincroniza a identidade (nome/username/email) a partir da sessão NextAuth. */
   hydrateFromSession: (session: { name: string; username: string; email: string }) => void;
-  /** Aplica dados reais de perfil vindos da API (/api/users/me), por cima do
-   * mock local. Ponto único de escrita pro que já é servidor: identidade,
-   * bio, gêneros, avatar, top4, contagem de seguidores. */
+  /** Aplica dados reais de perfil vindos da API (/api/users/me). Ponto único
+   * de escrita pro que já é servidor: identidade, bio, gêneros, avatar,
+   * top4, contagem de seguidores. */
   applyProfile: (patch: Partial<UserState>) => void;
   logout: () => void;
   updatePhone: (phone: string) => void;
@@ -56,7 +56,7 @@ type Store = {
 export const useStore = create<Store>()(
   persist(
     (set) => ({
-      user: INITIAL_USER,
+      user: EMPTY_USER,
       toast: null,
       theme: "dark",
       notifications: [...SEED_NOTIFICATIONS],
@@ -81,7 +81,7 @@ export const useStore = create<Store>()(
 
       logout: () =>
         set({
-          user: { ...INITIAL_USER, loggedIn: false },
+          user: { ...EMPTY_USER, loggedIn: false },
           notifications: [...SEED_NOTIFICATIONS],
         }),
 

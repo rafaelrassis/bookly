@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { getBook } from "@/data/books";
 import { Avatar } from "@/components/Avatar";
 import { BookCover } from "@/components/BookCover";
 import { FeedPost } from "@/components/FeedPost";
@@ -10,7 +9,7 @@ import { SectionTitle } from "@/components/SectionTitle";
 import { Stars } from "@/components/Stars";
 import { withAt } from "@/lib/handle";
 import { formatCount, formatDecimal } from "@/lib/format";
-import { useFeed, useMyStats, useRecommendations } from "@/lib/store/hooks";
+import { useBooksByIds, useFeed, useMyStats, useRecommendations } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
 import type { ApiList } from "@/lib/types";
 
@@ -49,6 +48,7 @@ export default function ProfilePage() {
     useMyStats();
   const recommended = useRecommendations(6);
   const { items: likedFeedReviews } = useFeed("liked");
+  const favoriteBooks = useBooksByIds(user.top4);
 
   const [tab, setTab] = useState<ActivityTab>("ratings");
   const [lists, setLists] = useState<ApiList[]>([]);
@@ -105,15 +105,11 @@ export default function ProfilePage() {
         <section className="mt-6">
           <SectionTitle>Favoritos</SectionTitle>
           <div className="mt-3 grid grid-cols-4 gap-3">
-            {user.top4.map((id) => {
-              const book = getBook(id);
-              if (!book) return null;
-              return (
-                <Link key={id} href={`/book/${id}`} aria-label={book.title} className="rounded-md">
-                  <BookCover book={book} width={88} />
-                </Link>
-              );
-            })}
+            {favoriteBooks.map((book) => (
+              <Link key={book.id} href={`/book/${book.id}`} aria-label={book.title} className="rounded-md">
+                <BookCover book={book} width={88} />
+              </Link>
+            ))}
           </div>
         </section>
       )}

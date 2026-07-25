@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BOOKS } from "@/data/books";
 import type { ApiReview, ApiUserReview, Book } from "@/lib/types";
 import { useStore } from "./index";
 
@@ -109,10 +108,11 @@ export function useMyStats() {
   return { readCount, pagesRead, reviewCount, avgRating, histogram, maxCount, ratedBooks, reviewEntries };
 }
 
-/** Recomendações: livros dos gêneros do usuário fora da estante (fallback: primeiros 4). */
+/** Recomendações: livros dos gêneros do usuário fora da estante (fallback: primeiros N do catálogo). */
 export function useRecommendations(limit = 4): Book[] {
   const genres = useStore((s) => s.user.genres);
   const [shelfIds, setShelfIds] = useState<string[]>([]);
+  const [catalog, setCatalog] = useState<Book[]>([]);
 
   useEffect(() => {
     fetch("/api/shelf")
@@ -120,11 +120,42 @@ export function useRecommendations(limit = 4): Book[] {
       .then((data) => data && setShelfIds(data.items.map((i: { book: { id: string } }) => i.book.id)));
   }, []);
 
+  useEffect(() => {
+    fetch("/api/books?limit=50")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => data && setCatalog(data.items));
+  }, []);
+
   return useMemo(() => {
-    const picks = BOOKS.filter((b) => genres.includes(b.genre) && !shelfIds.includes(b.id));
-    const result = picks.length > 0 ? picks : BOOKS.filter((b) => !shelfIds.includes(b.id));
-    return (result.length > 0 ? result : BOOKS).slice(0, limit);
-  }, [genres, shelfIds, limit]);
+    const picks = catalog.filter((b) => genres.includes(b.genre) && !shelfIds.includes(b.id));
+    const result = picks.length > 0 ? picks : catalog.filter((b) => !shelfIds.includes(b.id));
+    return (result.length > 0 ? result : catalog).slice(0, limit);
+  }, [catalog, genres, shelfIds, limit]);
+}
+
+/** Busca livros por id em lote (favoritos/top4), preservando a ordem pedida. */
+export function useBooksByIds(ids: string[]): Book[] {
+  const [books, setBooks] = useState<Book[]>([]);
+  const key = ids.join(",");
+
+  useEffect(() => {
+    if (!key) {
+      setBooks([]);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/books?ids=${encodeURIComponent(key)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data) setBooks(data.items);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+
+  return books;
 }
 
 /** Livros "em alta": os mais avaliados (contagem real de reviews, vinda do banco). */

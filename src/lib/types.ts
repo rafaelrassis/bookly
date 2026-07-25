@@ -13,10 +13,13 @@ export type Book = {
   coverUrl?: string;
 };
 
-export type CommunityList = {
+/** Lista pública de um usuário da comunidade, exibida na busca sem query. */
+export type ApiCommunityList = {
+  id: string;
   name: string;
   by: string;
   bookIds: string[];
+  books: Book[];
 };
 
 export type Visibility = "public" | "private";

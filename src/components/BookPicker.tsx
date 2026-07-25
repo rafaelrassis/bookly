@@ -1,30 +1,28 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BOOKS } from "@/data/books";
 import { BookCover } from "@/components/BookCover";
 import type { Book } from "@/lib/types";
 
-/** Sem query, lista o catálogo semeado (estático, idêntico ao que o seed
- * grava no banco); com query, busca com debounce em /api/books?q=. */
+/** Sem query, lista o catálogo (`/api/books`); com query, busca com debounce
+ * no mesmo endpoint (`?q=`). */
 function useBookSearch() {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<Book[]>(BOOKS);
+  const [results, setResults] = useState<Book[]>([]);
 
   useEffect(() => {
     const q = query.trim();
-    if (!q) {
-      setResults(BOOKS);
-      return;
-    }
     let cancelled = false;
-    const handle = setTimeout(() => {
-      fetch(`/api/books?q=${encodeURIComponent(q)}`)
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data) => {
-          if (!cancelled && data) setResults(data.items);
-        });
-    }, 200);
+    const handle = setTimeout(
+      () => {
+        fetch(q ? `/api/books?q=${encodeURIComponent(q)}` : "/api/books")
+          .then((res) => (res.ok ? res.json() : null))
+          .then((data) => {
+            if (!cancelled && data) setResults(data.items);
+          });
+      },
+      q ? 200 : 0
+    );
     return () => {
       cancelled = true;
       clearTimeout(handle);

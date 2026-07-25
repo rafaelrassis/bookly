@@ -2,7 +2,7 @@
 
 Web app de avaliação e review de livros — um "Letterboxd de livros".
 
-**Backend real:** Postgres/Prisma + NextAuth (credentials), com auth, perfil/follow, catálogo/estante/reviews, clubes com chat, feed social e listas todos persistidos no banco (rotas em `src/app/api/**`). O único domínio ainda mocado é **notificações** (`src/data/notifications.ts`, guardado no store local). Usuário demo pro dev/QA: `demo@bookly.dev` / `bookly123` (ver `prisma/seed.ts`).
+**Backend real:** Postgres/Prisma + NextAuth (credentials), com auth, perfil/follow, catálogo/estante/reviews, clubes com chat, feed social e listas todos persistidos no banco (rotas em `src/app/api/**`). Não há mais nenhum dado de domínio mocado em `src/` — o único mock restante é a lista de **notificações** (`src/lib/notifications-seed.ts`, guardado no store local), já que notificações não têm model no Prisma. Usuário demo pro dev/QA: `demo@bookly.dev` / `bookly123`; catálogo, comunidade e listas públicas de exemplo ficam em `prisma/seed-data.ts` (ver `prisma/seed.ts`).
 
 📄 Especificação completa do produto (visão, fluxos, modelos de dados, roadmap, stack alvo): [`docs/ESPECIFICACAO.md`](docs/ESPECIFICACAO.md).
 
@@ -52,16 +52,18 @@ src/
       clubs/  clubs/new/  clubs/[id]/  profile/  profile/edit/  settings/
     api/            rotas reais: auth, users, books, shelf, clubs, feed, lists, verification
   components/       BookCover, Stars, RatingInput, FeedPost, Avatar, TabBar, AuthSync…
-  data/             notificações mocadas (único domínio sem backend ainda)
   lib/
     db.ts           singleton do Prisma Client
     auth.ts / auth.config.ts   config do NextAuth
     store/          store zustand (cache de sessão/perfil + notificações) e hooks derivados
-    types.ts        Book, FeedReview, Club, ShelfEntry, UserState…
+    notifications-seed.ts   notificações mocadas (único dado sem backend — sem model no Prisma)
+    genres.ts / avatars.ts  constantes de UI (gêneros do onboarding, gradientes de avatar)
+    types.ts        Book, ApiReview, Club, ShelfEntry, UserState…
     format.ts       formatação pt-BR (vírgula decimal, milhar, progresso)
 prisma/
   schema.prisma     models reais (User, Book, ShelfEntry, Review, Club, Message…)
-  seed.ts           seed com livros, comunidade e usuário @demo
+  seed.ts           seed com livros, comunidade, listas públicas e usuário @demo
+  seed-data.ts       dados de semente (catálogo, perfis e listas da comunidade)
   migrations/       histórico de migrations
 e2e/                suíte Playwright (auth, books, clubs, social, users) — 44 specs
 docs/VALIDATION_REPORT.md   relatório de validação do backend (Spec V)

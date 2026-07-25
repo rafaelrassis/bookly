@@ -1,18 +1,17 @@
 /**
- * Popula o catálogo (Spec 0/3a) e, além disso, transforma os perfis mocados
- * da comunidade (data/users.ts) em contas reais com reviews/curtidas/
- * comentários (Spec 3b) — assim feed, listas e perfis públicos têm conteúdo
- * de verdade sem depender de cadastro manual. Também semeia um usuário demo
- * (demo@bookly.dev / bookly123) com estante, review e clube pra dev/QA e
- * smoke E2E. Idempotente: upsert por id/username. avg/count de Book nascem
- * zerados e são recalculados no fim a partir das reviews semeadas.
+ * Popula o catálogo e os perfis da comunidade (./seed-data.ts) como contas
+ * reais com reviews/curtidas/comentários/listas — assim feed, listas e
+ * perfis públicos têm conteúdo de verdade sem depender de cadastro manual.
+ * Também semeia um usuário demo (demo@bookly.dev / bookly123) com estante,
+ * review e clube pra dev/QA e smoke E2E. Idempotente: upsert por id/username.
+ * avg/count de Book nascem zerados e são recalculados no fim a partir das
+ * reviews semeadas.
  */
 import "dotenv/config";
 import bcrypt from "bcryptjs";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
-import { BOOKS } from "../src/data/books";
-import { MOCK_USERS } from "../src/data/users";
+import { BOOKS, COMMUNITY_PROFILES, SEED_LISTS } from "./seed-data";
 import { withoutAt } from "../src/lib/handle";
 import { recomputeBookRating } from "../src/lib/books";
 
@@ -66,7 +65,7 @@ async function seedCommunityUsers(): Promise<Record<string, string>> {
   const usernameByHandle: Record<string, string> = {};
   let avatarIndex = 0;
 
-  for (const [handle, profile] of Object.entries(MOCK_USERS)) {
+  for (const [handle, profile] of Object.entries(COMMUNITY_PROFILES)) {
     const username = realUsername(handle);
     usernameByHandle[handle] = username;
     await db.user.upsert({
@@ -97,7 +96,7 @@ async function seedCommunityUsers(): Promise<Record<string, string>> {
  * um comentário cruzado entre os próprios usuários da comunidade — dá
  * conteúdo de verdade pro feed/listas sem depender de autoria manual. */
 async function seedReviews(usernameByHandle: Record<string, string>) {
-  const handles = Object.keys(MOCK_USERS);
+  const handles = Object.keys(COMMUNITY_PROFILES);
   let i = 0;
 
   for (const handle of handles) {
@@ -105,7 +104,7 @@ async function seedReviews(usernameByHandle: Record<string, string>) {
     const author = await db.user.findUnique({ where: { username: authorUsername }, select: { id: true } });
     if (!author) continue;
 
-    for (const review of MOCK_USERS[handle].reviews) {
+    for (const review of COMMUNITY_PROFILES[handle].reviews) {
       const createdAt = new Date(Date.now() - i * 3 * 60 * 60 * 1000);
       const row = await db.review.upsert({
         where: { userId_bookId: { userId: author.id, bookId: review.bookId } },
@@ -155,6 +154,33 @@ async function seedReviews(usernameByHandle: Record<string, string>) {
     }
   }
   console.log(`Reviews da comunidade: ${i} seeded (com curtidas e comentários).`);
+}
+
+/** Listas públicas da comunidade (Spec 3b/Fase 6), pra "Listas da comunidade"
+ * na busca sem query não nascer vazia. Idempotente: recria os livros da
+ * lista a cada seed. */
+async function seedLists(usernameByHandle: Record<string, string>) {
+  const handleByUsername = new Map(Object.entries(usernameByHandle).map(([h, u]) => [u, h]));
+  let count = 0;
+
+  for (const list of SEED_LISTS) {
+    const username = realUsername(list.by);
+    if (!handleByUsername.has(username)) continue;
+    const owner = await db.user.findUnique({ where: { username }, select: { id: true } });
+    if (!owner) continue;
+
+    const existing = await db.list.findFirst({ where: { userId: owner.id, name: list.name } });
+    const row = existing
+      ? existing
+      : await db.list.create({ data: { userId: owner.id, name: list.name, visibility: "public" } });
+
+    await db.listBook.deleteMany({ where: { listId: row.id } });
+    for (let order = 0; order < list.bookIds.length; order++) {
+      await db.listBook.create({ data: { listId: row.id, bookId: list.bookIds[order], order } });
+    }
+    count++;
+  }
+  console.log(`Listas da comunidade: ${count} seeded.`);
 }
 
 /** Usuário demo pra dev/QA e pro smoke E2E rodarem com dados reais
@@ -236,8 +262,8 @@ async function seedDemoUser() {
   console.log("🌱 demo user + shelf + club seeded (demo@bookly.dev / bookly123)");
 }
 
-/** Recomputa avg/count a partir das reviews semeadas — substitui os números
- * decorativos de data/books.ts pelos reais, mesma fórmula da Spec 0. */
+/** Recomputa avg/count a partir das reviews semeadas — mesma fórmula usada
+ * em tempo real quando reviews são criadas/removidas pelo app. */
 async function recomputeAllBookRatings() {
   const seededBooks = await db.book.findMany({ select: { id: true } });
   for (const { id } of seededBooks) {
@@ -250,6 +276,7 @@ async function main() {
   await seedBooks();
   const usernameByHandle = await seedCommunityUsers();
   await seedReviews(usernameByHandle);
+  await seedLists(usernameByHandle);
   await seedDemoUser();
   await recomputeAllBookRatings();
 }

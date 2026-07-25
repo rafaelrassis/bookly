@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getBook } from "@/data/books";
 import { Avatar } from "@/components/Avatar";
 import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
@@ -11,6 +10,7 @@ import { Stars } from "@/components/Stars";
 import { SectionTitle } from "@/components/SectionTitle";
 import { withAt, withoutAt } from "@/lib/handle";
 import { formatCount } from "@/lib/format";
+import { useBooksByIds } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
 import type { ApiList, ApiUserReview } from "@/lib/types";
 import type { UserStats } from "@/lib/stats";
@@ -41,6 +41,7 @@ export default function PublicProfilePage({ params }: { params: { username: stri
   const [followBusy, setFollowBusy] = useState(false);
 
   const isMe = username === myUsername;
+  const favoriteBooks = useBooksByIds(profile?.top4 ?? []);
 
   useEffect(() => {
     if (isMe) {
@@ -138,15 +139,11 @@ export default function PublicProfilePage({ params }: { params: { username: stri
         <section className="mt-7">
           <SectionTitle>Favoritos</SectionTitle>
           <div className="mt-3 grid grid-cols-4 gap-3">
-            {profile.top4.map((id) => {
-              const book = getBook(id);
-              if (!book) return null;
-              return (
-                <Link key={id} href={`/book/${id}`} aria-label={book.title} className="rounded-md">
-                  <BookCover book={book} width={88} />
-                </Link>
-              );
-            })}
+            {favoriteBooks.map((book) => (
+              <Link key={book.id} href={`/book/${book.id}`} aria-label={book.title} className="rounded-md">
+                <BookCover book={book} width={88} />
+              </Link>
+            ))}
           </div>
         </section>
       )}

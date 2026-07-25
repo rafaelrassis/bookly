@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { GENRES } from "@/data/books";
+import { GENRES } from "@/lib/genres";
 import { Logo } from "@/components/Logo";
 import { useStore } from "@/lib/store";
 

@@ -1,6 +1,8 @@
 import type { Notification } from "@/lib/types";
 
-/** Notificações mocadas: atividade de leitores mock sobre o usuário logado. */
+/** Notificações mocadas: atividade de leitores da comunidade semeada sobre o
+ * usuário logado. Notificações ainda não têm backend (sem model no Prisma) —
+ * ficam só no store local, sincronizadas por sessão. */
 export const SEED_NOTIFICATIONS: Notification[] = [
   {
     id: "n1",

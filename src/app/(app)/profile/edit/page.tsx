@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AVATAR_CHOICES } from "@/data/users";
-import { getBook } from "@/data/books";
+import { AVATAR_CHOICES } from "@/lib/avatars";
 import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
 import { SectionTitle } from "@/components/SectionTitle";
 import { withoutAt } from "@/lib/handle";
+import { useBooksByIds } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
 import type { Book } from "@/lib/types";
 
@@ -46,10 +46,8 @@ export default function EditProfilePage() {
 
   // favoritos escolhidos entre os livros lidos (+ os já favoritos, mesmo que
   // não estejam mais marcados como lidos)
-  const extraFavorites = top4
-    .filter((id) => !readShelfBooks.some((b) => b.id === id))
-    .map((id) => getBook(id))
-    .filter((b): b is Book => Boolean(b));
+  const missingFavoriteIds = top4.filter((id) => !readShelfBooks.some((b) => b.id === id));
+  const extraFavorites = useBooksByIds(missingFavoriteIds);
   const readBooks = [...readShelfBooks, ...extraFavorites];
 
   function toggleFavorite(bookId: string) {

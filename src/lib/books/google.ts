@@ -2,7 +2,7 @@ import type { Book } from "@/lib/types";
 
 const GOOGLE_BOOKS_API = "https://www.googleapis.com/books/v1/volumes";
 
-/** Paleta do catálogo semeado (data/books.ts) — reaproveitada como fallback
+/** Paleta do catálogo semeado (prisma/seed-data.ts) — reaproveitada como fallback
  * visual determinístico pra livros do Google sem capa (imageLinks ausente). */
 const GRADIENTS: [string, string][] = [
   ["#5B7553", "#1E2B1A"],
