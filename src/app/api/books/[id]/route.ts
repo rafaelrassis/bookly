@@ -1,52 +1,30 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { serializeBook } from "@/lib/books";
-import { getGoogleBook } from "@/lib/books/google";
+import { getOrCreateBook, serializeBook } from "@/lib/books";
 
 /** Payload único que alimenta a página do livro: info + agregados +
  * estado do viewer (estante, nota/review, tags, citações).
  *
- * Livros do catálogo semeado vêm direto do banco. Um id ausente é buscado
- * no Google Books: se existir lá, vira uma linha nova no catálogo (upsert)
- * pra estante/review/tags/citações funcionarem dali em diante; se não
- * existir (404) ou o Google falhar (rede/5xx/quota), o erro é explícito —
- * nunca uma tela vazia ou um 404 mascarando uma falha de acesso. */
+ * Livros do catálogo semeado vêm direto do banco. Um id ausente (ou stale)
+ * é buscado no Google Books via getOrCreateBook — upsert idempotente, sem
+ * risco de 500 por corrida em duas requisições simultâneas pro mesmo id
+ * novo. Se não existir lá (404) ou o Google falhar (rede/5xx/quota), o
+ * erro é explícito — nunca uma tela vazia ou um 404 mascarando uma falha
+ * de acesso. */
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "unauth" }, { status: 401 });
   const uid = session.user.id;
 
-  let book = await db.book.findUnique({ where: { id: params.id } });
-
-  if (!book) {
-    let googleBook;
-    try {
-      googleBook = await getGoogleBook(params.id);
-    } catch (err) {
-      console.error("[books/:id] Google Books falhou:", err);
-      return NextResponse.json({ error: "fetch_failed" }, { status: 502 });
-    }
-    if (!googleBook) return NextResponse.json({ error: "not_found" }, { status: 404 });
-
-    const [gradientFrom, gradientTo] = googleBook.gradient;
-    book = await db.book.create({
-      data: {
-        id: googleBook.id,
-        title: googleBook.title,
-        authors: googleBook.authors,
-        year: googleBook.year,
-        pages: googleBook.pages,
-        genre: googleBook.genre,
-        gradientFrom,
-        gradientTo,
-        synopsis: googleBook.synopsis,
-        coverUrl: googleBook.coverUrl,
-        avg: googleBook.avg,
-        count: googleBook.count,
-      },
-    });
+  let book;
+  try {
+    book = await getOrCreateBook(params.id);
+  } catch (err) {
+    console.error("[books/:id] Google Books falhou:", err);
+    return NextResponse.json({ error: "fetch_failed" }, { status: 502 });
   }
+  if (!book) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
   const [entry, review, tags, quotes] = await Promise.all([
     db.shelfEntry.findUnique({ where: { userId_bookId: { userId: uid, bookId: book.id } } }),

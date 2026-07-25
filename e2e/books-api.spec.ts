@@ -173,7 +173,9 @@ test("busca de livros por título/autor (ILIKE)", async ({ page }) => {
   const byAuthorBody = await byAuthor.json();
   expect(byAuthorBody.items.some((b: { id: string }) => b.id === "1984")).toBeTruthy();
 
+  // Sem query nem sort, a rota lista o catálogo (usado pelo BookPicker e
+  // recomendações pra navegar sem busca) — não retorna vazio.
   const empty = await page.request.get("/api/books?q=");
   const emptyBody = await empty.json();
-  expect(emptyBody.items).toEqual([]);
+  expect(emptyBody.items.length).toBeGreaterThan(0);
 });

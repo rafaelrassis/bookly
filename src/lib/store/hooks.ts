@@ -14,23 +14,27 @@ export function useFeed(scope: FeedScope) {
   const [fellBackToAll, setFellBackToAll] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setError(false);
     fetch(`/api/feed?scope=${scope}`)
-      .then((res) => (res.ok ? res.json() : { items: [], nextCursor: null, fellBackToAll: false }))
+      .then((res) => (res.ok ? res.json() : Promise.reject(res)))
       .then((data) => {
         if (cancelled) return;
         setItems(data.items ?? []);
         setNextCursor(data.nextCursor ?? null);
         setFellBackToAll(Boolean(data.fellBackToAll));
       })
+      .catch(() => !cancelled && setError(true))
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
     };
-  }, [scope]);
+  }, [scope, retryCount]);
 
   async function loadMore() {
     if (!nextCursor || loadingMore) return;
@@ -47,7 +51,11 @@ export function useFeed(scope: FeedScope) {
     }
   }
 
-  return { items, loading, loadingMore, hasMore: nextCursor !== null, loadMore, fellBackToAll };
+  function retry() {
+    setRetryCount((n) => n + 1);
+  }
+
+  return { items, loading, loadingMore, hasMore: nextCursor !== null, loadMore, fellBackToAll, error, retry };
 }
 
 type HistogramBar = { value: number; count: number };

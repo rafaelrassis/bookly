@@ -39,6 +39,8 @@ export default function PublicProfilePage({ params }: { params: { username: stri
   const [reviews, setReviews] = useState<ApiUserReview[]>([]);
   const [lists, setLists] = useState<ApiList[]>([]);
   const [followBusy, setFollowBusy] = useState(false);
+  const [error, setError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   const isMe = username === myUsername;
   const favoriteBooks = useBooksByIds(profile?.top4 ?? []);
@@ -48,22 +50,55 @@ export default function PublicProfilePage({ params }: { params: { username: stri
       router.replace("/profile");
       return;
     }
+    let cancelled = false;
+    setError(false);
     fetch(`/api/users/${username}`)
-      .then((res) => (res.ok ? res.json() : null))
+      .then((res) => {
+        if (res.status === 404) return null;
+        if (!res.ok) return Promise.reject(res);
+        return res.json();
+      })
       .then((data: Profile | null) => {
+        if (cancelled) return;
         setProfile(data ?? null);
         if (data) {
           fetch(`/api/users/${username}/reviews`)
             .then((r) => (r.ok ? r.json() : { items: [] }))
-            .then((d) => setReviews((d.items ?? []).filter((r: ApiUserReview) => r.text !== "")));
+            .then((d) => !cancelled && setReviews((d.items ?? []).filter((r: ApiUserReview) => r.text !== "")));
           fetch(`/api/lists?userId=${data.id}`)
             .then((r) => (r.ok ? r.json() : []))
-            .then((d) => setLists(d ?? []));
+            .then((d) => !cancelled && setLists(d ?? []));
         }
-      });
-  }, [username, isMe, router]);
+      })
+      .catch(() => !cancelled && setError(true));
+    return () => {
+      cancelled = true;
+    };
+  }, [username, isMe, router, retryCount]);
 
-  if (isMe || profile === undefined) return null;
+  if (isMe) return null;
+
+  if (error) {
+    return (
+      <div className="px-5 pt-4">
+        <BackHeader>
+          <h1 className="text-lg font-extrabold">Perfil</h1>
+        </BackHeader>
+        <div className="mt-10 flex flex-col items-center gap-3 text-center">
+          <p className="text-paperDim">Não foi possível carregar o perfil. Tente de novo.</p>
+          <button
+            type="button"
+            onClick={() => setRetryCount((n) => n + 1)}
+            className="rounded-xl border border-line bg-card px-4 py-2.5 text-sm font-bold text-paper hover:border-foil/50"
+          >
+            Tentar de novo
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (profile === undefined) return null;
 
   if (!profile) {
     return (

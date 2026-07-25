@@ -25,6 +25,10 @@ export async function POST(req: Request) {
   });
   if (existing) return NextResponse.json({ id: club.id, status: "already" });
 
-  await db.clubMember.create({ data: { clubId: club.id, userId: uid } });
+  await db.clubMember.upsert({
+    where: { clubId_userId: { clubId: club.id, userId: uid } },
+    create: { clubId: club.id, userId: uid },
+    update: {},
+  });
   return NextResponse.json({ id: club.id, status: "joined" });
 }

@@ -38,7 +38,7 @@ export function DiscoverReaders() {
   if (!suggestions || suggestions.length === 0) return null;
 
   return (
-    <section className="mt-7">
+    <section id="discover-readers" className="mt-7">
       <SectionTitle>Descobrir leitores</SectionTitle>
       <div className="no-scrollbar -mx-5 mt-3 flex gap-3 overflow-x-auto px-5">
         {suggestions.map((u) => (

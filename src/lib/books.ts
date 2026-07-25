@@ -1,7 +1,53 @@
 import type { Prisma, Book } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
+import { getGoogleBook } from "@/lib/books/google";
 
 type DbClient = typeof db | Prisma.TransactionClient;
+
+const STALE_MS = 30 * 24 * 60 * 60 * 1000; // 30 dias
+
+/** Única porta de entrada pra livros do Google Books no catálogo. Upsert
+ * idempotente: concorrência (duas requisições buscando o mesmo id novo ao
+ * mesmo tempo) nunca gera 500 por violação de unicidade — a segunda
+ * chamada apenas atualiza os campos voláteis (capa/sinopse) por cima da
+ * primeira. Snapshot revalidado no Google quando mais velho que STALE_MS.
+ *
+ * Retorna `null` só quando o id não existe nem no catálogo nem no Google
+ * (404); falhas de acesso ao Google (rede/5xx/quota) lançam — cabe à rota
+ * decidir o 502, nunca mascarar como "não encontrado". */
+export async function getOrCreateBook(id: string): Promise<Book | null> {
+  const existing = await db.book.findUnique({ where: { id } });
+  const isStale = existing && Date.now() - existing.updatedAt.getTime() > STALE_MS;
+  if (existing && !isStale) return existing;
+
+  const googleBook = await getGoogleBook(id);
+  if (!googleBook) return existing ?? null;
+
+  const [gradientFrom, gradientTo] = googleBook.gradient;
+  return db.book.upsert({
+    where: { id },
+    create: {
+      id: googleBook.id,
+      title: googleBook.title,
+      authors: googleBook.authors,
+      year: googleBook.year,
+      pages: googleBook.pages,
+      genre: googleBook.genre,
+      gradientFrom,
+      gradientTo,
+      synopsis: googleBook.synopsis,
+      coverUrl: googleBook.coverUrl,
+      avg: googleBook.avg,
+      count: googleBook.count,
+    },
+    update: {
+      title: googleBook.title,
+      authors: googleBook.authors,
+      synopsis: googleBook.synopsis,
+      coverUrl: googleBook.coverUrl,
+    },
+  });
+}
 
 /** Recomputa avg/count cacheados no Book a partir das reviews existentes.
  * Chamar sempre dentro da mesma transação da gravação/remoção da review. */

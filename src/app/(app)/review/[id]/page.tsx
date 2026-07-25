@@ -16,33 +16,69 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
   const username = useStore((s) => s.user.username);
   const showToast = useStore((s) => s.showToast);
 
-  const [status, setStatus] = useState<"loading" | "ok" | "notfound">("loading");
+  const [status, setStatus] = useState<"loading" | "ok" | "notfound" | "error">("loading");
   const [review, setReview] = useState<ApiReview | null>(null);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [likeBusy, setLikeBusy] = useState(false);
   const [comments, setComments] = useState<ApiComment[]>([]);
   const [draft, setDraft] = useState("");
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
-    fetch(`/api/reviews/${params.id}`).then(async (res) => {
-      if (res.status === 404) {
-        setStatus("notfound");
-        return;
-      }
-      if (!res.ok) return;
-      const data: ApiReview = await res.json();
-      setReview(data);
-      setLiked(data.likedByMe);
-      setLikeCount(data.likes);
-      setStatus("ok");
-    });
+    let cancelled = false;
+    setStatus("loading");
+    fetch(`/api/reviews/${params.id}`)
+      .then(async (res) => {
+        if (cancelled) return;
+        if (res.status === 404) {
+          setStatus("notfound");
+          return;
+        }
+        if (!res.ok) {
+          setStatus("error");
+          return;
+        }
+        const data: ApiReview = await res.json();
+        setReview(data);
+        setLiked(data.likedByMe);
+        setLikeCount(data.likes);
+        setStatus("ok");
+      })
+      .catch(() => {
+        if (!cancelled) setStatus("error");
+      });
     fetch(`/api/reviews/${params.id}/comments`)
       .then((res) => (res.ok ? res.json() : { items: [] }))
-      .then((data) => setComments(data.items ?? []));
-  }, [params.id]);
+      .then((data) => !cancelled && setComments(data.items ?? []))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [params.id, retryCount]);
 
   if (status === "notfound") notFound();
+
+  if (status === "error") {
+    return (
+      <div className="px-5 pt-4">
+        <BackHeader>
+          <h1 className="text-lg font-extrabold">Resenha</h1>
+        </BackHeader>
+        <div className="mt-10 flex flex-col items-center gap-3 text-center">
+          <p className="text-paperDim">Não foi possível carregar a review. Tente de novo.</p>
+          <button
+            type="button"
+            onClick={() => setRetryCount((n) => n + 1)}
+            className="rounded-xl border border-line bg-card px-4 py-2.5 text-sm font-bold text-paper hover:border-foil/50"
+          >
+            Tentar de novo
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (status === "loading" || !review) return null;
 
   const profileHref = `/u/${review.user.username}`;
