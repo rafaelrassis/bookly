@@ -9,7 +9,8 @@ export async function GET(req: Request) {
 
   try {
     return NextResponse.json({ books: await searchGoogleBooks(q) });
-  } catch {
+  } catch (err) {
+    console.error("[books/search] Google Books falhou:", err);
     return NextResponse.json({ error: "search_failed" }, { status: 502 });
   }
 }

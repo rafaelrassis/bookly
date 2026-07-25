@@ -23,7 +23,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     let googleBook;
     try {
       googleBook = await getGoogleBook(params.id);
-    } catch {
+    } catch (err) {
+      console.error("[books/:id] Google Books falhou:", err);
       return NextResponse.json({ error: "fetch_failed" }, { status: 502 });
     }
     if (!googleBook) return NextResponse.json({ error: "not_found" }, { status: 404 });
