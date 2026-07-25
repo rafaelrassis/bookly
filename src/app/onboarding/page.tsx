@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { GENRES } from "@/data/books";
 import { Logo } from "@/components/Logo";
@@ -41,7 +42,11 @@ export default function OnboardingPage() {
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-app flex-col px-5 pb-10 pt-14">
-      <Logo className="text-3xl" />
+      <Link href="/" className="self-start text-sm text-paperDim hover:text-paper">
+        ‹ Voltar
+      </Link>
+
+      <Logo className="mt-6 text-3xl" />
       <h1 className="mt-6 text-2xl font-extrabold">Vamos montar seu perfil</h1>
       <p className="mt-1 text-paperDim">Conte o que você gosta de ler.</p>
 

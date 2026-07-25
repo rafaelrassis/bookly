@@ -30,6 +30,8 @@ function BookRow({ book }: { book: Book }) {
 export default function SearchPage() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Book[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
   const recommended = useRecommendations(4);
 
   const q = query.trim();
@@ -37,14 +39,25 @@ export default function SearchPage() {
   useEffect(() => {
     if (!q) {
       setResults([]);
+      setLoading(false);
+      setError(false);
       return;
     }
     let cancelled = false;
+    setLoading(true);
+    setError(false);
     const handle = setTimeout(() => {
       fetch(`/api/books?q=${encodeURIComponent(q)}`)
-        .then((res) => (res.ok ? res.json() : null))
+        .then((res) => (res.ok ? res.json() : Promise.reject(res)))
         .then((data) => {
-          if (!cancelled && data) setResults(data.items);
+          if (cancelled) return;
+          setResults(data.items);
+        })
+        .catch(() => {
+          if (!cancelled) setError(true);
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
         });
     }, 200);
     return () => {
@@ -106,6 +119,12 @@ export default function SearchPage() {
             </div>
           </section>
         </>
+      ) : loading ? (
+        <p className="mt-10 text-center text-paperDim">Buscando…</p>
+      ) : error ? (
+        <p className="mt-10 text-center text-paperDim">
+          Não foi possível buscar agora. Tente novamente em instantes.
+        </p>
       ) : results.length === 0 ? (
         <p className="mt-10 text-center text-paperDim">
           Nenhum livro encontrado no catálogo.
