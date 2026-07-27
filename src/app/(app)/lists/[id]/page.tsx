@@ -6,7 +6,9 @@ import { notFound, useRouter } from "next/navigation";
 import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
 import { LockIcon } from "@/components/icons";
+import { PageLoader } from "@/components/PageLoader";
 import { SectionTitle } from "@/components/SectionTitle";
+import { Spinner } from "@/components/Spinner";
 import { useStore } from "@/lib/store";
 import type { ApiList, Book } from "@/lib/types";
 
@@ -32,9 +34,9 @@ function DeleteListButton({ listId, listName }: { listId: string; listName: stri
       type="button"
       onClick={handleDelete}
       disabled={loading}
-      className="mt-8 w-full rounded-xl border border-ribbon/40 py-3 font-semibold text-ribbon disabled:opacity-50"
+      className="mt-8 flex w-full items-center justify-center rounded-xl border border-ribbon/40 py-3 font-semibold text-ribbon disabled:opacity-50"
     >
-      {loading ? "Apagando…" : "Apagar lista"}
+      {loading ? <Spinner size={16} className="text-ribbon" /> : "Apagar lista"}
     </button>
   );
 }
@@ -47,6 +49,7 @@ export default function ListPage({ params }: { params: { id: string } }) {
   const [adding, setAdding] = useState(false);
   const [picked, setPicked] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
   const [error, setError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
 
@@ -87,7 +90,14 @@ export default function ListPage({ params }: { params: { id: string } }) {
     );
   }
   if (list === null) notFound();
-  if (list === undefined) return null;
+  if (list === undefined) {
+    return (
+      <div className="pt-4">
+        <BackHeader />
+        <PageLoader />
+      </div>
+    );
+  }
 
   const books = list.books;
 
@@ -122,22 +132,28 @@ export default function ListPage({ params }: { params: { id: string } }) {
   }
 
   async function removeBook(bookId: string) {
-    const res = await fetch(`/api/lists/${list!.id}/books`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ bookId }),
-    });
-    if (res.ok) {
-      setList((current) =>
-        current
-          ? {
-              ...current,
-              bookIds: current.bookIds.filter((id) => id !== bookId),
-              books: current.books.filter((b) => b.id !== bookId),
-            }
-          : current
-      );
-      showToast("Removido da lista");
+    if (removingId) return;
+    setRemovingId(bookId);
+    try {
+      const res = await fetch(`/api/lists/${list!.id}/books`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookId }),
+      });
+      if (res.ok) {
+        setList((current) =>
+          current
+            ? {
+                ...current,
+                bookIds: current.bookIds.filter((id) => id !== bookId),
+                books: current.books.filter((b) => b.id !== bookId),
+              }
+            : current
+        );
+        showToast("Removido da lista");
+      }
+    } finally {
+      setRemovingId(null);
     }
   }
 
@@ -206,10 +222,11 @@ export default function ListPage({ params }: { params: { id: string } }) {
               <button
                 type="button"
                 onClick={() => removeBook(book.id)}
+                disabled={removingId === book.id}
                 aria-label={`Remover ${book.title} da lista`}
-                className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-card2 text-[10px] font-bold text-paperDim ring-1 ring-line hover:text-ribbonText"
+                className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-card2 text-[10px] font-bold text-paperDim ring-1 ring-line hover:text-ribbonText disabled:opacity-60"
               >
-                ✕
+                {removingId === book.id ? <Spinner size={10} className="text-paperDim" /> : "✕"}
               </button>
             </div>
           ))}
@@ -266,9 +283,9 @@ export default function ListPage({ params }: { params: { id: string } }) {
               type="button"
               onClick={confirmAdd}
               disabled={picked.length === 0 || busy}
-              className="mt-4 w-full rounded-xl bg-foil px-5 py-3 font-bold text-leather transition-opacity hover:opacity-90 disabled:opacity-40"
+              className="mt-4 flex w-full items-center justify-center rounded-xl bg-foil px-5 py-3 font-bold text-leather transition-opacity hover:opacity-90 disabled:opacity-40"
             >
-              Adicionar ({picked.length})
+              {busy ? <Spinner size={18} className="text-leather" /> : `Adicionar (${picked.length})`}
             </button>
           </>
         ) : (

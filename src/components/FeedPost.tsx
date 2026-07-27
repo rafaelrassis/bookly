@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { BookCover } from "@/components/BookCover";
+import { Spinner } from "@/components/Spinner";
 import { Stars } from "@/components/Stars";
 import { withAt } from "@/lib/handle";
 import { useStore } from "@/lib/store";
@@ -59,6 +60,7 @@ export function FeedPost({ review }: { review: ApiReview }) {
   const [commentCount, setCommentCount] = useState(review.comments);
   const [loadingComments, setLoadingComments] = useState(false);
   const [draft, setDraft] = useState("");
+  const [publishing, setPublishing] = useState(false);
 
   const authorHandle = withAt(review.user.username);
   const book = review.book;
@@ -99,21 +101,26 @@ export function FeedPost({ review }: { review: ApiReview }) {
 
   async function publishComment() {
     const text = draft.trim();
-    if (!text) return;
+    if (!text || publishing) return;
     setDraft("");
-    const res = await fetch(`/api/reviews/${review.id}/comments`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
-    });
-    if (!res.ok) {
-      showToast("Não foi possível comentar");
-      return;
+    setPublishing(true);
+    try {
+      const res = await fetch(`/api/reviews/${review.id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      if (!res.ok) {
+        showToast("Não foi possível comentar");
+        return;
+      }
+      const comment: ApiComment = await res.json();
+      setComments((current) => [...(current ?? []), comment]);
+      setCommentCount((c) => c + 1);
+      showToast("Comentário publicado!");
+    } finally {
+      setPublishing(false);
     }
-    const comment: ApiComment = await res.json();
-    setComments((current) => [...(current ?? []), comment]);
-    setCommentCount((c) => c + 1);
-    showToast("Comentário publicado!");
   }
 
   return (
@@ -182,7 +189,11 @@ export function FeedPost({ review }: { review: ApiReview }) {
 
       {threadOpen && (
         <div className="ml-12 mt-3 flex flex-col gap-3">
-          {loadingComments && <p className="text-xs text-paperDim">Carregando comentários…</p>}
+          {loadingComments && (
+            <div className="flex justify-center py-2">
+              <Spinner size={16} className="text-paperDim" label="Carregando comentários" />
+            </div>
+          )}
           {comments?.map((comment) => {
             const handle = withAt(comment.user.username);
             return (
@@ -223,10 +234,10 @@ export function FeedPost({ review }: { review: ApiReview }) {
             <button
               type="button"
               onClick={publishComment}
-              disabled={!draft.trim()}
-              className="rounded-full bg-foil px-3.5 py-2 text-xs font-bold text-leather disabled:opacity-40"
+              disabled={!draft.trim() || publishing}
+              className="flex items-center justify-center rounded-full bg-foil px-3.5 py-2 text-xs font-bold text-leather disabled:opacity-40"
             >
-              Publicar
+              {publishing ? <Spinner size={14} className="text-leather" /> : "Publicar"}
             </button>
           </div>
         </div>

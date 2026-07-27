@@ -10,6 +10,7 @@ import { BookOpenIcon } from "@/components/icons";
 import { Logo } from "@/components/Logo";
 import { SectionTitle } from "@/components/SectionTitle";
 import { Skeleton } from "@/components/Skeleton";
+import { Spinner } from "@/components/Spinner";
 import { readingPercent } from "@/lib/format";
 import { useFeed, useTrendingBooks } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
@@ -264,9 +265,9 @@ export default function HomePage() {
               type="button"
               onClick={loadMore}
               disabled={loadingMore}
-              className="mt-2 w-full rounded-xl border border-line bg-card px-4 py-2.5 text-sm font-bold text-paperDim transition-colors hover:text-paper disabled:opacity-50"
+              className="mt-2 flex w-full items-center justify-center rounded-xl border border-line bg-card px-4 py-2.5 text-sm font-bold text-paperDim transition-colors hover:text-paper disabled:opacity-50"
             >
-              {loadingMore ? "Carregando…" : "Carregar mais"}
+              {loadingMore ? <Spinner size={16} className="text-paperDim" /> : "Carregar mais"}
             </button>
           )}
         </div>

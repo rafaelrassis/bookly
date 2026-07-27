@@ -6,6 +6,7 @@ import { BookCover } from "@/components/BookCover";
 import { EmptyState } from "@/components/EmptyState";
 import { BookOpenIcon, LockIcon } from "@/components/icons";
 import { SectionTitle } from "@/components/SectionTitle";
+import { Spinner } from "@/components/Spinner";
 import { Stars } from "@/components/Stars";
 import { useStore } from "@/lib/store";
 import type { ApiList, Book, ShelfEntry, ShelfStatus, Visibility } from "@/lib/types";
@@ -121,9 +122,9 @@ function MyLists() {
               type="button"
               onClick={create}
               disabled={!name.trim() || saving}
-              className="ml-auto rounded-xl bg-foil px-4 py-1.5 text-xs font-bold text-leather disabled:opacity-40"
+              className="ml-auto flex items-center justify-center rounded-xl bg-foil px-4 py-1.5 text-xs font-bold text-leather disabled:opacity-40"
             >
-              Criar
+              {saving ? <Spinner size={14} className="text-leather" /> : "Criar"}
             </button>
           </div>
         </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Avatar } from "@/components/Avatar";
+import { Spinner } from "@/components/Spinner";
 import { withAt } from "@/lib/handle";
 import { useStore } from "@/lib/store";
 
@@ -71,7 +72,7 @@ export function AvatarUpload() {
         )}
         {uploading && (
           <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40">
-            <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+            <Spinner size={20} className="text-white" label="Enviando foto" />
           </span>
         )}
       </div>

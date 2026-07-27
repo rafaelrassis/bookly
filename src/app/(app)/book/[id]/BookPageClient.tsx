@@ -9,6 +9,7 @@ import { BookCover } from "@/components/BookCover";
 import { ExpandableText } from "@/components/ExpandableText";
 import { RatingInput } from "@/components/RatingInput";
 import { SectionTitle } from "@/components/SectionTitle";
+import { Spinner } from "@/components/Spinner";
 import { Stars } from "@/components/Stars";
 import BookLoading from "./loading";
 import { formatCount, formatDecimal, readingDates, readingPercent } from "@/lib/format";
@@ -63,6 +64,7 @@ function ProgressSection({
   const applyProfile = useStore((s) => s.applyProfile);
   const showToast = useStore((s) => s.showToast);
   const [value, setValue] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const currentPage = entry.currentPage ?? 0;
   const percent = readingPercent(currentPage, book.pages);
@@ -77,6 +79,7 @@ function ProgressSection({
   }
 
   async function save() {
+    if (saving) return;
     const n = Number(value);
     if (
       unit === "percent"
@@ -87,13 +90,18 @@ function ProgressSection({
       return;
     }
     const page = unit === "percent" ? Math.round((n / 100) * book.pages) : n;
-    const result = await onProgress(page);
-    if (!result) {
-      showToast("Não foi possível salvar o progresso");
-      return;
+    setSaving(true);
+    try {
+      const result = await onProgress(page);
+      if (!result) {
+        showToast("Não foi possível salvar o progresso");
+        return;
+      }
+      setValue("");
+      showToast(result.delta > 0 ? `+${result.delta} páginas! 📖` : "Progresso atualizado 📖");
+    } finally {
+      setSaving(false);
     }
-    setValue("");
-    showToast(result.delta > 0 ? `+${result.delta} páginas! 📖` : "Progresso atualizado 📖");
   }
 
   return (
@@ -158,10 +166,10 @@ function ProgressSection({
         <button
           type="button"
           onClick={save}
-          disabled={!value.trim()}
-          className="rounded-xl bg-foil px-4 py-2.5 text-sm font-bold text-leather disabled:opacity-40"
+          disabled={!value.trim() || saving}
+          className="flex items-center justify-center rounded-xl bg-foil px-4 py-2.5 text-sm font-bold text-leather disabled:opacity-40"
         >
-          Salvar
+          {saving ? <Spinner size={16} className="text-leather" /> : "Salvar"}
         </button>
       </div>
     </section>
@@ -194,6 +202,9 @@ export function BookPageClient({ params }: { params: { id: string } }) {
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [quoteDraft, setQuoteDraft] = useState("");
   const [quotePage, setQuotePage] = useState("");
+  const [publishingReview, setPublishingReview] = useState(false);
+  const [addingTag, setAddingTag] = useState(false);
+  const [savingQuote, setSavingQuote] = useState(false);
 
   const bookId = params.id;
 
@@ -328,44 +339,54 @@ export function BookPageClient({ params }: { params: { id: string } }) {
 
   async function publishReview() {
     const text = reviewDraft.trim();
-    if (!text) return;
+    if (!text || publishingReview) return;
     if (!rating || rating <= 0) {
       showToast("Dê uma nota antes de publicar a review");
       return;
     }
-    const res = await fetch(`/api/books/${bookId}/review`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ rating, title: titleDraft.trim() || undefined, text }),
-    });
-    if (!res.ok) {
-      showToast("Não foi possível publicar a review");
-      return;
+    setPublishingReview(true);
+    try {
+      const res = await fetch(`/api/books/${bookId}/review`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rating, title: titleDraft.trim() || undefined, text }),
+      });
+      if (!res.ok) {
+        showToast("Não foi possível publicar a review");
+        return;
+      }
+      const data = await res.json();
+      setMyReviewTitle(data.myReviewTitle);
+      setMyReview(data.myReview);
+      setEntry(data.entry);
+      setEditingReview(false);
+      showToast("Review publicada!");
+    } finally {
+      setPublishingReview(false);
     }
-    const data = await res.json();
-    setMyReviewTitle(data.myReviewTitle);
-    setMyReview(data.myReview);
-    setEntry(data.entry);
-    setEditingReview(false);
-    showToast("Review publicada!");
   }
 
   async function handleAddTag() {
     const tag = tagDraft.trim().toLowerCase();
-    if (!tag) return;
-    const res = await fetch(`/api/books/${bookId}/tags`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tag }),
-    });
-    setTagDraft("");
-    if (!res.ok) {
-      showToast("Não foi possível adicionar a tag");
-      return;
+    if (!tag || addingTag) return;
+    setAddingTag(true);
+    try {
+      const res = await fetch(`/api/books/${bookId}/tags`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tag }),
+      });
+      setTagDraft("");
+      if (!res.ok) {
+        showToast("Não foi possível adicionar a tag");
+        return;
+      }
+      const data = await res.json();
+      setTags(data.tags);
+      showToast("Tag adicionada");
+    } finally {
+      setAddingTag(false);
     }
-    const data = await res.json();
-    setTags(data.tags);
-    showToast("Tag adicionada");
   }
 
   async function handleRemoveTag(tag: string) {
@@ -382,23 +403,28 @@ export function BookPageClient({ params }: { params: { id: string } }) {
 
   async function saveQuote() {
     const text = quoteDraft.trim();
-    if (!text) return;
-    const page = Number(quotePage);
-    const res = await fetch(`/api/books/${bookId}/quotes`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, page: Number.isInteger(page) && page > 0 ? page : undefined }),
-    });
-    if (!res.ok) {
-      showToast("Não foi possível salvar a citação");
-      return;
+    if (!text || savingQuote) return;
+    setSavingQuote(true);
+    try {
+      const page = Number(quotePage);
+      const res = await fetch(`/api/books/${bookId}/quotes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, page: Number.isInteger(page) && page > 0 ? page : undefined }),
+      });
+      if (!res.ok) {
+        showToast("Não foi possível salvar a citação");
+        return;
+      }
+      const quote = await res.json();
+      setQuotes((prev) => [...prev, quote]);
+      setQuoteDraft("");
+      setQuotePage("");
+      setQuoteOpen(false);
+      showToast("Citação salva ✦");
+    } finally {
+      setSavingQuote(false);
     }
-    const quote = await res.json();
-    setQuotes((prev) => [...prev, quote]);
-    setQuoteDraft("");
-    setQuotePage("");
-    setQuoteOpen(false);
-    showToast("Citação salva ✦");
   }
 
   async function removeQuote(id: string) {
@@ -497,10 +523,10 @@ export function BookPageClient({ params }: { params: { id: string } }) {
                 <button
                   type="button"
                   onClick={publishReview}
-                  disabled={!reviewDraft.trim()}
-                  className="rounded-xl bg-foil px-4 py-2.5 text-sm font-bold text-leather transition-opacity hover:opacity-90 disabled:opacity-40"
+                  disabled={!reviewDraft.trim() || publishingReview}
+                  className="flex items-center justify-center rounded-xl bg-foil px-4 py-2.5 text-sm font-bold text-leather transition-opacity hover:opacity-90 disabled:opacity-40"
                 >
-                  Publicar
+                  {publishingReview ? <Spinner size={16} className="text-leather" /> : "Publicar"}
                 </button>
               </div>
             </div>
@@ -553,18 +579,24 @@ export function BookPageClient({ params }: { params: { id: string } }) {
               </button>
             </span>
           ))}
-          <input
-            type="text"
-            value={tagDraft}
-            onChange={(e) => setTagDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleAddTag();
-            }}
-            onBlur={() => tagDraft.trim() && handleAddTag()}
-            placeholder="+ Adicionar"
-            aria-label="Adicionar tag"
-            className="w-28 rounded-full border border-dashed border-line bg-transparent px-3.5 py-1.5 text-xs text-paper placeholder:text-paperDim/70"
-          />
+          {addingTag ? (
+            <span className="flex w-28 items-center justify-center py-1.5">
+              <Spinner size={14} className="text-paperDim" label="Adicionando tag" />
+            </span>
+          ) : (
+            <input
+              type="text"
+              value={tagDraft}
+              onChange={(e) => setTagDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleAddTag();
+              }}
+              onBlur={() => tagDraft.trim() && handleAddTag()}
+              placeholder="+ Adicionar"
+              aria-label="Adicionar tag"
+              className="w-28 rounded-full border border-dashed border-line bg-transparent px-3.5 py-1.5 text-xs text-paper placeholder:text-paperDim/70"
+            />
+          )}
         </div>
       </section>
 
@@ -627,10 +659,10 @@ export function BookPageClient({ params }: { params: { id: string } }) {
                   <button
                     type="button"
                     onClick={saveQuote}
-                    disabled={!quoteDraft.trim()}
-                    className="rounded-xl bg-foil px-4 py-2.5 text-sm font-bold text-leather disabled:opacity-40"
+                    disabled={!quoteDraft.trim() || savingQuote}
+                    className="flex items-center justify-center rounded-xl bg-foil px-4 py-2.5 text-sm font-bold text-leather disabled:opacity-40"
                   >
-                    Salvar
+                    {savingQuote ? <Spinner size={16} className="text-leather" /> : "Salvar"}
                   </button>
                 </div>
               </div>

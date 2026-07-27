@@ -7,6 +7,7 @@ import { BookCover } from "@/components/BookCover";
 import { EmptyState } from "@/components/EmptyState";
 import { BookOpenIcon } from "@/components/icons";
 import { SectionTitle } from "@/components/SectionTitle";
+import { Spinner } from "@/components/Spinner";
 import { useRecommendations } from "@/lib/store/hooks";
 import type { ApiCommunityList, Book } from "@/lib/types";
 
@@ -127,7 +128,9 @@ export default function SearchPage() {
           )}
         </>
       ) : loading ? (
-        <p className="mt-10 text-center text-paperDim">Buscando…</p>
+        <div className="flex justify-center py-10">
+          <Spinner size={28} className="text-paperDim" label="Buscando" />
+        </div>
       ) : error ? (
         <div className="mt-10 flex flex-col items-center gap-3 text-center">
           <p className="text-paperDim">Não foi possível buscar agora. Tente novamente em instantes.</p>
