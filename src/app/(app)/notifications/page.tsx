@@ -23,6 +23,7 @@ function notificationHref(n: Notification): string {
 export default function NotificationsPage() {
   const notifications = useStore((s) => s.notifications);
   const markNotificationsRead = useStore((s) => s.markNotificationsRead);
+  const clearNotifications = useStore((s) => s.clearNotifications);
 
   useEffect(() => {
     markNotificationsRead();
@@ -33,6 +34,16 @@ export default function NotificationsPage() {
       <BackHeader>
         <h1 className="text-lg font-extrabold">Notificações</h1>
       </BackHeader>
+
+      {notifications.length > 0 && (
+        <button
+          type="button"
+          onClick={clearNotifications}
+          className="mb-3 text-xs font-bold text-paperDim hover:text-ribbon"
+        >
+          Limpar tudo
+        </button>
+      )}
 
       {notifications.length === 0 ? (
         <p className="mt-6 text-sm text-paperDim">Nenhuma notificação por aqui ainda.</p>

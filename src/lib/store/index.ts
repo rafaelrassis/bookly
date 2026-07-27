@@ -52,6 +52,7 @@ type Store = {
 
   notifications: Notification[];
   markNotificationsRead: () => void;
+  clearNotifications: () => void;
 };
 
 export const useStore = create<Store>()(
@@ -90,6 +91,8 @@ export const useStore = create<Store>()(
 
       markNotificationsRead: () =>
         set((s) => ({ notifications: s.notifications.map((n) => ({ ...n, read: true })) })),
+
+      clearNotifications: () => set({ notifications: [] }),
     }),
     {
       name: "bookly-v5",
