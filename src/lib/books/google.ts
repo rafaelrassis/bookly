@@ -67,9 +67,30 @@ function requireApiKey(): string {
   return key;
 }
 
+const RETRYABLE_STATUS = new Set([429, 500, 503]);
+const MAX_ATTEMPTS = 3;
+const RETRY_DELAY_MS = 300;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Google Books costuma responder 503 "backendFailed" de forma transitória —
+ * tenta de novo (com backoff) antes de propagar como erro. */
+async function fetchGoogleBooks(url: string): Promise<Response> {
+  let lastRes: Response | undefined;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const res = await fetch(url);
+    if (res.ok || !RETRYABLE_STATUS.has(res.status)) return res;
+    lastRes = res;
+    if (attempt < MAX_ATTEMPTS) await sleep(RETRY_DELAY_MS * attempt);
+  }
+  return lastRes!;
+}
+
 export async function searchGoogleBooks(q: string): Promise<Book[]> {
-  const url = `${GOOGLE_BOOKS_API}?q=${encodeURIComponent(q)}&maxResults=20&key=${requireApiKey()}`;
-  const res = await fetch(url);
+  const url = `${GOOGLE_BOOKS_API}?q=${encodeURIComponent(q)}&maxResults=20&country=US&key=${requireApiKey()}`;
+  const res = await fetchGoogleBooks(url);
   if (!res.ok) throw new Error(`Google Books search failed: ${res.status} ${await res.text()}`);
   const data = (await res.json()) as { items?: GoogleVolume[] };
   return (data.items ?? []).map(mapVolume).filter((b): b is Book => b !== null);
@@ -78,8 +99,8 @@ export async function searchGoogleBooks(q: string): Promise<Book[]> {
 /** `null` quando o volume não existe (404); demais falhas (rede, 5xx, quota)
  * lançam pra virar erro explícito na rota (sem mascarar como "não encontrado"). */
 export async function getGoogleBook(id: string): Promise<Book | null> {
-  const url = `${GOOGLE_BOOKS_API}/${encodeURIComponent(id)}?key=${requireApiKey()}`;
-  const res = await fetch(url);
+  const url = `${GOOGLE_BOOKS_API}/${encodeURIComponent(id)}?country=US&key=${requireApiKey()}`;
+  const res = await fetchGoogleBooks(url);
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Google Books get failed: ${res.status} ${await res.text()}`);
   const item = (await res.json()) as GoogleVolume;
