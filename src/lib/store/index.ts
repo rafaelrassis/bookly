@@ -131,7 +131,7 @@ export function useNotifications() {
       : notifications;
     return base.map((n) => ({
       ...n,
-      read: readAt ? n.time <= readAt : n.read,
+      read: readAt ? n.time <= readAt : false,
     }));
   }, [notifications, clearedAt, readAt]);
 }

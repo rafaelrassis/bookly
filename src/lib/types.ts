@@ -136,7 +136,6 @@ export type Notification = {
   reviewId?: string;
   bookId?: string;
   text?: string;
-  read: boolean;
   time: string;
 };
 
