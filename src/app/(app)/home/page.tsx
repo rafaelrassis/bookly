@@ -8,12 +8,12 @@ import { EmptyState } from "@/components/EmptyState";
 import { FeedPost } from "@/components/FeedPost";
 import { BookOpenIcon } from "@/components/icons";
 import { Logo } from "@/components/Logo";
+import { NotificationBell } from "@/components/NotificationBell";
 import { SectionTitle } from "@/components/SectionTitle";
 import { Skeleton } from "@/components/Skeleton";
 import { Spinner } from "@/components/Spinner";
 import { readingPercent } from "@/lib/format";
 import { useFeed, useTrendingBooks } from "@/lib/store/hooks";
-import { useNotifications } from "@/lib/store";
 import type { Book, ShelfEntry } from "@/lib/types";
 
 type ReadingItem = { book: Book; entry: ShelfEntry };
@@ -32,25 +32,6 @@ function SearchIcon() {
     >
       <circle cx="11" cy="11" r="7" />
       <path d="m20 20-3.8-3.8" />
-    </svg>
-  );
-}
-
-function BellIcon() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.8}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M18 16v-5a6 6 0 1 0-12 0v5l-1.8 2.8A1 1 0 0 0 5 20.5h14a1 1 0 0 0 .8-1.7L18 16Z" />
-      <path d="M10 21a2 2 0 0 0 4 0" />
     </svg>
   );
 }
@@ -103,7 +84,6 @@ function ReadingCard({ item, priority = false }: { item: ReadingItem; priority?:
 
 export default function HomePage() {
   const [reading, setReading] = useState<ReadingItem[]>([]);
-  const unread = useNotifications().filter((n) => !n.read).length;
   const [feedFilter, setFeedFilter] = useState<"all" | "following">("all");
   const {
     items: feed,
@@ -129,18 +109,7 @@ export default function HomePage() {
     <div className="pt-5">
       <header className="flex items-center justify-between">
         <Logo />
-        <Link
-          href="/notifications"
-          aria-label={unread > 0 ? `Notificações, ${unread} não lidas` : "Notificações"}
-          className="relative flex h-10 w-10 items-center justify-center rounded-full text-paperDim transition-colors hover:text-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foil focus-visible:ring-offset-2 focus-visible:ring-offset-leather"
-        >
-          <BellIcon />
-          {unread > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-ribbon px-1 text-[10px] font-bold text-white">
-              {unread}
-            </span>
-          )}
-        </Link>
+        <NotificationBell className="-mr-2" />
       </header>
 
       <Link

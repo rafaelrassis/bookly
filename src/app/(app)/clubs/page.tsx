@@ -7,6 +7,7 @@ import { BookCover } from "@/components/BookCover";
 import { EmptyState } from "@/components/EmptyState";
 import { SectionTitle } from "@/components/SectionTitle";
 import { BookOpenIcon, LockIcon } from "@/components/icons";
+import { NotificationBell } from "@/components/NotificationBell";
 import { Spinner } from "@/components/Spinner";
 import { useStore } from "@/lib/store";
 import type { ClubSummary } from "@/lib/types";
@@ -88,7 +89,10 @@ export default function ClubsPage() {
 
   return (
     <div className="pt-5">
-      <h1 className="text-2xl font-extrabold">Clubes</h1>
+      <header className="flex items-center justify-between">
+        <h1 className="text-2xl font-extrabold">Clubes</h1>
+        <NotificationBell className="-mr-2" />
+      </header>
 
       <div className="mt-4 flex gap-2">
         <Link

@@ -6,6 +6,7 @@ import { BookCover } from "@/components/BookCover";
 import { BottomSheet } from "@/components/BottomSheet";
 import { EmptyState } from "@/components/EmptyState";
 import { BookOpenIcon, LockIcon } from "@/components/icons";
+import { NotificationBell } from "@/components/NotificationBell";
 import { SectionTitle } from "@/components/SectionTitle";
 import { Spinner } from "@/components/Spinner";
 import { Stars } from "@/components/Stars";
@@ -231,7 +232,10 @@ export default function ShelfPage() {
 
   return (
     <div className="pt-5">
-      <h1 className="text-2xl font-extrabold">Estante</h1>
+      <header className="flex items-center justify-between">
+        <h1 className="text-2xl font-extrabold">Estante</h1>
+        <NotificationBell className="-mr-2" />
+      </header>
 
       <MyLists />
 
