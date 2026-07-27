@@ -17,6 +17,26 @@ export function LockIcon({ size = 12 }: { size?: number }) {
   );
 }
 
+/** Ícone genérico (livro aberto) pros estados vazios do app. */
+export function BookOpenIcon({ size = 40 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 6.5c-1.6-1.2-3.6-1.8-5.8-1.8-.7 0-1.2.55-1.2 1.2v11.6c0 .7.55 1.2 1.2 1.2 2.2 0 4.2.6 5.8 1.8" />
+      <path d="M12 6.5c1.6-1.2 3.6-1.8 5.8-1.8.7 0 1.2.55 1.2 1.2v11.6c0 .7-.55 1.2-1.2 1.2-2.2 0-4.2.6-5.8 1.8V6.5Z" />
+    </svg>
+  );
+}
+
 export function CopyIcon({ size = 14 }: { size?: number }) {
   return (
     <svg

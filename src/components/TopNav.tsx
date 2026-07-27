@@ -31,7 +31,7 @@ export function TopNav() {
   return (
     <header className="sticky top-0 z-40 hidden border-b border-line bg-leather/85 backdrop-blur md:block">
       <div className="mx-auto flex h-16 max-w-2xl items-center justify-between px-5">
-        <Link href="/home" aria-label="Início" className="rounded-md">
+        <Link href="/home" className="rounded-md">
           <Logo className="text-2xl" />
         </Link>
 

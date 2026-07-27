@@ -4,9 +4,12 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BookCover } from "@/components/BookCover";
 import { DiscoverReaders } from "@/components/DiscoverReaders";
+import { EmptyState } from "@/components/EmptyState";
 import { FeedPost } from "@/components/FeedPost";
+import { BookOpenIcon } from "@/components/icons";
 import { Logo } from "@/components/Logo";
 import { SectionTitle } from "@/components/SectionTitle";
+import { Skeleton } from "@/components/Skeleton";
 import { readingPercent } from "@/lib/format";
 import { useFeed, useTrendingBooks } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
@@ -52,7 +55,7 @@ function BellIcon() {
 }
 
 /** Card de leitura atual — link para o livro; progresso é atualizado lá. */
-function ReadingCard({ item }: { item: ReadingItem }) {
+function ReadingCard({ item, priority = false }: { item: ReadingItem; priority?: boolean }) {
   const { book, entry } = item;
   const currentPage = entry.currentPage ?? 0;
   const lastPage = entry.lastPage ?? currentPage;
@@ -70,7 +73,7 @@ function ReadingCard({ item }: { item: ReadingItem }) {
         className="absolute right-6 top-0 h-16 w-6 bg-ribbon"
         style={{ clipPath: "polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 10px), 0 100%)" }}
       />
-      <BookCover book={book} width={64} />
+      <BookCover book={book} width={64} priority={priority} />
       <div className="min-w-0 flex-1 self-center pr-8">
         <h3 className="truncate font-display text-base font-bold">{book.title}</h3>
         <p className="truncate text-sm text-paperDim">{book.authors}</p>
@@ -153,8 +156,8 @@ export default function HomePage() {
             {reading.length === 1 ? "Leitura atual" : "Leituras atuais"}
           </SectionTitle>
           <div className="mt-3 flex flex-col gap-3">
-            {reading.map((item) => (
-              <ReadingCard key={item.book.id} item={item} />
+            {reading.map((item, i) => (
+              <ReadingCard key={item.book.id} item={item} priority={i === 0} />
             ))}
           </div>
         </section>
@@ -217,26 +220,38 @@ export default function HomePage() {
                 Tentar de novo
               </button>
             </div>
-          ) : (
-            !feedLoading &&
-            feed.length === 0 && (
-              <div className="flex flex-col items-center gap-3 py-6 text-center">
-                <p className="text-sm text-paperDim">Nenhuma review por aqui ainda.</p>
-                <div className="flex gap-2">
-                  <Link
-                    href="/search"
-                    className="rounded-xl bg-foil px-4 py-2 text-xs font-bold text-leather transition-opacity hover:opacity-90"
-                  >
-                    Avaliar um livro
-                  </Link>
-                  <Link
-                    href="#discover-readers"
-                    className="rounded-xl border border-line bg-card px-4 py-2 text-xs font-bold text-paper transition-colors hover:bg-card2"
-                  >
-                    Seguir leitores
-                  </Link>
+          ) : feedLoading ? (
+            <div className="flex flex-col gap-4 py-4" aria-hidden="true">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="flex gap-3 border-b border-line pb-4">
+                  <Skeleton className="h-9 w-9 shrink-0 rounded-full" />
+                  <div className="flex min-w-0 flex-1 flex-col gap-2">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-2/3" />
+                  </div>
                 </div>
-              </div>
+              ))}
+            </div>
+          ) : (
+            feed.length === 0 && (
+              <EmptyState
+                icon={<BookOpenIcon />}
+                title="Nenhuma review por aqui ainda"
+                description={
+                  feedFilter === "following"
+                    ? "Siga outros leitores pra ver as reviews deles aqui."
+                    : "Seja a primeira pessoa a avaliar um livro."
+                }
+                action={{ label: "Avaliar um livro", href: "/search" }}
+              >
+                <Link
+                  href="#discover-readers"
+                  className="mt-2 text-sm font-bold text-paperDim underline decoration-dotted hover:text-paper"
+                >
+                  Encontrar leitores
+                </Link>
+              </EmptyState>
             )
           )}
           {feed.map((review) => (

@@ -1,12 +1,17 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { TabBar } from "@/components/TabBar";
 import { TopNav } from "@/components/TopNav";
 import { auth } from "@/lib/auth";
+import { isSocialCrawler } from "@/lib/bot";
 
-/** Rotas logadas: redireciona para o login quando não há sessão. */
+/** Rotas logadas: redireciona para o login quando não há sessão — exceto
+ * para crawlers de preview de link (WhatsApp etc.), que precisam renderizar
+ * a árvore pra a metadata da página (title/OG) chegar até eles. */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
-  if (!session?.user) redirect("/login");
+  const isCrawler = isSocialCrawler(headers().get("user-agent"));
+  if (!session?.user && !isCrawler) redirect("/login");
 
   return (
     <>

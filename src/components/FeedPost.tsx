@@ -158,7 +158,7 @@ export function FeedPost({ review }: { review: ApiReview }) {
               aria-pressed={liked}
               aria-label={liked ? "Remover curtida" : "Curtir review"}
               className={`flex items-center gap-1.5 rounded-full py-1 transition-colors ${
-                liked ? "text-ribbon" : "hover:text-paper"
+                liked ? "text-ribbonText" : "hover:text-paper"
               }`}
             >
               <HeartIcon filled={liked} />

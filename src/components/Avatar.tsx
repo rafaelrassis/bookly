@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { AVATAR_CHOICES, hashAvatarIndex } from "@/lib/avatars";
 import { withAt, withoutAt } from "@/lib/handle";
 import { useStore } from "@/lib/store";
@@ -32,10 +33,17 @@ export function Avatar({ user, size = 36, className = "", avatarIndex, avatarUrl
   if (resolvedUrl) {
     return (
       <span
-        aria-hidden="true"
-        className={`inline-block shrink-0 overflow-hidden rounded-full bg-cover bg-center ${className}`}
-        style={{ width: size, height: size, backgroundImage: `url(${resolvedUrl})` }}
-      />
+        className={`relative inline-block shrink-0 overflow-hidden rounded-full ${className}`}
+        style={{ width: size, height: size }}
+      >
+        <Image
+          src={resolvedUrl}
+          alt={user}
+          fill
+          sizes={`${size}px`}
+          className="object-cover"
+        />
+      </span>
     );
   }
 

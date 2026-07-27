@@ -13,6 +13,10 @@
   --paperDim: 184 171 151;
   --foil: 228 169 60;
   --ribbon: 196 71 47;
+  /* Mesmo tom do ribbon, clareado só pra uso em texto/ícone (nunca no
+     ribbon gráfico em si): #C4472F sobre card/card2 não passa 4.5:1 AA
+     pro texto normal — ver docs/ESPECIFICACAO.md / spec de polish. */
+  --ribbon-text: 216 111 90;
   --line: 58 50 43;
 }
 
@@ -24,6 +28,7 @@
   --paperDim: 110 99 83;
   --foil: 181 130 31;
   --ribbon: 196 71 47;
+  --ribbon-text: 177 64 42;
   --line: 224 213 192;
 }
 

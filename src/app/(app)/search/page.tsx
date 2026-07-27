@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
+import { EmptyState } from "@/components/EmptyState";
+import { BookOpenIcon } from "@/components/icons";
 import { SectionTitle } from "@/components/SectionTitle";
 import { useRecommendations } from "@/lib/store/hooks";
 import type { ApiCommunityList, Book } from "@/lib/types";
@@ -77,6 +79,7 @@ export default function SearchPage() {
       <BackHeader>
         <input
           type="search"
+          // eslint-disable-next-line jsx-a11y/no-autofocus -- campo recém-aberto (único alvo óbvio da ação do usuário); não muda o foco de página alguma sem essa ação
           autoFocus
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -137,7 +140,13 @@ export default function SearchPage() {
           </button>
         </div>
       ) : results.length === 0 ? (
-        <p className="mt-10 text-center text-paperDim">Nenhum livro encontrado.</p>
+        <EmptyState
+          className="mt-4"
+          icon={<BookOpenIcon />}
+          title="Nenhum livro encontrado"
+          description={`Não encontramos nada para "${q}".`}
+          action={{ label: "Limpar busca", onClick: () => setQuery("") }}
+        />
       ) : (
         <ul className="mt-4 flex flex-col">
           {results.map((book) => (

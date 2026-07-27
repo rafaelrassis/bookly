@@ -459,7 +459,7 @@ export default function SettingsPage() {
         <button
           type="button"
           onClick={handleLogout}
-          className="mt-3 w-full rounded-xl border border-line bg-card px-5 py-3.5 font-bold text-ribbon transition-colors hover:bg-card2"
+          className="mt-3 w-full rounded-xl border border-line bg-card px-5 py-3.5 font-bold text-ribbonText transition-colors hover:bg-card2"
         >
           Sair da conta
         </button>

@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { BookCover } from "@/components/BookCover";
-import { LockIcon } from "@/components/icons";
+import { EmptyState } from "@/components/EmptyState";
+import { BookOpenIcon, LockIcon } from "@/components/icons";
 import { SectionTitle } from "@/components/SectionTitle";
 import { Stars } from "@/components/Stars";
 import { useStore } from "@/lib/store";
@@ -19,7 +20,7 @@ const STATUS_FILTERS: { key: ShelfStatus | "ALL"; label: string }[] = [
 ];
 
 const STATUS_BADGE: Record<ShelfStatus, { label: string; className: string }> = {
-  READING: { label: "Lendo", className: "bg-ribbon/20 text-ribbon" },
+  READING: { label: "Lendo", className: "bg-ribbon/20 text-ribbonText" },
   WANT_TO_READ: { label: "Quero ler", className: "bg-card2 text-paperDim" },
   READ: { label: "Lido", className: "bg-foil/15 text-foil" },
 };
@@ -88,6 +89,7 @@ function MyLists() {
             onKeyDown={(e) => {
               if (e.key === "Enter") create();
             }}
+            // eslint-disable-next-line jsx-a11y/no-autofocus -- campo recém-aberto (único alvo óbvio da ação do usuário); não muda o foco de página alguma sem essa ação
             autoFocus
             placeholder="Nome da lista…"
             aria-label="Nome da nova lista"
@@ -283,24 +285,30 @@ export default function ShelfPage() {
           </button>
         </div>
       ) : items.length === 0 ? (
-        loaded && (
-          <div className="mt-12 flex flex-col items-center text-center">
-            <p className="font-bold">Nada por aqui</p>
-            <p className="mt-2 max-w-64 text-sm text-paperDim">
-              {isEmptyShelf
-                ? "Sua estante está vazia. Busque um livro e marque como Quero ler, Lendo ou Lido."
-                : "Nenhum livro combina com esses filtros."}
-            </p>
-            {isEmptyShelf && (
-              <Link
-                href="/search"
-                className="mt-6 rounded-xl bg-foil px-5 py-3 font-bold text-leather transition-opacity hover:opacity-90"
-              >
-                Buscar livros
-              </Link>
-            )}
-          </div>
-        )
+        loaded &&
+        (isEmptyShelf ? (
+          <EmptyState
+            icon={<BookOpenIcon />}
+            title="Sua estante está vazia"
+            description="Busque um livro e marque como Quero ler, Lendo ou Lido."
+            action={{ label: "Buscar livros", href: "/search" }}
+          />
+        ) : (
+          <EmptyState
+            icon={<BookOpenIcon />}
+            title="Nada por aqui"
+            description="Nenhum livro combina com esses filtros."
+            action={{
+              label: "Limpar filtros",
+              onClick: () => {
+                setQuery("");
+                setStatus("ALL");
+                setGenre("ALL");
+                setTag("ALL");
+              },
+            }}
+          />
+        ))
       ) : (
         <ul className="mt-2 flex flex-col">
           {items.map(({ book, entry, tags, rating }) => {

@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BookCover } from "@/components/BookCover";
+import { EmptyState } from "@/components/EmptyState";
 import { SectionTitle } from "@/components/SectionTitle";
-import { LockIcon } from "@/components/icons";
+import { BookOpenIcon, LockIcon } from "@/components/icons";
 import { useStore } from "@/lib/store";
 import type { ClubSummary } from "@/lib/types";
 
@@ -186,9 +187,12 @@ export default function ClubsPage() {
           )}
 
           {minePublic.length === 0 && minePrivate.length === 0 && discover.length === 0 && (
-            <p className="mt-8 text-center text-sm text-paperDim">
-              Nenhum clube ainda. Crie o primeiro!
-            </p>
+            <EmptyState
+              icon={<BookOpenIcon />}
+              title="Nenhum clube ainda"
+              description="Crie um clube de leitura ou entre com um código de convite."
+              action={{ label: "Criar um clube", href: "/clubs/new" }}
+            />
           )}
         </>
       )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useModalA11y } from "@/lib/useModalA11y";
 
 type Props = {
   email: string;
@@ -13,6 +14,7 @@ export function VerificationModal({ email, onVerified, onSkip }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const dialogRef = useModalA11y<HTMLDivElement>(onSkip ?? (() => {}));
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -54,8 +56,17 @@ export function VerificationModal({ email, onVerified, onSkip }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-5">
-      <div className="w-full max-w-sm rounded-2xl border border-line bg-card p-6">
-        <h2 className="text-lg font-extrabold">Verificar e-mail</h2>
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="verification-modal-title"
+        tabIndex={-1}
+        className="w-full max-w-sm rounded-2xl border border-line bg-card p-6 focus:outline-none"
+      >
+        <h2 id="verification-modal-title" className="text-lg font-extrabold">
+          Verificar e-mail
+        </h2>
         <p className="mt-1 text-sm text-paperDim">
           Enviamos um código de 6 dígitos para <span className="text-paper">{email}</span>.
         </p>
@@ -72,7 +83,11 @@ export function VerificationModal({ email, onVerified, onSkip }: Props) {
             className="rounded-xl border border-line bg-card2 px-4 py-3 text-center text-lg tracking-[0.5em] text-paper placeholder:text-paperDim/40"
           />
 
-          {error && <p className="text-sm text-red-400">{error}</p>}
+          {error && (
+            <p role="alert" className="text-sm text-red-400">
+              {error}
+            </p>
+          )}
 
           <button
             type="submit"

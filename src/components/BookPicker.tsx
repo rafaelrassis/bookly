@@ -63,7 +63,7 @@ export function BookPicker({
           type="button"
           onClick={onClear}
           aria-label="Trocar livro"
-          className="shrink-0 rounded-full px-2 text-sm text-paperDim hover:text-ribbon"
+          className="shrink-0 rounded-full px-2 text-sm text-paperDim hover:text-ribbonText"
         >
           ✕
         </button>

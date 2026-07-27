@@ -11,6 +11,7 @@ import { SectionTitle } from "@/components/SectionTitle";
 import { formatClockTime } from "@/lib/format";
 import { withAt, withoutAt } from "@/lib/handle";
 import { useStore } from "@/lib/store";
+import { useModalA11y } from "@/lib/useModalA11y";
 import type { Book, ClubDetail, ClubMessage } from "@/lib/types";
 
 const POLL_INTERVAL_MS = 4000;
@@ -105,16 +106,20 @@ function MembersModal({
   onClose: () => void;
   onRemove: (userId: string, user: string) => void;
 }) {
+  const dialogRef = useModalA11y<HTMLDivElement>(onClose);
   return (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- fechar no clique fora é um atalho de mouse; teclado já fecha com Esc (useModalA11y) e o botão "Fechar" abaixo
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-5"
-      onClick={onClose}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
+        ref={dialogRef}
         role="dialog"
+        aria-modal="true"
         aria-label="Membros do clube"
-        onClick={(e) => e.stopPropagation()}
-        className="max-h-[80vh] w-full overflow-y-auto rounded-t-3xl border border-line bg-leather p-5 sm:max-w-md sm:rounded-3xl"
+        tabIndex={-1}
+        className="max-h-[80vh] w-full overflow-y-auto rounded-t-3xl border border-line bg-leather p-5 sm:max-w-md sm:rounded-3xl focus:outline-none"
       >
         <div className="flex items-center justify-between">
           <h2 className="font-display text-lg font-bold">Membros ({club.members.length})</h2>
@@ -150,7 +155,7 @@ function MembersModal({
                   type="button"
                   onClick={() => onRemove(m.userId, m.user)}
                   aria-label={`Remover ${m.user} do clube`}
-                  className="shrink-0 rounded-full px-2 py-1 text-xs font-bold text-paperDim hover:text-ribbon"
+                  className="shrink-0 rounded-full px-2 py-1 text-xs font-bold text-paperDim hover:text-ribbonText"
                 >
                   Excluir
                 </button>
@@ -435,7 +440,7 @@ export default function ClubPage({ params }: { params: { id: string } }) {
             <button
               type="button"
               onClick={deleteClub}
-              className="flex-1 rounded-xl border border-line bg-card px-5 py-3 font-bold text-paperDim transition-colors hover:text-ribbon"
+              className="flex-1 rounded-xl border border-line bg-card px-5 py-3 font-bold text-paperDim transition-colors hover:text-ribbonText"
             >
               Excluir clube
             </button>
@@ -638,7 +643,7 @@ export default function ClubPage({ params }: { params: { id: string } }) {
                     type="button"
                     onClick={() => setReplyTo(null)}
                     aria-label="Cancelar resposta"
-                    className="shrink-0 text-paperDim hover:text-ribbon"
+                    className="shrink-0 text-paperDim hover:text-ribbonText"
                   >
                     ✕
                   </button>

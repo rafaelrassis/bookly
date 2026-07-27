@@ -178,7 +178,7 @@ export default function ListPage({ params }: { params: { id: string } }) {
                 type="button"
                 onClick={() => removeBook(book.id)}
                 aria-label={`Remover ${book.title} da lista`}
-                className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-card2 text-[10px] font-bold text-paperDim ring-1 ring-line hover:text-ribbon"
+                className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-card2 text-[10px] font-bold text-paperDim ring-1 ring-line hover:text-ribbonText"
               >
                 ✕
               </button>

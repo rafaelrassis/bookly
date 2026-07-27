@@ -6,24 +6,55 @@ import { ThemeSync } from "@/components/ThemeSync";
 import { Toaster } from "@/components/Toaster";
 import "./globals.css";
 
+// Fraunces só é usada em negrito/black (700/900) no app — 500 nunca aparece,
+// então cai fora. "swap" evita FOIT enquanto a fonte carrega.
 const fraunces = Fraunces({
   subsets: ["latin"],
-  weight: ["500", "700", "900"],
+  weight: ["700", "900"],
+  display: "swap",
   variable: "--font-fraunces",
 });
 
 const karla = Karla({
   subsets: ["latin"],
   weight: ["400", "500", "700", "800"],
+  display: "swap",
   variable: "--font-karla",
 });
 
+const DESCRIPTION =
+  "Registre o que você lê, avalie e descubra o que ler a seguir — com clubes de livro e uma comunidade de leitores.";
+
 export const metadata: Metadata = {
-  title: "bookly — registre o que você lê",
-  description: "Registre o que você lê. Descubra o que ler.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
+  title: {
+    default: "Bookly",
+    template: "%s · Bookly",
+  },
+  description: DESCRIPTION,
+  applicationName: "Bookly",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: "/icon.png",
+    apple: "/apple-icon.png",
+  },
+  openGraph: {
+    type: "website",
+    locale: "pt_BR",
+    siteName: "Bookly",
+    title: "Bookly",
+    description: DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Bookly",
+    description: DESCRIPTION,
+  },
 };
 
 export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
   themeColor: "#161210",
 };
 

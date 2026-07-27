@@ -16,6 +16,7 @@ const config: Config = {
         paperDim: "rgb(var(--paperDim) / <alpha-value>)",
         foil: "rgb(var(--foil) / <alpha-value>)",
         ribbon: "rgb(var(--ribbon) / <alpha-value>)",
+        ribbonText: "rgb(var(--ribbon-text) / <alpha-value>)",
         line: "rgb(var(--line) / <alpha-value>)",
       },
       fontFamily: {
