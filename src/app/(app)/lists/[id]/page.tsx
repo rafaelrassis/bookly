@@ -2,13 +2,42 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { notFound } from "next/navigation";
+import { notFound, useRouter } from "next/navigation";
 import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
 import { LockIcon } from "@/components/icons";
 import { SectionTitle } from "@/components/SectionTitle";
 import { useStore } from "@/lib/store";
 import type { ApiList, Book } from "@/lib/types";
+
+function DeleteListButton({ listId, listName }: { listId: string; listName: string }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+
+  async function handleDelete() {
+    if (!confirm(`Apagar a lista "${listName}"? Esta ação não pode ser desfeita.`)) return;
+    setLoading(true);
+    const res = await fetch(`/api/lists/${listId}`, { method: "DELETE" });
+    if (!res.ok) {
+      setLoading(false);
+      alert("Não foi possível apagar a lista.");
+      return;
+    }
+    router.push("/shelf");
+    router.refresh();
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleDelete}
+      disabled={loading}
+      className="mt-8 w-full rounded-xl border border-ribbon/40 py-3 font-semibold text-ribbon disabled:opacity-50"
+    >
+      {loading ? "Apagando…" : "Apagar lista"}
+    </button>
+  );
+}
 
 export default function ListPage({ params }: { params: { id: string } }) {
   const showToast = useStore((s) => s.showToast);
@@ -252,6 +281,8 @@ export default function ListPage({ params }: { params: { id: string } }) {
           </button>
         )}
       </section>
+
+      {list.isOwner && <DeleteListButton listId={list.id} listName={list.name} />}
     </div>
   );
 }

@@ -11,13 +11,14 @@ async function loadList(id: string) {
   });
 }
 
-function serializeList(list: NonNullable<Awaited<ReturnType<typeof loadList>>>) {
+function serializeList(list: NonNullable<Awaited<ReturnType<typeof loadList>>>, userId?: string) {
   return {
     id: list.id,
     name: list.name,
     visibility: list.visibility,
     bookIds: list.books.map((b) => b.bookId),
     books: list.books.map((b) => serializeBook(b.book)),
+    isOwner: list.userId === userId,
   };
 }
 
@@ -28,7 +29,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   if (list.visibility === "private" && list.userId !== session?.user?.id) {
     return NextResponse.json({ error: "privada" }, { status: 403 });
   }
-  return NextResponse.json(serializeList(list));
+  return NextResponse.json(serializeList(list, session?.user?.id));
 }
 
 const patchSchema = z.object({
@@ -50,7 +51,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
   await db.list.update({ where: { id: params.id }, data: parsed.data });
   const list = await loadList(params.id);
-  return NextResponse.json(serializeList(list!));
+  return NextResponse.json(serializeList(list!, session.user.id));
 }
 
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {

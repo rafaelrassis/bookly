@@ -125,6 +125,8 @@ export type ApiList = {
   books: Book[];
   /** Username do dono (sem @) — só presente em `GET /api/lists?community=true`. */
   by?: string;
+  /** true se o usuário autenticado é o dono da lista. */
+  isOwner?: boolean;
 };
 
 export type Notification = {
