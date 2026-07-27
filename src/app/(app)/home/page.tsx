@@ -163,16 +163,18 @@ export default function HomePage() {
         </section>
       )}
 
-      <section className="mt-7">
-        <SectionTitle>Em alta esta semana</SectionTitle>
-        <div className="no-scrollbar -mx-5 mt-3 flex gap-3 overflow-x-auto px-5">
-          {trending.map((book) => (
-            <Link key={book.id} href={`/book/${book.id}`} aria-label={book.title} className="rounded-md">
-              <BookCover book={book} width={96} />
-            </Link>
-          ))}
-        </div>
-      </section>
+      {trending.length > 0 && (
+        <section className="mt-7">
+          <SectionTitle>Em alta esta semana</SectionTitle>
+          <div className="no-scrollbar -mx-5 mt-3 flex gap-3 overflow-x-auto px-5">
+            {trending.map((book) => (
+              <Link key={book.id} href={`/book/${book.id}`} aria-label={book.title} className="rounded-md">
+                <BookCover book={book} width={96} />
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="mt-7">
         <div className="flex items-center justify-between">

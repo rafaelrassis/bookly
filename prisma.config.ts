@@ -7,7 +7,6 @@ export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
-    seed: "npx tsx prisma/seed.ts",
   },
   datasource: {
     // migrate/introspect precisam de conexão direta — a pooler do Neon

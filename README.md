@@ -2,7 +2,7 @@
 
 Web app de avaliação e review de livros — um "Letterboxd de livros".
 
-**Backend real:** Postgres/Prisma + NextAuth (credentials), com auth, perfil/follow, catálogo/estante/reviews, clubes com chat, feed social e listas todos persistidos no banco (rotas em `src/app/api/**`). Não há mais nenhum dado de domínio mocado em `src/` — o único mock restante é a lista de **notificações** (`src/lib/notifications-seed.ts`, guardado no store local), já que notificações não têm model no Prisma. Usuário demo pro dev/QA: `demo@bookly.dev` / `bookly123`; catálogo, comunidade e listas públicas de exemplo ficam em `prisma/seed-data.ts` (ver `prisma/seed.ts`).
+**Backend real:** Postgres/Prisma + NextAuth (credentials), com auth, perfil/follow, catálogo/estante/reviews, clubes com chat, feed social e listas todos persistidos no banco (rotas em `src/app/api/**`). Não há mais nenhum dado de domínio mocado em `src/` — o único mock restante é a lista de **notificações** (`src/lib/notifications-seed.ts`, guardado no store local), já que notificações não têm model no Prisma. Não existe mais seed automático em nenhum ambiente: o catálogo nasce vazio e é populado pela busca real (Google Books, `getOrCreateBook`); contas são só as criadas via `/api/auth/register`.
 
 📄 Especificação completa do produto (visão, fluxos, modelos de dados, roadmap, stack alvo): [`docs/ESPECIFICACAO.md`](docs/ESPECIFICACAO.md).
 
@@ -24,7 +24,6 @@ Precisa de um Postgres e das variáveis de ambiente — copie `.env.example` pra
 ```bash
 npm install
 npx prisma migrate deploy
-npm run db:seed
 npm run dev
 ```
 
@@ -62,9 +61,9 @@ src/
     format.ts       formatação pt-BR (vírgula decimal, milhar, progresso)
 prisma/
   schema.prisma     models reais (User, Book, ShelfEntry, Review, Club, Message…)
-  seed.ts           seed com livros, comunidade, listas públicas e usuário @demo
-  seed-data.ts       dados de semente (catálogo, perfis e listas da comunidade)
   migrations/       histórico de migrations
-e2e/                suíte Playwright (auth, books, clubs, social, users) — 44 specs
+scripts/
+  purge-seed.ts     utilitário pontual pra remover os registros de seed legado do banco (dry-run por padrão, --apply pra deletar)
+e2e/                suíte Playwright (auth, books, clubs, social, users) — 44 specs; e2e/global-setup.ts semeia só a fixture mínima de catálogo (duna/1984/verity) usada pelos testes
 docs/VALIDATION_REPORT.md   relatório de validação do backend (Spec V)
 ```

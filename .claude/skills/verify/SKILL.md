@@ -17,10 +17,15 @@ domínio ainda mocado (store local, sem tabela).
 # Postgres precisa estar de pé (ex.: pg_ctlcluster 16 main start) e a
 # DATABASE_URL do .env apontando pra ele antes de qualquer passo abaixo.
 npx prisma migrate deploy  # aplica as migrations em prisma/migrations
-npm run db:seed            # popula livros, comunidade e o usuário @demo (demo@bookly.dev / bookly123)
 npm run build               # inclui lint + type-check; deve passar limpo
 npm run start                # serve o build em http://localhost:3000
 ```
+
+Não há seed em nenhum ambiente: o banco recém-migrado nasce vazio (sem
+livros nem usuários). Pra dirigir a UI manualmente é preciso criar uma conta
+via `/signup` e popular o catálogo buscando livros de verdade (Google Books,
+`GOOGLE_BOOKS_API_KEY`) — sem isso, seções como "Em alta esta semana" ficam
+vazias (estado esperado, não é bug).
 
 Se a porta 3000 estiver ocupada, mate o `next-server` antigo pelo PID
 (`ps aux | grep 'next-serve[r]'`) — cuidado: `pkill -f` pode matar o próprio
@@ -40,7 +45,8 @@ Fluxo completo a exercitar manualmente:
 
 1. Landing `/` → signup (cria conta real via `/api/auth/register` + login
    NextAuth) → `/onboarding` (grava perfil via `/api/users/me`) → `/home`
-2. Home lista **todas** as leituras atuais (≥2 no seed), sem botão de progresso
+2. Home lista **todas** as leituras atuais (adicione 2+ livros à estante via
+   busca real pra exercitar isso), sem botão de progresso
 3. `/book/[id]` com status Lendo: seção "Seu progresso" com toggle Páginas | %,
    valida limites e mostra delta; review com "(você)" exibe datas de leitura
 4. `/clubs`: seções Públicos/Privados, código de 6 chars visível a membros de
@@ -62,10 +68,10 @@ Capture erros/avisos do console — o critério de aceite é zero.
 
 - Estado agora persiste no Postgres (é esperado sobreviver a refresh **e** a
   restart do processo). Pra resetar, é preciso mexer no banco (ex.: recriar
-  o DB e rodar `npx prisma migrate deploy && npm run db:seed`) — não existe
-  mais um botão de "Limpar dados de demonstração" que reseta tudo pro seed;
-  troca de senha/perfil grava de verdade. Notificações continuam só no
-  store local (sem tabela), então essas sim resetam com `localStorage.clear()`.
+  o DB e rodar `npx prisma migrate deploy`) — não existe seed nem botão de
+  "Limpar dados de demonstração"; troca de senha/perfil grava de verdade.
+  Notificações continuam só no store local (sem tabela), então essas sim
+  resetam com `localStorage.clear()`.
 - Guard roda no `src/middleware.ts` (server-side, via NextAuth): `page.goto`
   direto numa rota protegida sem sessão já chega redirecionado pra `/login`
   antes de qualquer JS client rodar — não precisa mais navegar pela UI só
@@ -81,4 +87,4 @@ Capture erros/avisos do console — o critério de aceite é zero.
   contenha X como substring (ex.: "Entrar com código" casa com "Entrar") —
   prefira seletores mais específicos (`input[aria-label=...] + button`).
 - Seletores Playwright com acentos (ê etc.) podem falhar por normalização
-  Unicode — prefira regex sem o caractere acentuado (ex.: `/@pedro_l/`).
+  Unicode — prefira regex sem o caractere acentuado.

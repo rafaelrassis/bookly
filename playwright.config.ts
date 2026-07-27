@@ -10,6 +10,7 @@ const launchOptions = fs.existsSync(pinnedChromium)
 
 export default defineConfig({
   testDir: "./e2e",
+  globalSetup: "./e2e/global-setup.ts",
   use: {
     viewport: { width: 390, height: 844 },
     baseURL: "http://localhost:3000",

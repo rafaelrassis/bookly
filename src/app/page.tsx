@@ -69,14 +69,16 @@ export default function LandingPage() {
         </Link>
       </div>
 
-      <section className="mt-10">
-        <SectionTitle>Top livros do mês</SectionTitle>
-        <div className="no-scrollbar -mx-5 mt-3 flex gap-3 overflow-x-auto px-5">
-          {topBooks.map((book) => (
-            <BookCover key={book.id} book={book} width={96} />
-          ))}
-        </div>
-      </section>
+      {topBooks.length > 0 && (
+        <section className="mt-10">
+          <SectionTitle>Top livros do mês</SectionTitle>
+          <div className="no-scrollbar -mx-5 mt-3 flex gap-3 overflow-x-auto px-5">
+            {topBooks.map((book) => (
+              <BookCover key={book.id} book={book} width={96} />
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="mt-10 flex flex-col gap-3">
         {FEATURES.map((feature) => (
