@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { BackHeader } from "@/components/BackHeader";
+import { FeedbackModal } from "@/components/FeedbackModal";
 import { SectionTitle } from "@/components/SectionTitle";
 import { generateVerificationCode } from "@/lib/format";
 import { useStore } from "@/lib/store";
@@ -38,6 +39,7 @@ export default function SettingsPage() {
   const updatePhone = useStore((s) => s.updatePhone);
   const showToast = useStore((s) => s.showToast);
   const router = useRouter();
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   // e-mail — troca real: código enviado ao endereço novo (POST .../email/request + /confirm)
   const [emailStep, setEmailStep] = useState<EmailStep>("idle");
@@ -465,14 +467,14 @@ export default function SettingsPage() {
         </button>
         <button
           type="button"
-          onClick={() => {
-            useStore.persist.clearStorage();
-            location.reload();
-          }}
-          className="mt-3 w-full rounded-xl border border-line bg-card px-4 py-3 text-sm font-bold text-paperDim hover:text-paper"
+          onClick={() => setFeedbackOpen(true)}
+          className="mt-3 w-full rounded-xl border border-line bg-card px-4 py-3 text-sm font-bold text-paper transition-colors hover:bg-card2"
         >
-          Limpar dados de demonstração
+          Ajude a melhorar o Bookly
         </button>
+        {feedbackOpen && (
+          <FeedbackModal onClose={() => setFeedbackOpen(false)} onToast={showToast} />
+        )}
       </section>
     </div>
   );
