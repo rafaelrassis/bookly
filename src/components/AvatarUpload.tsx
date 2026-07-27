@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Avatar } from "@/components/Avatar";
+import { AvatarCropModal } from "@/components/AvatarCropModal";
 import { Spinner } from "@/components/Spinner";
 import { withAt } from "@/lib/handle";
 import { useStore } from "@/lib/store";
@@ -9,14 +10,16 @@ import { useStore } from "@/lib/store";
 const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_BYTES = 5 * 1024 * 1024;
 
-/** Upload real de avatar: valida no client, sobe pra /api/upload/avatar (Blob
- * + resize server-side) com preview otimista, e atualiza o store no sucesso. */
+/** Upload real de avatar: valida no client, abre o editor de recorte/zoom/
+ * rotação, sobe o Blob recortado pra /api/upload/avatar (resize server-side)
+ * com preview otimista, e atualiza o store no sucesso. */
 export function AvatarUpload() {
   const username = useStore((s) => s.user.username);
   const applyProfile = useStore((s) => s.applyProfile);
   const showToast = useStore((s) => s.showToast);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [editorSrc, setEditorSrc] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -26,7 +29,13 @@ export function AvatarUpload() {
     };
   }, [preview]);
 
-  async function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+  useEffect(() => {
+    return () => {
+      if (editorSrc) URL.revokeObjectURL(editorSrc);
+    };
+  }, [editorSrc]);
+
+  function handlePick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
@@ -40,18 +49,28 @@ export function AvatarUpload() {
       return;
     }
 
-    const objectUrl = URL.createObjectURL(file);
+    setEditorSrc(URL.createObjectURL(file));
+  }
+
+  function closeEditor() {
+    if (editorSrc) URL.revokeObjectURL(editorSrc);
+    setEditorSrc(null);
+  }
+
+  async function handleConfirm(blob: Blob) {
+    const objectUrl = URL.createObjectURL(blob);
     setPreview(objectUrl);
     setUploading(true);
 
     try {
       const form = new FormData();
-      form.append("file", file);
+      form.append("file", blob, "avatar.webp");
       const res = await fetch("/api/upload/avatar", { method: "POST", body: form });
       const body = await res.json().catch(() => null);
       if (!res.ok) throw new Error(body?.error ?? "Falha ao enviar imagem.");
       applyProfile({ avatarUrl: body.url });
       showToast("Foto atualizada ✦");
+      closeEditor();
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Falha ao enviar imagem.");
     } finally {
@@ -81,7 +100,7 @@ export function AvatarUpload() {
           ref={fileInputRef}
           type="file"
           accept="image/jpeg,image/png,image/webp"
-          onChange={handleChange}
+          onChange={handlePick}
           className="hidden"
           disabled={uploading}
         />
@@ -94,6 +113,10 @@ export function AvatarUpload() {
           {uploading ? "Enviando…" : "Trocar foto"}
         </button>
       </div>
+
+      {editorSrc && (
+        <AvatarCropModal src={editorSrc} onCancel={closeEditor} onConfirm={handleConfirm} />
+      )}
     </div>
   );
 }
