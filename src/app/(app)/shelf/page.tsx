@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { BookCover } from "@/components/BookCover";
+import { BottomSheet } from "@/components/BottomSheet";
 import { EmptyState } from "@/components/EmptyState";
 import { BookOpenIcon, LockIcon } from "@/components/icons";
 import { SectionTitle } from "@/components/SectionTitle";
 import { Spinner } from "@/components/Spinner";
 import { Stars } from "@/components/Stars";
+import { TagEditor } from "@/components/TagEditor";
 import { useStore } from "@/lib/store";
 import type { ApiList, Book, ShelfEntry, ShelfStatus, Visibility } from "@/lib/types";
 
@@ -184,6 +186,7 @@ function Chip({
 }
 
 export default function ShelfPage() {
+  const showToast = useStore((s) => s.showToast);
   const [items, setItems] = useState<ShelfItem[]>([]);
   const [genres, setGenres] = useState<string[]>([]);
   const [allTags, setAllTags] = useState<string[]>([]);
@@ -195,28 +198,31 @@ export default function ShelfPage() {
   const [genre, setGenre] = useState<string>("ALL");
   const [tag, setTag] = useState<string>("ALL");
   const [retryCount, setRetryCount] = useState(0);
+  const [tagSheetItem, setTagSheetItem] = useState<ShelfItem | null>(null);
+
+  const reload = useCallback(() => {
+    const params = new URLSearchParams();
+    if (query.trim()) params.set("q", query.trim());
+    if (status !== "ALL") params.set("status", status);
+    if (genre !== "ALL") params.set("genre", genre);
+    if (tag !== "ALL") params.set("tag", tag);
+
+    setError(false);
+    return fetch(`/api/shelf?${params.toString()}`)
+      .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+      .then((data) => {
+        setItems(data.items);
+        setGenres(data.genres);
+        setAllTags(data.tags);
+        setLoaded(true);
+      })
+      .catch(() => setError(true));
+  }, [query, status, genre, tag]);
 
   useEffect(() => {
-    const handle = setTimeout(() => {
-      const params = new URLSearchParams();
-      if (query.trim()) params.set("q", query.trim());
-      if (status !== "ALL") params.set("status", status);
-      if (genre !== "ALL") params.set("genre", genre);
-      if (tag !== "ALL") params.set("tag", tag);
-
-      setError(false);
-      fetch(`/api/shelf?${params.toString()}`)
-        .then((res) => (res.ok ? res.json() : Promise.reject(res)))
-        .then((data) => {
-          setItems(data.items);
-          setGenres(data.genres);
-          setAllTags(data.tags);
-          setLoaded(true);
-        })
-        .catch(() => setError(true));
-    }, 200);
+    const handle = setTimeout(reload, 200);
     return () => clearTimeout(handle);
-  }, [query, status, genre, tag, retryCount]);
+  }, [reload, retryCount]);
 
   const isEmptyShelf = useMemo(
     () => loaded && items.length === 0 && query === "" && status === "ALL" && genre === "ALL" && tag === "ALL",
@@ -315,10 +321,10 @@ export default function ShelfPage() {
           {items.map(({ book, entry, tags, rating }) => {
             const badge = STATUS_BADGE[entry.status];
             return (
-              <li key={book.id}>
+              <li key={book.id} className="flex items-center rounded-2xl transition-colors hover:bg-card">
                 <Link
                   href={`/book/${book.id}`}
-                  className="flex items-center gap-3.5 rounded-2xl px-2 py-3 transition-colors hover:bg-card"
+                  className="flex min-w-0 flex-1 items-center gap-3.5 px-2 py-3"
                 >
                   <BookCover book={book} width={48} />
                   <div className="min-w-0 flex-1">
@@ -344,10 +350,29 @@ export default function ShelfPage() {
                   </div>
                   {rating !== null && <Stars rating={rating} className="shrink-0 text-xs" />}
                 </Link>
+                <button
+                  type="button"
+                  onClick={() => setTagSheetItem({ book, entry, tags, rating })}
+                  aria-label={`Editar tags de ${book.title}`}
+                  className="mr-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-paperDim hover:bg-card2 hover:text-paper"
+                >
+                  ⋯
+                </button>
               </li>
             );
           })}
         </ul>
+      )}
+
+      {tagSheetItem && (
+        <BottomSheet onClose={() => setTagSheetItem(null)} title={`Tags · ${tagSheetItem.book.title}`}>
+          <TagEditor
+            bookId={tagSheetItem.book.id}
+            tags={tagSheetItem.tags}
+            onChanged={() => reload()}
+            onToast={showToast}
+          />
+        </BottomSheet>
       )}
     </div>
   );

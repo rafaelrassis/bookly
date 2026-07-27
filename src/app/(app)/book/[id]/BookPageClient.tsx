@@ -11,6 +11,7 @@ import { RatingInput } from "@/components/RatingInput";
 import { SectionTitle } from "@/components/SectionTitle";
 import { Spinner } from "@/components/Spinner";
 import { Stars } from "@/components/Stars";
+import { TagEditor } from "@/components/TagEditor";
 import BookLoading from "./loading";
 import { formatCount, formatDecimal, readingDates, readingPercent } from "@/lib/format";
 import { useStore } from "@/lib/store";
@@ -198,12 +199,10 @@ export function BookPageClient({ params }: { params: { id: string } }) {
   const [editingReview, setEditingReview] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
   const [reviewDraft, setReviewDraft] = useState("");
-  const [tagDraft, setTagDraft] = useState("");
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [quoteDraft, setQuoteDraft] = useState("");
   const [quotePage, setQuotePage] = useState("");
   const [publishingReview, setPublishingReview] = useState(false);
-  const [addingTag, setAddingTag] = useState(false);
   const [savingQuote, setSavingQuote] = useState(false);
 
   const bookId = params.id;
@@ -366,41 +365,6 @@ export function BookPageClient({ params }: { params: { id: string } }) {
     }
   }
 
-  async function handleAddTag() {
-    const tag = tagDraft.trim().toLowerCase();
-    if (!tag || addingTag) return;
-    setAddingTag(true);
-    try {
-      const res = await fetch(`/api/books/${bookId}/tags`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tag }),
-      });
-      setTagDraft("");
-      if (!res.ok) {
-        showToast("Não foi possível adicionar a tag");
-        return;
-      }
-      const data = await res.json();
-      setTags(data.tags);
-      showToast("Tag adicionada");
-    } finally {
-      setAddingTag(false);
-    }
-  }
-
-  async function handleRemoveTag(tag: string) {
-    const res = await fetch(`/api/books/${bookId}/tags`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tag }),
-    });
-    if (!res.ok) return;
-    const data = await res.json();
-    setTags(data.tags);
-    showToast("Tag removida");
-  }
-
   async function saveQuote() {
     const text = quoteDraft.trim();
     if (!text || savingQuote) return;
@@ -556,47 +520,8 @@ export function BookPageClient({ params }: { params: { id: string } }) {
 
       <section className="mt-6">
         <SectionTitle>Suas tags</SectionTitle>
-        {tags.length === 0 && (
-          <p className="mt-2 text-xs text-paperDim">
-            Tags são suas: use para organizar e filtrar a estante (ex.: &quot;favoritos do
-            ano&quot;).
-          </p>
-        )}
-        <div className="mt-2.5 flex flex-wrap items-center gap-2">
-          {tags.map((tag) => (
-            <span
-              key={tag}
-              className="flex items-center gap-1.5 rounded-full bg-card2 py-1.5 pl-3.5 pr-2 text-xs font-medium text-paper"
-            >
-              {tag}
-              <button
-                type="button"
-                onClick={() => handleRemoveTag(tag)}
-                aria-label={`Remover tag ${tag}`}
-                className="flex h-4 w-4 items-center justify-center rounded-full text-paperDim hover:text-ribbonText"
-              >
-                ✕
-              </button>
-            </span>
-          ))}
-          {addingTag ? (
-            <span className="flex w-28 items-center justify-center py-1.5">
-              <Spinner size={14} className="text-paperDim" label="Adicionando tag" />
-            </span>
-          ) : (
-            <input
-              type="text"
-              value={tagDraft}
-              onChange={(e) => setTagDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleAddTag();
-              }}
-              onBlur={() => tagDraft.trim() && handleAddTag()}
-              placeholder="+ Adicionar"
-              aria-label="Adicionar tag"
-              className="w-28 rounded-full border border-dashed border-line bg-transparent px-3.5 py-1.5 text-xs text-paper placeholder:text-paperDim/70"
-            />
-          )}
+        <div className="mt-2.5">
+          <TagEditor bookId={bookId} tags={tags} onChanged={setTags} onToast={showToast} />
         </div>
       </section>
 
