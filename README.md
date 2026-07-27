@@ -44,6 +44,45 @@ o dashboard: **Project → Settings → Git → Production Branch** já restring
 qual branch é produção; a seção de deployments ali também permite desligar
 deploy automático de branches fora dela.
 
+## Limpeza do seed legado (migração one-time)
+
+O catálogo/usuários de seed antigos (`@seed.bookly.local`, `demo`, catálogo
+fixo tipo `duna`/`1984`) foram removidos do código há um tempo, mas nunca
+tinham sido apagados do banco de **produção** — o passo era manual e ficou
+pendente. Isso foi corrigido com uma migração Prisma one-time,
+`prisma/migrations/20260727184144_purge_seed_data`, que roda automaticamente
+no próximo `prisma migrate deploy` (já parte do `build`, ver `package.json`),
+é registrada em `_prisma_migrations` e portanto executa **uma única vez**.
+
+A migração:
+- Apaga só os 7 usuários de seed (username **e** email precisam bater os
+  valores fixos — não risca usuário real que tenha escolhido o mesmo
+  username com o próprio e-mail). Todo o resto (estante, reviews, curtidas,
+  comentários, listas, clubes, follows desses usuários) cai em cascata via
+  `onDelete: Cascade` do schema.
+- Apaga os livros do catálogo semeado só se não sobrar nenhuma referência
+  real (review/estante/tag/citação/lista/clube de usuário real), e
+  recalcula `avg`/`count` dos que ficarem.
+- **Aborta a migração inteira** (falha o deploy, nada é apagado) se algum
+  clube criado por usuário de seed tiver membro ou mensagem de usuário
+  real — esse caso precisa de revisão manual antes de reaplicar.
+- Validada localmente (Postgres descartável com seed + dados reais
+  fabricados): seed some, dado real fica, e reaplicar não falha nem apaga
+  nada de novo (idempotente).
+
+**CI verde ≠ produção limpa.** `npm run guard:no-seed` (rodado no CI) só
+enxerga o **banco de teste** do pipeline — nunca vai detectar seed vivo em
+produção, foi exatamente por isso que o deploy anterior passou verde com o
+banco de prod sujo. Pra checar produção de verdade, rode manualmente (ou
+via job agendado, nunca no CI de PR):
+
+```bash
+DATABASE_URL="<url de produção>" npm run guard:no-seed:prod
+```
+
+Isso mais uma inspeção visual (aba anônima, Prisma Studio) é a única fonte
+de verdade sobre o estado do banco de produção.
+
 ## Stack
 
 - Next.js 14 (App Router) + TypeScript estrito
@@ -78,7 +117,7 @@ prisma/
   schema.prisma     models reais (User, Book, ShelfEntry, Review, Club, Message…)
   migrations/       histórico de migrations
 scripts/
-  purge-seed.ts       utilitário pontual pra remover os registros de seed legado do banco (dry-run por padrão, --apply pra deletar)
+  purge-seed.ts       utilitário pontual pra remover os registros de seed legado do banco (dry-run por padrão, --apply pra deletar) — mesmo critério da migração `purge_seed_data`, útil pra medir antes/depois manualmente
   assert-no-seed.ts   guarda de regressão (`npm run guard:no-seed`, rodado no CI) — falha se o seed legado voltar: arquivo `prisma/seed.ts`/`seed-data.ts` recriado, referência a "seed" no build/CI, ou usuário de seed no banco
 e2e/                suíte Playwright (auth, books, clubs, social, users) — 44 specs; e2e/global-setup.ts semeia só a fixture mínima de catálogo (duna/1984/verity) usada pelos testes
 docs/VALIDATION_REPORT.md   relatório de validação do backend (Spec V)

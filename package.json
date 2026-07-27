@@ -9,6 +9,7 @@
     "lint": "next lint",
     "test:e2e": "playwright test",
     "guard:no-seed": "tsx scripts/assert-no-seed.ts",
+    "guard:no-seed:prod": "tsx scripts/assert-no-seed.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
