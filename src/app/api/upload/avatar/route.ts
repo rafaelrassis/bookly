@@ -45,12 +45,17 @@ export async function POST(req: Request) {
       addRandomSuffix: false,
     });
 
+    // A chave do blob é fixa por usuário (overwrite), então a URL não muda
+    // entre uploads — sem isso o browser e o otimizador de imagem do Next
+    // continuam servindo a foto antiga em cache pra essa mesma URL.
+    const cacheBustedUrl = `${url}?v=${Date.now()}`;
+
     await db.user.update({
       where: { id: session.user.id },
-      data: { avatarUrl: url },
+      data: { avatarUrl: cacheBustedUrl },
     });
 
-    return NextResponse.json({ url });
+    return NextResponse.json({ url: cacheBustedUrl });
   } catch (err) {
     console.error("avatar upload failed", err);
     return NextResponse.json(
