@@ -29,6 +29,21 @@ npm run dev
 
 Abre em [http://localhost:3000](http://localhost:3000).
 
+## Deploy — só produção
+
+Só a branch `main` gera deployment na Vercel. Isso é forçado por
+`vercel.json` (`ignoreCommand`): qualquer push cujo `VERCEL_GIT_COMMIT_REF`
+não seja `main` sai com código 0 e o build é ignorado (nenhum Preview
+deployment é construído), independente do nome/padrão da branch — inclusive
+`claude/*`. `git.deploymentEnabled` (a outra forma de configurar isso) foi
+descartada porque branches não listadas nele **defaultam pra `true`**, o que
+não bloqueia branches novas/desconhecidas.
+
+Se algum dia isso não bastar (ex.: mudança futura na plataforma), o backup é
+o dashboard: **Project → Settings → Git → Production Branch** já restringe
+qual branch é produção; a seção de deployments ali também permite desligar
+deploy automático de branches fora dela.
+
 ## Stack
 
 - Next.js 14 (App Router) + TypeScript estrito
@@ -63,7 +78,8 @@ prisma/
   schema.prisma     models reais (User, Book, ShelfEntry, Review, Club, Message…)
   migrations/       histórico de migrations
 scripts/
-  purge-seed.ts     utilitário pontual pra remover os registros de seed legado do banco (dry-run por padrão, --apply pra deletar)
+  purge-seed.ts       utilitário pontual pra remover os registros de seed legado do banco (dry-run por padrão, --apply pra deletar)
+  assert-no-seed.ts   guarda de regressão (`npm run guard:no-seed`, rodado no CI) — falha se o seed legado voltar: arquivo `prisma/seed.ts`/`seed-data.ts` recriado, referência a "seed" no build/CI, ou usuário de seed no banco
 e2e/                suíte Playwright (auth, books, clubs, social, users) — 44 specs; e2e/global-setup.ts semeia só a fixture mínima de catálogo (duna/1984/verity) usada pelos testes
 docs/VALIDATION_REPORT.md   relatório de validação do backend (Spec V)
 ```
