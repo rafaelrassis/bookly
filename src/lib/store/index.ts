@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { SEED_NOTIFICATIONS } from "@/lib/notifications-seed";
@@ -51,6 +52,8 @@ type Store = {
   updatePhone: (phone: string) => void;
 
   notifications: Notification[];
+  clearedAt: string | null;
+  readAt: string | null;
   markNotificationsRead: () => void;
   clearNotifications: () => void;
 };
@@ -62,6 +65,8 @@ export const useStore = create<Store>()(
       toast: null,
       theme: "dark",
       notifications: [...SEED_NOTIFICATIONS],
+      clearedAt: null,
+      readAt: null,
       hasHydrated: false,
 
       showToast: (message) => set({ toast: { id: Date.now(), message } }),
@@ -85,14 +90,15 @@ export const useStore = create<Store>()(
         set({
           user: { ...EMPTY_USER, loggedIn: false },
           notifications: [...SEED_NOTIFICATIONS],
+          clearedAt: null,
+          readAt: null,
         }),
 
       updatePhone: (phone) => set((s) => ({ user: { ...s.user, phone } })),
 
-      markNotificationsRead: () =>
-        set((s) => ({ notifications: s.notifications.map((n) => ({ ...n, read: true })) })),
+      markNotificationsRead: () => set({ readAt: new Date().toISOString() }),
 
-      clearNotifications: () => set({ notifications: [] }),
+      clearNotifications: () => set({ clearedAt: new Date().toISOString() }),
     }),
     {
       name: "bookly-v5",
@@ -103,8 +109,29 @@ export const useStore = create<Store>()(
         user: s.user,
         notifications: s.notifications,
         theme: s.theme,
+        clearedAt: s.clearedAt,
+        readAt: s.readAt,
       }),
       skipHydration: true,
     }
   )
 );
+
+/** Deriva a lista visível e o `read` de cada notificação a partir dos marcos
+ * `clearedAt`/`readAt`, em vez de mutar o array bruto. Fonte única da verdade
+ * pra badge do sino e pra página de notificações. */
+export function useNotifications() {
+  const notifications = useStore((s) => s.notifications);
+  const clearedAt = useStore((s) => s.clearedAt);
+  const readAt = useStore((s) => s.readAt);
+
+  return useMemo(() => {
+    const base = clearedAt
+      ? notifications.filter((n) => n.time > clearedAt)
+      : notifications;
+    return base.map((n) => ({
+      ...n,
+      read: readAt ? n.time <= readAt : n.read,
+    }));
+  }, [notifications, clearedAt, readAt]);
+}

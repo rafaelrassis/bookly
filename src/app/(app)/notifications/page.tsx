@@ -6,7 +6,7 @@ import { Avatar } from "@/components/Avatar";
 import { BackHeader } from "@/components/BackHeader";
 import { withoutAt } from "@/lib/handle";
 import { formatNotificationTime } from "@/lib/format";
-import { useStore } from "@/lib/store";
+import { useStore, useNotifications } from "@/lib/store";
 import type { Notification } from "@/lib/types";
 
 function notificationText(n: Notification): string {
@@ -21,7 +21,7 @@ function notificationHref(n: Notification): string {
 }
 
 export default function NotificationsPage() {
-  const notifications = useStore((s) => s.notifications);
+  const notifications = useNotifications();
   const markNotificationsRead = useStore((s) => s.markNotificationsRead);
   const clearNotifications = useStore((s) => s.clearNotifications);
 

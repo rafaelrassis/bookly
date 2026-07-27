@@ -13,7 +13,7 @@ import { Skeleton } from "@/components/Skeleton";
 import { Spinner } from "@/components/Spinner";
 import { readingPercent } from "@/lib/format";
 import { useFeed, useTrendingBooks } from "@/lib/store/hooks";
-import { useStore } from "@/lib/store";
+import { useNotifications } from "@/lib/store";
 import type { Book, ShelfEntry } from "@/lib/types";
 
 type ReadingItem = { book: Book; entry: ShelfEntry };
@@ -103,7 +103,7 @@ function ReadingCard({ item, priority = false }: { item: ReadingItem; priority?:
 
 export default function HomePage() {
   const [reading, setReading] = useState<ReadingItem[]>([]);
-  const unread = useStore((s) => s.notifications.filter((n) => !n.read).length);
+  const unread = useNotifications().filter((n) => !n.read).length;
   const [feedFilter, setFeedFilter] = useState<"all" | "following">("all");
   const {
     items: feed,
