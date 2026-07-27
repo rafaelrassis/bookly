@@ -6,6 +6,7 @@ import { BackHeader } from "@/components/BackHeader";
 import { BookPicker } from "@/components/BookPicker";
 import { LockIcon } from "@/components/icons";
 import { SectionTitle } from "@/components/SectionTitle";
+import { Spinner } from "@/components/Spinner";
 import { useStore } from "@/lib/store";
 import type { Book, Visibility } from "@/lib/types";
 
@@ -114,9 +115,9 @@ export default function NewClubPage() {
         type="button"
         onClick={create}
         disabled={!valid || saving}
-        className="mb-4 mt-8 w-full rounded-xl bg-foil px-5 py-3.5 font-bold text-leather transition-opacity hover:opacity-90 disabled:opacity-40"
+        className="mb-4 mt-8 flex w-full items-center justify-center rounded-xl bg-foil px-5 py-3.5 font-bold text-leather transition-opacity hover:opacity-90 disabled:opacity-40"
       >
-        Criar clube
+        {saving ? <Spinner size={18} className="text-leather" /> : "Criar clube"}
       </button>
     </div>
   );

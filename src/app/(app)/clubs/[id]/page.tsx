@@ -7,7 +7,9 @@ import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
 import { BookPicker } from "@/components/BookPicker";
 import { CopyIcon, LockIcon } from "@/components/icons";
+import { PageLoader } from "@/components/PageLoader";
 import { SectionTitle } from "@/components/SectionTitle";
+import { Spinner } from "@/components/Spinner";
 import { formatClockTime } from "@/lib/format";
 import { withAt, withoutAt } from "@/lib/handle";
 import { useStore } from "@/lib/store";
@@ -184,6 +186,9 @@ export default function ClubPage({ params }: { params: { id: string } }) {
   const [editName, setEditName] = useState("");
   const [editDesc, setEditDesc] = useState("");
   const [editBook, setEditBook] = useState<Book | null>(null);
+  const [membershipBusy, setMembershipBusy] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [savingEdit, setSavingEdit] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const feedEndRef = useRef<HTMLDivElement>(null);
   const lastIdRef = useRef<string | null>(null);
@@ -286,7 +291,7 @@ export default function ClubPage({ params }: { params: { id: string } }) {
     return (
       <div className="pt-4">
         <BackHeader />
-        <p className="mt-10 text-center text-paperDim">Carregando…</p>
+        <PageLoader />
       </div>
     );
   }
@@ -307,46 +312,63 @@ export default function ClubPage({ params }: { params: { id: string } }) {
   }
 
   async function join() {
-    const res = await fetch(`/api/clubs/${club!.id}/join`, { method: "POST" });
-    if (!res.ok) {
-      showToast("Não foi possível entrar no clube");
-      return;
+    if (membershipBusy) return;
+    setMembershipBusy(true);
+    try {
+      const res = await fetch(`/api/clubs/${club!.id}/join`, { method: "POST" });
+      if (!res.ok) {
+        showToast("Não foi possível entrar no clube");
+        return;
+      }
+      showToast("Você entrou no clube! 🎉");
+      loadClub();
+    } finally {
+      setMembershipBusy(false);
     }
-    showToast("Você entrou no clube! 🎉");
-    loadClub();
   }
 
   async function leave() {
-    const res = await fetch(`/api/clubs/${club!.id}/leave`, { method: "DELETE" });
-    if (!res.ok) {
-      const data = await res.json().catch(() => null);
-      showToast(data?.error ?? "Não foi possível sair do clube");
-      return;
+    if (membershipBusy) return;
+    setMembershipBusy(true);
+    try {
+      const res = await fetch(`/api/clubs/${club!.id}/leave`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        showToast(data?.error ?? "Não foi possível sair do clube");
+        return;
+      }
+      showToast("Você saiu do clube");
+      loadClub();
+      setMessages([]);
+      lastIdRef.current = null;
+    } finally {
+      setMembershipBusy(false);
     }
-    showToast("Você saiu do clube");
-    loadClub();
-    setMessages([]);
-    lastIdRef.current = null;
   }
 
   async function publish() {
     const text = draft.trim();
-    if (!text) return;
+    if (!text || publishing) return;
     setDraft("");
+    setPublishing(true);
     const replyToSnapshot = replyTo;
     setReplyTo(null);
-    const res = await fetch(`/api/clubs/${club!.id}/messages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, replyToId: replyToSnapshot?.id }),
-    });
-    if (!res.ok) {
-      showToast("Não foi possível publicar");
-      return;
+    try {
+      const res = await fetch(`/api/clubs/${club!.id}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, replyToId: replyToSnapshot?.id }),
+      });
+      if (!res.ok) {
+        showToast("Não foi possível publicar");
+        return;
+      }
+      const message: ClubMessage = await res.json();
+      lastIdRef.current = message.id;
+      setMessages((prev) => [...prev, message]);
+    } finally {
+      setPublishing(false);
     }
-    const message: ClubMessage = await res.json();
-    lastIdRef.current = message.id;
-    setMessages((prev) => [...prev, message]);
   }
 
   async function copyCode() {
@@ -379,22 +401,27 @@ export default function ClubPage({ params }: { params: { id: string } }) {
 
   async function saveEdit() {
     const name = editName.trim();
-    if (!name || !editBook) {
-      showToast("Preencha nome e livro do clube");
+    if (!name || !editBook || savingEdit) {
+      if (!name || !editBook) showToast("Preencha nome e livro do clube");
       return;
     }
-    const res = await fetch(`/api/clubs/${club!.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, bookId: editBook.id, desc: editDesc.trim() }),
-    });
-    if (!res.ok) {
-      showToast("Não foi possível atualizar o clube");
-      return;
+    setSavingEdit(true);
+    try {
+      const res = await fetch(`/api/clubs/${club!.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, bookId: editBook.id, desc: editDesc.trim() }),
+      });
+      if (!res.ok) {
+        showToast("Não foi possível atualizar o clube");
+        return;
+      }
+      setEditing(false);
+      showToast("Clube atualizado ✦");
+      loadClub();
+    } finally {
+      setSavingEdit(false);
     }
-    setEditing(false);
-    showToast("Clube atualizado ✦");
-    loadClub();
   }
 
   async function removeMember(userId: string, user: string) {
@@ -448,17 +475,19 @@ export default function ClubPage({ params }: { params: { id: string } }) {
             <button
               type="button"
               onClick={leave}
-              className="flex-1 rounded-xl border border-line bg-card px-5 py-3 font-bold text-paperDim transition-colors hover:text-paper"
+              disabled={membershipBusy}
+              className="flex flex-1 items-center justify-center rounded-xl border border-line bg-card px-5 py-3 font-bold text-paperDim transition-colors hover:text-paper disabled:opacity-60"
             >
-              Sair do clube
+              {membershipBusy ? <Spinner size={18} className="text-paperDim" /> : "Sair do clube"}
             </button>
           ) : (
             <button
               type="button"
               onClick={join}
-              className="flex-1 rounded-xl bg-foil px-5 py-3 font-bold text-leather transition-opacity hover:opacity-90"
+              disabled={membershipBusy}
+              className="flex flex-1 items-center justify-center rounded-xl bg-foil px-5 py-3 font-bold text-leather transition-opacity hover:opacity-90 disabled:opacity-60"
             >
-              Participar do clube
+              {membershipBusy ? <Spinner size={18} className="text-leather" /> : "Participar do clube"}
             </button>
           )}
           {club.isCreator && (
@@ -541,9 +570,10 @@ export default function ClubPage({ params }: { params: { id: string } }) {
             <button
               type="button"
               onClick={saveEdit}
-              className="rounded-xl bg-foil px-4 py-2.5 text-sm font-bold text-leather"
+              disabled={savingEdit}
+              className="flex items-center justify-center rounded-xl bg-foil px-4 py-2.5 text-sm font-bold text-leather disabled:opacity-60"
             >
-              Salvar
+              {savingEdit ? <Spinner size={16} className="text-leather" /> : "Salvar"}
             </button>
           </div>
         </section>
@@ -686,10 +716,10 @@ export default function ClubPage({ params }: { params: { id: string } }) {
                 <button
                   type="button"
                   onClick={publish}
-                  disabled={!draft.trim()}
-                  className="rounded-full bg-foil px-3.5 py-2.5 text-xs font-bold text-leather disabled:opacity-40"
+                  disabled={!draft.trim() || publishing}
+                  className="flex items-center justify-center rounded-full bg-foil px-3.5 py-2.5 text-xs font-bold text-leather disabled:opacity-40"
                 >
-                  Publicar
+                  {publishing ? <Spinner size={14} className="text-leather" /> : "Publicar"}
                 </button>
               </div>
             </div>

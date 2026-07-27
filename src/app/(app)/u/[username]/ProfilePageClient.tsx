@@ -121,14 +121,16 @@ export function ProfilePageClient({ params }: { params: { username: string } }) 
     if (followBusy || !profile) return;
     setFollowBusy(true);
     const next = !profile.isFollowing;
+    setProfile((p) => (p ? { ...p, isFollowing: next, followers: p.followers + (next ? 1 : -1) } : p));
     try {
       const res = await fetch(`/api/users/${profile.username}/follow`, {
         method: next ? "POST" : "DELETE",
       });
-      if (res.ok) {
-        setProfile((p) => (p ? { ...p, isFollowing: next, followers: p.followers + (next ? 1 : -1) } : p));
-        showToast(next ? `Seguindo ${handle}` : `Deixou de seguir ${handle}`);
-      }
+      if (!res.ok) throw new Error();
+      showToast(next ? `Seguindo ${handle}` : `Deixou de seguir ${handle}`);
+    } catch {
+      setProfile((p) => (p ? { ...p, isFollowing: !next, followers: p.followers + (next ? -1 : 1) } : p));
+      showToast("Não foi possível atualizar");
     } finally {
       setFollowBusy(false);
     }

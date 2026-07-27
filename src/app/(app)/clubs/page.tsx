@@ -7,6 +7,7 @@ import { BookCover } from "@/components/BookCover";
 import { EmptyState } from "@/components/EmptyState";
 import { SectionTitle } from "@/components/SectionTitle";
 import { BookOpenIcon, LockIcon } from "@/components/icons";
+import { Spinner } from "@/components/Spinner";
 import { useStore } from "@/lib/store";
 import type { ClubSummary } from "@/lib/types";
 
@@ -123,9 +124,9 @@ export default function ClubsPage() {
             type="button"
             onClick={submitCode}
             disabled={code.length !== 6 || joining}
-            className="rounded-xl bg-foil px-4 py-2.5 text-sm font-bold text-leather disabled:opacity-40"
+            className="flex items-center justify-center rounded-xl bg-foil px-4 py-2.5 text-sm font-bold text-leather disabled:opacity-40"
           >
-            Entrar
+            {joining ? <Spinner size={16} className="text-leather" /> : "Entrar"}
           </button>
         </div>
       )}
@@ -142,7 +143,9 @@ export default function ClubsPage() {
           </button>
         </div>
       ) : clubs === null ? (
-        <p className="mt-8 text-center text-sm text-paperDim">Carregando clubes…</p>
+        <div className="mt-8 flex justify-center">
+          <Spinner size={28} className="text-foil" label="Carregando clubes" />
+        </div>
       ) : (
         <>
           {(minePublic.length > 0 || minePrivate.length > 0) && (
