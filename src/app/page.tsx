@@ -8,6 +8,7 @@ import { Logo } from "@/components/Logo";
 import { SectionTitle } from "@/components/SectionTitle";
 import { useTopBooks } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
+import { emailLoginEnabled } from "@/lib/featureFlags";
 
 const FEATURES = [
   {
@@ -56,7 +57,7 @@ export default function LandingPage() {
 
       <div className="mt-8 flex flex-col gap-3">
         <Link
-          href="/login"
+          href={emailLoginEnabled ? "/signup" : "/login"}
           className="rounded-xl bg-foil px-5 py-3.5 text-center font-bold text-leather transition-opacity hover:opacity-90"
         >
           Criar conta grátis

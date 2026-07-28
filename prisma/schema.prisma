@@ -18,6 +18,9 @@ model User {
   /// Nula até o onboarding (login OAuth não coleta username — só e-mail/nome).
   username      String?      @unique @db.Citext
   name          String
+  /// Só existe pra contas criadas via /signup com o login por e-mail/senha
+  /// (feature flag EMAIL_LOGIN_ENABLED); nula pra contas OAuth.
+  passwordHash  String?
   emailVerified DateTime?
   bio           String?      @db.VarChar(500)
   /// Índice do gradiente de avatar escolhido (AVATAR_CHOICES no front); usado
@@ -139,6 +142,8 @@ enum ProgressUnit {
 
 enum VerificationType {
   email
+  /// Só usado pelo fluxo de reset de senha (feature flag EMAIL_LOGIN_ENABLED).
+  password
 }
 
 /// Catálogo semeado (Spec 0 previa Google Books; adiado como enriquecimento
