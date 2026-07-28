@@ -49,7 +49,6 @@ type Store = {
    * top4, contagem de seguidores. */
   applyProfile: (patch: Partial<UserState>) => void;
   logout: () => void;
-  updatePhone: (phone: string) => void;
 
   notifications: Notification[];
   clearedAt: string | null;
@@ -93,8 +92,6 @@ export const useStore = create<Store>()(
           clearedAt: null,
           readAt: null,
         }),
-
-      updatePhone: (phone) => set((s) => ({ user: { ...s.user, phone } })),
 
       markNotificationsRead: () => set({ readAt: new Date().toISOString() }),
 

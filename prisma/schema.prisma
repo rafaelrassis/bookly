@@ -92,7 +92,6 @@ enum ProgressUnit {
 
 enum VerificationType {
   email
-  phone
   password
 }
 

@@ -61,7 +61,3 @@ export function formatClockTime(iso: string): string {
   return new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 }
 
-/** Código de verificação numérico de 6 dígitos (mock — sem envio real). */
-export function generateVerificationCode(): string {
-  return String(Math.floor(100000 + Math.random() * 900000));
-}

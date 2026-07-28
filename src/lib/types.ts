@@ -144,8 +144,6 @@ export type UserState = {
   name: string;
   username: string;
   email: string;
-  /** Telefone no formato exibido; ausente até o usuário adicionar um. */
-  phone?: string;
   bio: string;
   genres: string[];
   followers: number;

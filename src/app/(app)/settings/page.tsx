@@ -6,29 +6,10 @@ import { signOut } from "next-auth/react";
 import { BackHeader } from "@/components/BackHeader";
 import { FeedbackModal } from "@/components/FeedbackModal";
 import { SectionTitle } from "@/components/SectionTitle";
-import { generateVerificationCode } from "@/lib/format";
 import { useStore } from "@/lib/store";
 
 type EmailStep = "idle" | "editing" | "verifying";
-type PhoneStep = "idle" | "adding" | "verifying";
 type PasswordStep = "idle" | "editing";
-
-/** Envia (mock) um código de verificação: sem backend, o código aparece no toast. */
-function useMockVerification(showToast: (message: string) => void) {
-  const [sentCode, setSentCode] = useState<string | null>(null);
-  function send(destination: string) {
-    const code = generateVerificationCode();
-    setSentCode(code);
-    showToast(`Código enviado para ${destination}: ${code}`);
-  }
-  function check(input: string): boolean {
-    return sentCode !== null && input.trim() === sentCode;
-  }
-  function reset() {
-    setSentCode(null);
-  }
-  return { send, check, reset };
-}
 
 export default function SettingsPage() {
   const user = useStore((s) => s.user);
@@ -36,7 +17,6 @@ export default function SettingsPage() {
   const setTheme = useStore((s) => s.setTheme);
   const logout = useStore((s) => s.logout);
   const applyProfile = useStore((s) => s.applyProfile);
-  const updatePhone = useStore((s) => s.updatePhone);
   const showToast = useStore((s) => s.showToast);
   const router = useRouter();
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -46,12 +26,6 @@ export default function SettingsPage() {
   const [emailDraft, setEmailDraft] = useState(user.email);
   const [emailCode, setEmailCode] = useState("");
   const [emailBusy, setEmailBusy] = useState(false);
-
-  // telefone
-  const [phoneStep, setPhoneStep] = useState<PhoneStep>("idle");
-  const [phoneDraft, setPhoneDraft] = useState("");
-  const [phoneCode, setPhoneCode] = useState("");
-  const phoneVerification = useMockVerification(showToast);
 
   // senha — troca real: exige a senha atual, sem código (POST .../password)
   const [passwordStep, setPasswordStep] = useState<PasswordStep>("idle");
@@ -109,33 +83,6 @@ export default function SettingsPage() {
     applyProfile({ email: emailDraft.trim() });
     showToast("E-mail atualizado ✦");
     resetEmailFlow();
-  }
-
-  function resetPhoneFlow() {
-    setPhoneStep("idle");
-    setPhoneDraft("");
-    setPhoneCode("");
-    phoneVerification.reset();
-  }
-
-  function submitNewPhone() {
-    const value = phoneDraft.trim();
-    if (value.length < 8) {
-      showToast("Digite um telefone válido");
-      return;
-    }
-    phoneVerification.send(value);
-    setPhoneStep("verifying");
-  }
-
-  function confirmPhoneCode() {
-    if (!phoneVerification.check(phoneCode)) {
-      showToast("Código incorreto");
-      return;
-    }
-    updatePhone(phoneDraft.trim());
-    showToast("Telefone adicionado ✦");
-    resetPhoneFlow();
   }
 
   function resetPasswordFlow() {
@@ -269,90 +216,6 @@ export default function SettingsPage() {
                       className="rounded-xl bg-foil px-4 py-2 text-sm font-bold text-leather disabled:opacity-40"
                     >
                       {emailBusy ? "Confirmando…" : "Confirmar"}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="flex items-center justify-between border-t border-line px-4 py-3.5">
-            <span className="text-sm text-paperDim">Telefone</span>
-            {phoneStep === "idle" && (
-              <div className="flex items-center gap-2.5">
-                {user.phone ? (
-                  <span className="text-sm font-medium">{user.phone}</span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setPhoneStep("adding")}
-                    className="text-xs font-bold text-foil hover:opacity-80"
-                  >
-                    + Adicionar telefone
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-
-          {phoneStep !== "idle" && (
-            <div className="border-t border-line px-4 py-3.5">
-              {phoneStep === "adding" ? (
-                <div className="flex flex-col gap-2.5">
-                  <input
-                    type="tel"
-                    value={phoneDraft}
-                    onChange={(e) => setPhoneDraft(e.target.value)}
-                    placeholder="(11) 91234-5678"
-                    aria-label="Novo telefone"
-                    className="rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper placeholder:text-paperDim/60"
-                  />
-                  <div className="flex justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={resetPhoneFlow}
-                      className="rounded-xl px-4 py-2 text-sm font-bold text-paperDim hover:text-paper"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={submitNewPhone}
-                      className="rounded-xl bg-foil px-4 py-2 text-sm font-bold text-leather"
-                    >
-                      Enviar código
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2.5">
-                  <p className="text-xs text-paperDim">
-                    Digite o código de verificação enviado por SMS para {phoneDraft}
-                  </p>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={phoneCode}
-                    onChange={(e) => setPhoneCode(e.target.value)}
-                    placeholder="000000"
-                    aria-label="Código de verificação do telefone"
-                    className="rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper placeholder:text-paperDim/60"
-                  />
-                  <div className="flex justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={resetPhoneFlow}
-                      className="rounded-xl px-4 py-2 text-sm font-bold text-paperDim hover:text-paper"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={confirmPhoneCode}
-                      disabled={!phoneCode.trim()}
-                      className="rounded-xl bg-foil px-4 py-2 text-sm font-bold text-leather disabled:opacity-40"
-                    >
-                      Confirmar
                     </button>
                   </div>
                 </div>
