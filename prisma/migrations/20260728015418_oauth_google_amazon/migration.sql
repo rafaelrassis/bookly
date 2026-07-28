@@ -1,16 +1,12 @@
--- AlterEnum
-BEGIN;
-CREATE TYPE "VerificationType_new" AS ENUM ('email');
-ALTER TABLE "VerificationCode" ALTER COLUMN "type" TYPE "VerificationType_new" USING ("type"::text::"VerificationType_new");
-ALTER TYPE "VerificationType" RENAME TO "VerificationType_old";
-ALTER TYPE "VerificationType_new" RENAME TO "VerificationType";
-DROP TYPE "public"."VerificationType_old";
-COMMIT;
-
 -- AlterTable
-ALTER TABLE "User" DROP COLUMN "passwordHash",
+-- passwordHash fica nullable (não é DROP): login por e-mail/senha continua
+-- disponível atrás da feature flag EMAIL_LOGIN_ENABLED, só contas OAuth
+-- é que nascem sem senha. VerificationType mantém 'password' sem alteração
+-- (nunca chegou a ser removido em produção).
+ALTER TABLE "User"
 ADD COLUMN     "onboarded" BOOLEAN NOT NULL DEFAULT false,
-ALTER COLUMN "username" DROP NOT NULL;
+ALTER COLUMN "username" DROP NOT NULL,
+ALTER COLUMN "passwordHash" DROP NOT NULL;
 
 -- CreateTable
 CREATE TABLE "Account" (
@@ -64,4 +60,3 @@ ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId"
 
 -- AddForeignKey
 ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
