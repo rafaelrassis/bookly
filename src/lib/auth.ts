@@ -2,7 +2,9 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import type { OAuthConfig } from "next-auth/providers";
+import type { Adapter } from "next-auth/adapters";
 import { PrismaAdapter } from "@auth/prisma-adapter";
+import type { Prisma } from "@/generated/prisma/client";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { authConfig } from "@/lib/auth.config";
@@ -46,9 +48,32 @@ function Amazon(): OAuthConfig<AmazonProfile> {
   };
 }
 
+/** O model User do Prisma não tem coluna `image` (usa `avatarUrl`, reservado
+ * pro upload do usuário) — sem esse wrapper o PrismaAdapter tenta gravar
+ * `image` no create/update e o login OAuth quebra com PrismaClientValidationError. */
+function adapterWithoutImage(): Adapter {
+  const adapter = PrismaAdapter(db);
+  return {
+    ...adapter,
+    createUser: async ({ image, ...data }) => {
+      void image;
+      const user = await db.user.create({ data: data as Prisma.UserCreateInput });
+      return { ...user, image: null };
+    },
+    updateUser: async ({ image, ...data }) => {
+      void image;
+      const user = await db.user.update({
+        where: { id: data.id },
+        data: data as Prisma.UserUpdateInput,
+      });
+      return { ...user, image: null };
+    },
+  };
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
-  adapter: PrismaAdapter(db),
+  adapter: adapterWithoutImage(),
   session: { strategy: "jwt" },
   providers: [
     Google({
