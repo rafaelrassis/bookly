@@ -56,7 +56,7 @@ export default function LandingPage() {
 
       <div className="mt-8 flex flex-col gap-3">
         <Link
-          href="/signup"
+          href="/login"
           className="rounded-xl bg-foil px-5 py-3.5 text-center font-bold text-leather transition-opacity hover:opacity-90"
         >
           Criar conta grátis

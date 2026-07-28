@@ -15,9 +15,9 @@ datasource db {
 model User {
   id            String       @id @default(cuid())
   email         String       @unique
-  username      String       @unique @db.Citext
+  /// Nula até o onboarding (login OAuth não coleta username — só e-mail/nome).
+  username      String?      @unique @db.Citext
   name          String
-  passwordHash  String
   emailVerified DateTime?
   bio           String?      @db.VarChar(500)
   /// Índice do gradiente de avatar escolhido (AVATAR_CHOICES no front); usado
@@ -30,8 +30,14 @@ model User {
   /// Até 4 bookIds em destaque no perfil (catálogo mocado até a Spec 3).
   top4          String[]     @default([])
   progressUnit  ProgressUnit @default(pages)
+  /// Falso até o usuário concluir o onboarding (username + gêneros) no
+  /// primeiro login OAuth — controla o gate de acesso ao grupo (app).
+  onboarded     Boolean      @default(false)
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
+
+  accounts Account[]
+  sessions Session[]
 
   followedBy Follow[] @relation("following")
   following  Follow[] @relation("follower")
@@ -48,6 +54,47 @@ model User {
   reviewLikes ReviewLike[]
   comments    Comment[]
   lists       List[]
+}
+
+/// Conta OAuth vinculada a um User (Google/Amazon) — Auth.js PrismaAdapter.
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+/// Exigida pelo tipo do PrismaAdapter; não usada em runtime — a sessão da
+/// aplicação é JWT (ver src/lib/auth.ts) pro middleware rodar no Edge.
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// Exigida pelo tipo do PrismaAdapter; não usada em runtime (sem provider
+/// de e-mail/magic link).
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }
 
 model Follow {
@@ -92,7 +139,6 @@ enum ProgressUnit {
 
 enum VerificationType {
   email
-  password
 }
 
 /// Catálogo semeado (Spec 0 previa Google Books; adiado como enriquecimento

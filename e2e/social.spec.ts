@@ -1,30 +1,24 @@
 import { test, expect, type Page } from "@playwright/test";
+import { createAccount, seedAccount, signInAs } from "./helpers/auth";
 
-// Conta semente registrada uma vez (via API) e reutilizada pelos testes que só
-// precisam estar logados — evita recriar conta a cada teste.
-const SEED_EMAIL = `e2e.${Date.now()}.${Math.random().toString(36).slice(2, 6)}@example.com`;
-const SEED_USERNAME = `e2e_${Date.now().toString(36)}`;
-const SEED_PASSWORD = "SenhaForte123";
-const SEED_NAME = "Marina Souza";
+// Conta semente criada uma vez (direto no banco) e reutilizada pelos testes
+// que só precisam estar logados — evita recriar conta a cada teste. Login
+// real via Google/Amazon não dá pra automatizar aqui (ver e2e/helpers/auth.ts).
+const SEED_ACCOUNT = seedAccount("social_seed");
 
-test.beforeAll(async ({ request }) => {
-  const res = await request.post("/api/auth/register", {
-    data: { email: SEED_EMAIL, username: SEED_USERNAME, password: SEED_PASSWORD, name: SEED_NAME },
-  });
-  expect(res.ok()).toBeTruthy();
+test.beforeAll(async () => {
+  await createAccount(SEED_ACCOUNT);
 });
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => window.localStorage.clear());
 });
 
-/** Login real com a conta semente. */
+/** Login real com a conta semente (cookie de sessão + navega pro /home). */
 async function loginAsSeedUser(page: Page) {
-  await page.goto("/login");
-  await page.fill('input[type="email"]', SEED_EMAIL);
-  await page.fill('input[type="password"]', SEED_PASSWORD);
-  await page.click('button:has-text("Entrar")');
-  await page.waitForURL("**/home");
+  await signInAs(page, SEED_ACCOUNT);
+  await page.goto("/home");
+  await page.waitForLoadState("networkidle");
 }
 
 // C1: landing mostra os 4 blocos
@@ -35,39 +29,28 @@ test("landing mostra os 4 blocos", async ({ page }) => {
   }
 });
 
-// C2: signup mostra os placeholders literários; onboarding mostra o de bio
-test("signup e onboarding mostram os placeholders esperados", async ({ page }) => {
+// C2: login e criação de conta são o mesmo fluxo OAuth — a tela só mostra
+// os botões de provider, sem formulário de e-mail/senha.
+test("login mostra as opções Google e Amazon", async ({ page }) => {
   await page.goto("/");
   await page.click('a[href="/login"] >> nth=0');
   await page.waitForURL("**/login");
-  await page.click('a[href="/signup"]');
-  await page.waitForURL("**/signup");
-  await expect(page.getByPlaceholder("Victor Frankenstein")).toBeVisible();
-  await expect(page.getByPlaceholder("meninomaluquinho")).toBeVisible();
-  await expect(page.getByPlaceholder("capitu@biblioteca.com")).toBeVisible();
-
-  // onboarding não exige sessão — só bio/gêneros (identidade já vem do cadastro)
-  await page.goto("/onboarding");
-  await expect(page.getByPlaceholder("Era uma vez...")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Continuar com Google" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Continuar com Amazon" })).toBeVisible();
 });
 
-// C2b: fluxo completo de cadastro — registro, pular verificação, onboarding, /home
-test("cadastro completo leva ao /home", async ({ page }) => {
-  const rand = Math.random().toString(36).slice(2, 8);
-  const email = `signup.${rand}@example.com`;
-  const username = `signup_${rand}`;
+// C2b: conta OAuth nova (sem username, onboarded=false) é redirecionada pro
+// onboarding; escolher username + gêneros libera o /home.
+test("conta nova cai no onboarding; completar leva ao /home", async ({ page }) => {
+  const account = seedAccount("new_onboard");
+  await createAccount(account, { onboarded: false });
+  await signInAs(page, account);
 
-  await page.goto("/signup");
-  await page.getByPlaceholder("Victor Frankenstein").fill("Leitora Teste");
-  await page.getByPlaceholder("meninomaluquinho").fill(username);
-  await page.getByPlaceholder("capitu@biblioteca.com").fill(email);
-  await page.getByPlaceholder("••••••••").fill("SenhaForte123");
-  await page.click('button:has-text("Criar conta")');
-
-  await page.waitForSelector("text=Verificar e-mail");
-  await page.click('button:has-text("Pular por agora")');
+  await page.goto("/home");
   await page.waitForURL("**/onboarding");
+  await expect(page.getByPlaceholder("Era uma vez...")).toBeVisible();
 
+  await page.getByPlaceholder("meninomaluquinho").fill(account.username);
   await page.click('button:has-text("Ficção Científica")');
   await page.click('button:has-text("Começar a ler")');
   await page.waitForURL("**/home");

@@ -21,6 +21,7 @@ const schema = z.object({
   top4: z.array(z.string()).max(4).optional(),
   genres: z.array(z.string()).optional(),
   progressUnit: z.enum(["pages", "percent"]).optional(),
+  onboarded: z.literal(true).optional(),
 });
 
 export async function PATCH(req: Request) {

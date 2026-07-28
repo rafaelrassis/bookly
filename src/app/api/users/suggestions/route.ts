@@ -17,7 +17,8 @@ export async function GET() {
   const excluded = [uid, ...following.map((f) => f.followingId)];
 
   const users = await db.user.findMany({
-    where: { id: { notIn: excluded } },
+    // onboarded: false ainda não tem username — nada pra mostrar/seguir por handle.
+    where: { id: { notIn: excluded }, onboarded: true },
     orderBy: { createdAt: "asc" },
     take: LIMIT,
     select: { username: true, name: true, avatar: true, avatarUrl: true },

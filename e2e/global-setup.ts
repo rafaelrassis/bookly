@@ -90,8 +90,8 @@ export default async function globalSetup() {
     }
 
     await client.query(
-      `INSERT INTO "User" (id, email, username, name, "passwordHash", "updatedAt")
-       VALUES ($1, $2, $3, $4, 'not-a-real-login', now())
+      `INSERT INTO "User" (id, email, username, name, onboarded, "updatedAt")
+       VALUES ($1, $2, $3, $4, true, now())
        ON CONFLICT (id) DO NOTHING`,
       [FIXTURE_READER.id, FIXTURE_READER.email, FIXTURE_READER.username, FIXTURE_READER.name]
     );

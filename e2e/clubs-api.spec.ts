@@ -1,27 +1,13 @@
 import "dotenv/config";
 import { test, expect, type Page } from "@playwright/test";
+import { createAccount, seedAccount, signInAs } from "./helpers/auth";
 
-function seedAccount(tag: string) {
-  const rand = Math.random().toString(36).slice(2, 8);
-  return {
-    email: `e2e.${tag}.${rand}@example.com`,
-    username: `e2e_${tag}_${rand}`,
-    password: "SenhaForte123",
-    name: `Leitora ${tag}`,
-  };
-}
-
-async function register(page: Page, account: ReturnType<typeof seedAccount>) {
-  const res = await page.request.post("/api/auth/register", { data: account });
-  expect(res.ok()).toBeTruthy();
+async function register(_page: Page, account: ReturnType<typeof seedAccount>) {
+  await createAccount(account);
 }
 
 async function login(page: Page, account: ReturnType<typeof seedAccount>) {
-  await page.goto("/login");
-  await page.fill('input[type="email"]', account.email);
-  await page.fill('input[type="password"]', account.password);
-  await page.click('button:has-text("Entrar")');
-  await page.waitForURL("**/home");
+  await signInAs(page, account);
 }
 
 test.beforeEach(async ({ page }) => {

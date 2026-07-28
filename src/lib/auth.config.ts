@@ -1,9 +1,11 @@
 import type { NextAuthConfig } from "next-auth";
 
 /**
- * Config "edge-safe": sem providers que dependem de Node APIs (Prisma, bcrypt).
- * Usado pelo middleware, que roda no Edge runtime. O provider Credentials
- * (com acesso ao banco) só entra em src/lib/auth.ts, usado pelas rotas.
+ * Config "edge-safe": sem providers OAuth nem adapter (ambos dependem de
+ * Node APIs — fetch a endpoints de token e Prisma). Usado pelo middleware,
+ * que roda no Edge runtime e só precisa decodificar o JWT da sessão; os
+ * providers Google/Amazon + PrismaAdapter só entram em src/lib/auth.ts,
+ * usado pelas rotas.
  */
 export const authConfig = {
   trustHost: true,

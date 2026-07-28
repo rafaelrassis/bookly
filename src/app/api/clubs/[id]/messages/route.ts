@@ -12,19 +12,19 @@ function serializeMessage(m: {
   text: string;
   system: boolean;
   createdAt: Date;
-  user: { username: string; name: string; avatar: number; avatarUrl: string | null };
-  replyTo: { text: string; user: { username: string } } | null;
+  user: { username: string | null; name: string; avatar: number; avatarUrl: string | null };
+  replyTo: { text: string; user: { username: string | null } } | null;
 }) {
   return {
     id: m.id,
-    user: `@${m.user.username}`,
+    user: `@${m.user.username ?? ""}`,
     name: m.user.name,
     avatar: m.user.avatar,
     avatarUrl: m.user.avatarUrl,
     text: m.text,
     system: m.system,
     time: m.createdAt.toISOString(),
-    replyTo: m.replyTo ? { user: `@${m.replyTo.user.username}`, text: m.replyTo.text } : null,
+    replyTo: m.replyTo ? { user: `@${m.replyTo.user.username ?? ""}`, text: m.replyTo.text } : null,
   };
 }
 

@@ -14,7 +14,7 @@ function gen(): string {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
-async function createAndSendCode(email: string, type: "email" | "password") {
+async function createAndSendCode(email: string, type: "email") {
   const last = await db.verificationCode.findFirst({
     where: { email, type },
     orderBy: { createdAt: "desc" },
@@ -38,40 +38,6 @@ async function createAndSendCode(email: string, type: "email" | "password") {
 export async function sendEmailCode(email: string) {
   const code = await createAndSendCode(email, "email");
   await sendMail(email, "Seu código Bookly", `Código: ${code} (expira em ${TTL_MIN} min)`);
-}
-
-export async function verifyEmailCode(email: string, code: string) {
-  const rec = await db.verificationCode.findFirst({
-    where: { email, type: "email", code, usedAt: null, expiresAt: { gt: new Date() } },
-    orderBy: { createdAt: "desc" },
-  });
-  if (!rec) return false;
-
-  await db.$transaction([
-    db.verificationCode.update({ where: { id: rec.id }, data: { usedAt: new Date() } }),
-    db.user.update({ where: { email }, data: { emailVerified: new Date() } }),
-  ]);
-  return true;
-}
-
-export async function sendPasswordResetCode(email: string) {
-  const code = await createAndSendCode(email, "password");
-  await sendMail(
-    email,
-    "Redefinir senha — Bookly",
-    `Código para redefinir sua senha: ${code} (expira em ${TTL_MIN} min)`
-  );
-}
-
-export async function consumePasswordResetCode(email: string, code: string) {
-  const rec = await db.verificationCode.findFirst({
-    where: { email, type: "password", code, usedAt: null, expiresAt: { gt: new Date() } },
-    orderBy: { createdAt: "desc" },
-  });
-  if (!rec) return false;
-
-  await db.verificationCode.update({ where: { id: rec.id }, data: { usedAt: new Date() } });
-  return true;
 }
 
 /** Troca de e-mail: o código é enviado ao endereço novo, que ainda não
