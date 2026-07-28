@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { BookCover } from "@/components/BookCover";
@@ -9,7 +8,6 @@ import { SectionTitle } from "@/components/SectionTitle";
 import { SocialLoginButtons } from "@/components/SocialLoginButtons";
 import { useTopBooks } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
-import { emailLoginEnabled } from "@/lib/featureFlags";
 
 const FEATURES = [
   {
@@ -57,25 +55,6 @@ export default function LandingPage() {
       </div>
 
       <div className="mt-8 flex flex-col gap-3">
-        <Link
-          href={emailLoginEnabled ? "/signup" : "/login"}
-          className="rounded-xl bg-foil px-5 py-3.5 text-center font-bold text-leather transition-opacity hover:opacity-90"
-        >
-          Criar conta grátis
-        </Link>
-        <Link
-          href="/login"
-          className="rounded-xl border border-line bg-card px-5 py-3.5 text-center font-bold text-paper transition-colors hover:bg-card2"
-        >
-          Já tenho conta
-        </Link>
-
-        <div className="my-1 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.12em] text-paperDim">
-          <span className="h-px flex-1 bg-line" />
-          ou
-          <span className="h-px flex-1 bg-line" />
-        </div>
-
         <SocialLoginButtons callbackUrl="/home" />
       </div>
 
