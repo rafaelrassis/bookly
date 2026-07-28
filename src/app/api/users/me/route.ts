@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { serializeProfile } from "@/lib/users";
+import { usernameSchema } from "@/lib/validators/username";
 
 export async function GET() {
   const session = await auth();
@@ -13,12 +14,7 @@ export async function GET() {
 }
 
 const schema = z.object({
-  username: z
-    .string()
-    .min(3)
-    .max(20)
-    .regex(/^[a-z0-9._]+$/)
-    .optional(),
+  username: usernameSchema.optional(),
   name: z.string().min(1).max(60).optional(),
   bio: z.string().max(500).optional(),
   avatar: z.number().int().min(0).optional(),
@@ -50,7 +46,13 @@ export async function PATCH(req: Request) {
     }
   }
 
-  await db.user.update({ where: { id: session.user.id }, data });
+  try {
+    await db.user.update({ where: { id: session.user.id }, data });
+  } catch (err) {
+    const isUniqueClash = err instanceof Error && "code" in err && (err as { code?: string }).code === "P2002";
+    if (isUniqueClash) return NextResponse.json({ error: "username em uso" }, { status: 409 });
+    throw err;
+  }
   const profile = await serializeProfile(session.user.id, session.user.id);
   return NextResponse.json(profile);
 }

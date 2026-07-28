@@ -2,18 +2,20 @@
 // (Spec 3a), clubes/chat (Spec 4) e feed social/listas (Spec 3b).
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
+  provider   = "postgresql"
+  extensions = [citext]
 }
 
 model User {
   id            String       @id @default(cuid())
   email         String       @unique
-  username      String       @unique
+  username      String       @unique @db.Citext
   name          String
   passwordHash  String
   emailVerified DateTime?

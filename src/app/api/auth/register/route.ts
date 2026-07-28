@@ -3,14 +3,11 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { sendEmailCode } from "@/lib/verification";
+import { usernameSchema } from "@/lib/validators/username";
 
 const schema = z.object({
   email: z.string().email(),
-  username: z
-    .string()
-    .min(3)
-    .max(20)
-    .regex(/^[a-z0-9._]+$/),
+  username: usernameSchema,
   password: z.string().min(8),
   name: z.string().min(1).max(60),
 });

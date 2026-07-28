@@ -8,6 +8,7 @@ import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
 import { SectionTitle } from "@/components/SectionTitle";
 import { withoutAt } from "@/lib/handle";
+import { useUsernameCheck } from "@/hooks/useUsernameCheck";
 import { useBooksByIds } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
 import type { Book } from "@/lib/types";
@@ -24,6 +25,8 @@ export default function EditProfilePage() {
   const [top4, setTop4] = useState<string[]>(user.top4);
   const [saving, setSaving] = useState(false);
   const [readShelfBooks, setReadShelfBooks] = useState<Book[]>([]);
+
+  const usernameCheck = useUsernameCheck(withoutAt(username), user.username);
 
   useEffect(() => {
     fetch("/api/shelf?status=READ")
@@ -120,6 +123,18 @@ export default function EditProfilePage() {
               className="w-full bg-transparent py-3 pl-1 text-base text-paper focus:outline-none"
             />
           </div>
+          {usernameCheck.state === "checking" && (
+            <p className="text-xs text-paperDim">Verificando…</p>
+          )}
+          {usernameCheck.state === "available" && (
+            <p className="text-xs text-green-600">Disponível ✓</p>
+          )}
+          {usernameCheck.state === "taken" && (
+            <p className="text-xs text-red-600">Já está em uso</p>
+          )}
+          {usernameCheck.state === "invalid" && (
+            <p className="text-xs text-red-600">{usernameCheck.error}</p>
+          )}
         </label>
         <label className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
           Bio
@@ -175,7 +190,12 @@ export default function EditProfilePage() {
         <button
           type="button"
           onClick={save}
-          disabled={saving}
+          disabled={
+            saving ||
+            usernameCheck.state === "taken" ||
+            usernameCheck.state === "invalid" ||
+            usernameCheck.state === "checking"
+          }
           className="flex-1 rounded-xl bg-foil px-5 py-3.5 font-bold text-leather transition-opacity hover:opacity-90 disabled:opacity-60"
         >
           {saving ? "Salvando…" : "Salvar"}
