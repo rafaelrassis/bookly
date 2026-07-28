@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma migrate deploy && next build",
+    "build": "tsx scripts/resolve-stuck-migration.ts && prisma migrate deploy && next build",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
