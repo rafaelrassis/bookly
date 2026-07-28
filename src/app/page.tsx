@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { BookCover } from "@/components/BookCover";
 import { Logo } from "@/components/Logo";
 import { SectionTitle } from "@/components/SectionTitle";
+import { SocialLoginButtons } from "@/components/SocialLoginButtons";
 import { useTopBooks } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
 import { emailLoginEnabled } from "@/lib/featureFlags";
@@ -68,6 +69,14 @@ export default function LandingPage() {
         >
           Já tenho conta
         </Link>
+
+        <div className="my-1 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.12em] text-paperDim">
+          <span className="h-px flex-1 bg-line" />
+          ou
+          <span className="h-px flex-1 bg-line" />
+        </div>
+
+        <SocialLoginButtons callbackUrl="/home" />
       </div>
 
       {topBooks.length > 0 && (
