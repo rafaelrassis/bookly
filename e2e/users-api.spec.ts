@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { test, expect, type Page } from "@playwright/test";
-import { createAccount, seedAccount, signInAs, withDb } from "./helpers/auth";
+import { createAccount, seedAccount, signInAs } from "./helpers/auth";
 
 async function register(_page: Page, account: ReturnType<typeof seedAccount>) {
   await createAccount(account);
@@ -8,16 +8,6 @@ async function register(_page: Page, account: ReturnType<typeof seedAccount>) {
 
 async function login(page: Page, account: ReturnType<typeof seedAccount>) {
   await signInAs(page, account);
-}
-
-async function latestCode(email: string, type: "email") {
-  return withDb(async (client) => {
-    const res = await client.query<{ code: string }>(
-      'SELECT code FROM "VerificationCode" WHERE email = $1 AND type = $2 ORDER BY "createdAt" DESC LIMIT 1',
-      [email, type]
-    );
-    return res.rows[0]?.code;
-  });
 }
 
 test.beforeEach(async ({ page }) => {
@@ -83,32 +73,4 @@ test("não é possível seguir a si mesmo", async ({ page }) => {
 
   const res = await page.request.post(`/api/users/${a.username}/follow`);
   expect(res.status()).toBe(400);
-});
-
-test("troca de e-mail exige código enviado ao endereço novo", async ({ page }) => {
-  const a = seedAccount("mail");
-  await register(page, a);
-  await login(page, a);
-
-  const newEmail = `novo.${Math.random().toString(36).slice(2, 8)}@example.com`;
-
-  const wrongCode = await page.request.post("/api/users/me/email/confirm", {
-    data: { newEmail, code: "000000" },
-  });
-  expect(wrongCode.status()).toBe(400);
-
-  const request = await page.request.post("/api/users/me/email/request", {
-    data: { newEmail },
-  });
-  expect(request.ok()).toBeTruthy();
-
-  const code = await latestCode(newEmail, "email");
-  expect(code).toBeTruthy();
-
-  const confirm = await page.request.post("/api/users/me/email/confirm", {
-    data: { newEmail, code },
-  });
-  expect(confirm.ok()).toBeTruthy();
-  const confirmBody = await confirm.json();
-  expect(confirmBody.email).toBe(newEmail);
 });

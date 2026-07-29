@@ -30,11 +30,10 @@ test("landing mostra os 4 blocos", async ({ page }) => {
 });
 
 // C2: login e criação de conta são o mesmo fluxo OAuth — a tela só mostra
-// os botões de provider, sem formulário de e-mail/senha.
+// os botões de provider, sem formulário de e-mail/senha. A landing embute os
+// mesmos botões direto (sem link pra /login), então testa a rota /login em si.
 test("login mostra as opções Google e Amazon", async ({ page }) => {
-  await page.goto("/");
-  await page.click('a[href="/login"] >> nth=0');
-  await page.waitForURL("**/login");
+  await page.goto("/login");
   await expect(page.getByRole("button", { name: "Continuar com Google" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Continuar com Amazon" })).toBeVisible();
 });
