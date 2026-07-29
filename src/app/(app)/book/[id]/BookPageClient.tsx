@@ -59,7 +59,7 @@ function ProgressSection({
 }: {
   book: Book;
   entry: ShelfEntry;
-  onProgress: (page: number) => Promise<{ delta: number } | null>;
+  onProgress: (page: number) => Promise<{ delta: number; finished: boolean } | null>;
 }) {
   const unit = useStore((s) => s.user.progressUnit);
   const applyProfile = useStore((s) => s.applyProfile);
@@ -99,7 +99,13 @@ function ProgressSection({
         return;
       }
       setValue("");
-      showToast(result.delta > 0 ? `+${result.delta} páginas! 📖` : "Progresso atualizado 📖");
+      showToast(
+        result.finished
+          ? "Livro concluído 📖"
+          : result.delta > 0
+            ? `+${result.delta} páginas! 📖`
+            : "Progresso atualizado 📖"
+      );
     } finally {
       setSaving(false);
     }
@@ -306,13 +312,13 @@ export function BookPageClient({ params }: { params: { id: string } }) {
     if (!res.ok) return null;
     const data = await res.json();
     setEntry((prev) => ({
-      status: "READING",
+      status: data.status,
       currentPage: page,
       lastPage: prev?.currentPage ?? 0,
       startedAt: prev?.startedAt ?? new Date().toISOString(),
-      finishedAt: null,
+      finishedAt: data.finishedAt,
     }));
-    return { delta: data.delta as number };
+    return { delta: data.delta as number, finished: data.status === "READ" };
   }
 
   async function handleRating(value: number) {
