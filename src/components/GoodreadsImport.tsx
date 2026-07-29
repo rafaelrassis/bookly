@@ -48,10 +48,29 @@ export function GoodreadsImport() {
 
   return (
     <div>
-      <p className="text-sm text-paperDim">
-        Exporte sua biblioteca no Goodreads (My Books → Import/Export → Export Library) e envie o
-        arquivo .csv aqui.
-      </p>
+      <div className="text-sm text-paperDim">
+        <p>Baixe sua biblioteca no Goodreads e envie o arquivo .csv aqui:</p>
+        <ol className="mt-2 list-decimal space-y-1 pl-4">
+          <li>
+            Abra a{" "}
+            <a
+              href="https://www.goodreads.com/review/import"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-foil underline decoration-dotted underline-offset-2 hover:opacity-80"
+            >
+              página de exportação do Goodreads
+            </a>{" "}
+            (My Books → Import/Export).
+          </li>
+          <li>
+            Clique em <strong className="font-semibold text-paper">Export</strong> e depois em{" "}
+            <strong className="font-semibold text-paper">Export Library</strong>.
+          </li>
+          <li>Aguarde o arquivo ser gerado e baixe o .csv.</li>
+          <li>Volte aqui e envie o arquivo baixado.</li>
+        </ol>
+      </div>
 
       <input
         ref={fileInputRef}
