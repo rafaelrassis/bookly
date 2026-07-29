@@ -10,6 +10,7 @@ import { BookOpenIcon } from "@/components/icons";
 import { Logo } from "@/components/Logo";
 import { NotificationBell } from "@/components/NotificationBell";
 import { SectionTitle } from "@/components/SectionTitle";
+import { SeguindoEmptyState } from "@/components/SeguindoEmptyState";
 import { Skeleton } from "@/components/Skeleton";
 import { Spinner } from "@/components/Spinner";
 import { readingPercent } from "@/lib/format";
@@ -91,7 +92,7 @@ export default function HomePage() {
     hasMore,
     loadingMore,
     loadMore,
-    fellBackToAll,
+    emptyReason,
     error: feedError,
     retry: retryFeed,
   } = useFeed(feedFilter);
@@ -176,11 +177,6 @@ export default function HomePage() {
           </div>
         </div>
         <div className="mt-1">
-          {feedFilter === "following" && fellBackToAll && (
-            <p className="py-3 text-xs text-paperDim">
-              Você ainda não segue ninguém — mostrando o feed geral.
-            </p>
-          )}
           {feedError ? (
             <div className="flex flex-col items-center gap-3 py-6 text-center">
               <p className="text-sm text-paperDim">Não foi possível carregar o feed. Tente de novo.</p>
@@ -206,13 +202,16 @@ export default function HomePage() {
               ))}
             </div>
           ) : (
-            feed.length === 0 && (
+            feed.length === 0 &&
+            (feedFilter === "following" && emptyReason === "no_follows" ? (
+              <SeguindoEmptyState onGoGeneral={() => setFeedFilter("all")} />
+            ) : (
               <EmptyState
                 icon={<BookOpenIcon />}
                 title="Nenhuma review por aqui ainda"
                 description={
                   feedFilter === "following"
-                    ? "Siga outros leitores pra ver as reviews deles aqui."
+                    ? "Ninguém que você segue publicou uma review ainda."
                     : "Seja a primeira pessoa a avaliar um livro."
                 }
                 action={{ label: "Avaliar um livro", href: "/search" }}
@@ -224,7 +223,7 @@ export default function HomePage() {
                   Encontrar leitores
                 </Link>
               </EmptyState>
-            )
+            ))
           )}
           {feed.map((review) => (
             <FeedPost key={review.id} review={review} />

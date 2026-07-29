@@ -22,8 +22,11 @@ export async function GET(req: Request) {
       select: { followingId: true },
     });
     const ids = following.map((f) => f.followingId);
-    // fallback: se não segue ninguém, cai pro geral
-    if (ids.length > 0) where = { ...where, userId: { in: ids } };
+    // Sem follows → empty state real (não cai mais pro geral)
+    if (ids.length === 0) {
+      return NextResponse.json({ items: [], nextCursor: null, emptyReason: "no_follows" });
+    }
+    where = { ...where, userId: { in: ids } };
   } else if (scope === "liked") {
     where = { ...where, likes: { some: { userId: uid } } };
   }
@@ -60,11 +63,5 @@ export async function GET(req: Request) {
   return NextResponse.json({
     items: page,
     nextCursor: hasMore ? page[page.length - 1].id : null,
-    fellBackToAll: scope === "following" && (await noFollowing(uid)),
   });
-}
-
-async function noFollowing(uid: string): Promise<boolean> {
-  const count = await db.follow.count({ where: { followerId: uid } });
-  return count === 0;
 }
