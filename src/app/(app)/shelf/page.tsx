@@ -7,6 +7,7 @@ import { BottomSheet } from "@/components/BottomSheet";
 import { EmptyState } from "@/components/EmptyState";
 import { BookOpenIcon, LockIcon } from "@/components/icons";
 import { NotificationBell } from "@/components/NotificationBell";
+import { ReadingGoalCard } from "@/components/ReadingGoalCard";
 import { SectionTitle } from "@/components/SectionTitle";
 import { Spinner } from "@/components/Spinner";
 import { Stars } from "@/components/Stars";
@@ -236,6 +237,8 @@ export default function ShelfPage() {
         <h1 className="text-2xl font-extrabold">Estante</h1>
         <NotificationBell className="-mr-2" />
       </header>
+
+      <ReadingGoalCard />
 
       <MyLists />
 

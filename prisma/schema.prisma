@@ -49,6 +49,7 @@ model User {
   reviews      Review[]
   bookTags     BookTag[]
   quotes       Quote[]
+  readingGoals ReadingGoal[]
 
   createdClubs Club[]       @relation("clubCreator")
   clubMembers  ClubMember[]
@@ -196,6 +197,20 @@ model ShelfEntry {
 
   @@unique([userId, bookId])
   @@index([bookId])
+}
+
+/// Meta anual de livros (Reading Challenge). Progresso é derivado de
+/// ShelfEntry (status READ + finishedAt no ano), não persistido aqui.
+model ReadingGoal {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  year        Int
+  targetBooks Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, year])
 }
 
 /// Rating e review são a mesma entidade (1 por usuário+livro). Nota <= 0
