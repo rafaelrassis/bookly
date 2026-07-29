@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { serializeBook } from "@/lib/books";
 import { averageClubProgress, generateClubCode } from "@/lib/clubs";
+import { checkRateLimit } from "@/lib/ratelimit";
 
 /** Clubes do usuário (joined) + clubes públicos pra descobrir. O front
  * separa em "Meus"/"Públicos" a partir do campo `joined`. */
@@ -55,6 +56,9 @@ const createSchema = z.object({
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "unauth" }, { status: 401 });
+
+  const limited = await checkRateLimit("write", session.user.id);
+  if (limited) return limited;
 
   const parsed = createSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });

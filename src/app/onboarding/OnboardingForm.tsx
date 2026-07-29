@@ -8,6 +8,7 @@ import { Logo } from "@/components/Logo";
 import { withoutAt } from "@/lib/handle";
 import { useUsernameCheck } from "@/hooks/useUsernameCheck";
 import { useStore } from "@/lib/store";
+import { apiErrorMessage } from "@/lib/apiError";
 
 export function OnboardingForm() {
   const user = useStore((s) => s.user);
@@ -46,6 +47,10 @@ export function OnboardingForm() {
     });
     setSaving(false);
     if (!res.ok) {
+      if (res.status === 429) {
+        setError(await apiErrorMessage(res, "Não foi possível salvar"));
+        return;
+      }
       const body = await res.json().catch(() => null);
       setError(body?.error === "username em uso" ? "Nome de usuário já em uso" : "Não foi possível salvar");
       return;

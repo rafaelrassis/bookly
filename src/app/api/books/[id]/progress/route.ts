@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { publishProgressToClubs } from "@/lib/clubs";
 import type { ShelfStatus } from "@/lib/types";
+import { checkRateLimit } from "@/lib/ratelimit";
 
 const schema = z.object({ page: z.number().int().min(0) });
 
@@ -17,6 +18,9 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   if (!session?.user?.id) return NextResponse.json({ error: "unauth" }, { status: 401 });
   const uid = session.user.id;
   const bookId = params.id;
+
+  const limited = await checkRateLimit("write", uid);
+  if (limited) return limited;
 
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });

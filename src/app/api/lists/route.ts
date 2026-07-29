@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { serializeBook } from "@/lib/books";
+import { checkRateLimit } from "@/lib/ratelimit";
 
 export async function GET(req: Request) {
   const session = await auth();
@@ -61,6 +62,9 @@ const createSchema = z.object({
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "unauth" }, { status: 401 });
+
+  const limited = await checkRateLimit("write", session.user.id);
+  if (limited) return limited;
 
   const json = await req.json().catch(() => null);
   const parsed = createSchema.safeParse(json);

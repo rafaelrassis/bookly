@@ -16,6 +16,7 @@ import BookLoading from "./loading";
 import { formatCount, formatDecimal, readingDates, readingPercent } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import type { Book, ShelfEntry, ShelfStatus } from "@/lib/types";
+import { apiErrorMessage } from "@/lib/apiError";
 
 type BookQuote = { id: string; text: string; page?: number };
 
@@ -295,7 +296,7 @@ export function BookPageClient({ params }: { params: { id: string } }) {
       body: JSON.stringify({ status: next }),
     });
     if (!res.ok) {
-      showToast("Não foi possível atualizar a estante");
+      showToast(await apiErrorMessage(res, "Não foi possível atualizar a estante"));
       return;
     }
     const data = await res.json();
@@ -328,7 +329,7 @@ export function BookPageClient({ params }: { params: { id: string } }) {
       body: JSON.stringify({ rating: value, title: myReviewTitle ?? undefined, text: myReview ?? "" }),
     });
     if (!res.ok) {
-      showToast("Não foi possível salvar a avaliação");
+      showToast(await apiErrorMessage(res, "Não foi possível salvar a avaliação"));
       return;
     }
     const data = await res.json();
@@ -357,7 +358,7 @@ export function BookPageClient({ params }: { params: { id: string } }) {
         body: JSON.stringify({ rating, title: titleDraft.trim() || undefined, text }),
       });
       if (!res.ok) {
-        showToast("Não foi possível publicar a review");
+        showToast(await apiErrorMessage(res, "Não foi possível publicar a review"));
         return;
       }
       const data = await res.json();
@@ -383,7 +384,7 @@ export function BookPageClient({ params }: { params: { id: string } }) {
         body: JSON.stringify({ text, page: Number.isInteger(page) && page > 0 ? page : undefined }),
       });
       if (!res.ok) {
-        showToast("Não foi possível salvar a citação");
+        showToast(await apiErrorMessage(res, "Não foi possível salvar a citação"));
         return;
       }
       const quote = await res.json();

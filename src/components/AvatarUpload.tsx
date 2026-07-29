@@ -6,6 +6,7 @@ import { AvatarCropModal } from "@/components/AvatarCropModal";
 import { Spinner } from "@/components/Spinner";
 import { withAt } from "@/lib/handle";
 import { useStore } from "@/lib/store";
+import { apiErrorMessage } from "@/lib/apiError";
 
 const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -66,8 +67,8 @@ export function AvatarUpload() {
       const form = new FormData();
       form.append("file", blob, "avatar.webp");
       const res = await fetch("/api/upload/avatar", { method: "POST", body: form });
-      const body = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(body?.error ?? "Falha ao enviar imagem.");
+      if (!res.ok) throw new Error(await apiErrorMessage(res, "Falha ao enviar imagem."));
+      const body = await res.json();
       applyProfile({ avatarUrl: body.url });
       showToast("Foto atualizada ✦");
       closeEditor();

@@ -7,6 +7,7 @@ import { FeedbackModal } from "@/components/FeedbackModal";
 import { SectionTitle } from "@/components/SectionTitle";
 import { emailLoginEnabled } from "@/lib/featureFlags";
 import { useStore } from "@/lib/store";
+import { apiErrorMessage } from "@/lib/apiError";
 
 type PasswordStep = "idle" | "editing";
 
@@ -52,6 +53,10 @@ export default function SettingsPage() {
     });
     setPasswordBusy(false);
     if (!res.ok) {
+      if (res.status === 429) {
+        showToast(await apiErrorMessage(res, "Não foi possível alterar a senha"));
+        return;
+      }
       const body = await res.json().catch(() => null);
       showToast(
         body?.error === "senha atual incorreta"

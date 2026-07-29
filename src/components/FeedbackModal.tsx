@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useModalA11y } from "@/lib/useModalA11y";
+import { apiErrorMessage } from "@/lib/apiError";
 
 const CATEGORIES = [
   { id: "erro", label: "Reportar erro" },
@@ -35,7 +36,7 @@ export function FeedbackModal({ onClose, onToast }: Props) {
     });
     setLoading(false);
     if (!res.ok) {
-      onToast("Não deu pra enviar agora. Tente de novo.");
+      onToast(await apiErrorMessage(res, "Não deu pra enviar agora. Tente de novo."));
       return;
     }
     onToast("Obrigado! Recebemos sua mensagem 💛");

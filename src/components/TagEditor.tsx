@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { apiErrorMessage } from "@/lib/apiError";
 
 type Props = {
   bookId: string;
@@ -33,14 +34,14 @@ export function TagEditor({ bookId, tags, onChanged, onToast }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tag }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error(await apiErrorMessage(res, "Não foi possível adicionar a tag"));
       const data: { tags: string[] } = await res.json();
       setList(data.tags);
       onChanged?.(data.tags);
       onToast?.("Tag adicionada");
-    } catch {
+    } catch (err) {
       setList(prev);
-      onToast?.("Não foi possível adicionar a tag");
+      onToast?.(err instanceof Error ? err.message : "Não foi possível adicionar a tag");
     } finally {
       setBusy(false);
     }
@@ -57,14 +58,14 @@ export function TagEditor({ bookId, tags, onChanged, onToast }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tag }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error(await apiErrorMessage(res, "Não foi possível remover a tag"));
       const data: { tags: string[] } = await res.json();
       setList(data.tags);
       onChanged?.(data.tags);
       onToast?.("Tag removida");
-    } catch {
+    } catch (err) {
       setList(prev);
-      onToast?.("Não foi possível remover a tag");
+      onToast?.(err instanceof Error ? err.message : "Não foi possível remover a tag");
     } finally {
       setBusy(false);
     }

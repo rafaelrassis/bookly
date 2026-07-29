@@ -3,6 +3,7 @@ import { put } from "@vercel/blob";
 import sharp from "sharp";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { checkRateLimit } from "@/lib/ratelimit";
 
 const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -12,6 +13,9 @@ export async function POST(req: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
+
+  const limited = await checkRateLimit("upload", session.user.id);
+  if (limited) return limited;
 
   const form = await req.formData().catch(() => null);
   const file = form?.get("file");

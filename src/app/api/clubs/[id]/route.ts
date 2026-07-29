@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { serializeBook } from "@/lib/books";
 import { generateClubCode, shelfPercent } from "@/lib/clubs";
+import { checkRateLimit } from "@/lib/ratelimit";
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const session = await auth();
@@ -73,6 +74,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "unauth" }, { status: 401 });
 
+  const limited = await checkRateLimit("write", session.user.id);
+  if (limited) return limited;
+
   const club = await db.club.findUnique({ where: { id: params.id } });
   if (!club) return NextResponse.json({ error: "não encontrado" }, { status: 404 });
   if (club.creatorId !== session.user.id) {
@@ -113,6 +117,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "unauth" }, { status: 401 });
+
+  const limited = await checkRateLimit("write", session.user.id);
+  if (limited) return limited;
 
   const club = await db.club.findUnique({ where: { id: params.id }, select: { creatorId: true } });
   if (!club) return NextResponse.json({ error: "não encontrado" }, { status: 404 });

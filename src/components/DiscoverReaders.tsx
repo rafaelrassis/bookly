@@ -7,6 +7,7 @@ import { SectionTitle } from "@/components/SectionTitle";
 import { withAt } from "@/lib/handle";
 import { useStore } from "@/lib/store";
 import type { ApiAuthor } from "@/lib/types";
+import { apiErrorMessage } from "@/lib/apiError";
 
 export function DiscoverReaders() {
   const showToast = useStore((s) => s.showToast);
@@ -28,7 +29,7 @@ export function DiscoverReaders() {
         setSuggestions((current) => current?.filter((u) => u.username !== username) ?? null);
         showToast(`Seguindo ${withAt(username)}`);
       } else {
-        showToast("Não foi possível seguir");
+        showToast(await apiErrorMessage(res, "Não foi possível seguir"));
       }
     } finally {
       setPending(null);

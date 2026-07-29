@@ -9,6 +9,7 @@ import { Stars } from "@/components/Stars";
 import { withAt } from "@/lib/handle";
 import { useStore } from "@/lib/store";
 import type { ApiComment, ApiReview } from "@/lib/types";
+import { apiErrorMessage } from "@/lib/apiError";
 
 function HeartIcon({ filled }: { filled: boolean }) {
   return (
@@ -111,7 +112,7 @@ export function FeedPost({ review }: { review: ApiReview }) {
         body: JSON.stringify({ text }),
       });
       if (!res.ok) {
-        showToast("Não foi possível comentar");
+        showToast(await apiErrorMessage(res, "Não foi possível comentar"));
         return;
       }
       const comment: ApiComment = await res.json();

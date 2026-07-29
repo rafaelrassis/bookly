@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { checkRateLimit } from "@/lib/ratelimit";
 
 const PAGE = 20;
 
@@ -37,6 +38,9 @@ const schema = z.object({ text: z.string().trim().min(1).max(500) });
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "unauth" }, { status: 401 });
+
+  const limited = await checkRateLimit("write", session.user.id);
+  if (limited) return limited;
 
   const review = await db.review.findUnique({ where: { id: params.id }, select: { id: true } });
   if (!review) return NextResponse.json({ error: "não encontrada" }, { status: 404 });

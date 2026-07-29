@@ -14,6 +14,7 @@ import { Stars } from "@/components/Stars";
 import { TagEditor } from "@/components/TagEditor";
 import { useStore } from "@/lib/store";
 import type { ApiList, Book, ShelfEntry, ShelfStatus, Visibility } from "@/lib/types";
+import { apiErrorMessage } from "@/lib/apiError";
 
 type ShelfItem = { book: Book; entry: ShelfEntry; tags: string[]; rating: number | null };
 
@@ -57,7 +58,7 @@ function MyLists() {
         body: JSON.stringify({ name: trimmed, visibility }),
       });
       if (!res.ok) {
-        showToast("Não foi possível criar a lista");
+        showToast(await apiErrorMessage(res, "Não foi possível criar a lista"));
         return;
       }
       const list: ApiList = await res.json();

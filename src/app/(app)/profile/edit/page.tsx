@@ -12,6 +12,7 @@ import { useUsernameCheck } from "@/hooks/useUsernameCheck";
 import { useBooksByIds } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
 import type { Book } from "@/lib/types";
+import { apiErrorMessage } from "@/lib/apiError";
 
 export default function EditProfilePage() {
   const user = useStore((s) => s.user);
@@ -65,6 +66,10 @@ export default function EditProfilePage() {
     });
     setSaving(false);
     if (!res.ok) {
+      if (res.status === 429) {
+        showToast(await apiErrorMessage(res, "Não foi possível salvar"));
+        return;
+      }
       const body = await res.json().catch(() => null);
       showToast(body?.error === "username em uso" ? "Nome de usuário já em uso" : "Não foi possível salvar");
       return;

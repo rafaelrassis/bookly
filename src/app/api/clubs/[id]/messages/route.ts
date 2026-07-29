@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { checkRateLimit } from "@/lib/ratelimit";
 
 async function isMember(clubId: string, userId: string) {
   return !!(await db.clubMember.findUnique({ where: { clubId_userId: { clubId, userId } } }));
@@ -78,6 +79,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   if (!(await isMember(params.id, session.user.id))) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
+
+  const limited = await checkRateLimit("chat", session.user.id);
+  if (limited) return limited;
 
   const parsed = postSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });

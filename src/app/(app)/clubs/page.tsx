@@ -11,6 +11,7 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { Spinner } from "@/components/Spinner";
 import { useStore } from "@/lib/store";
 import type { ClubSummary } from "@/lib/types";
+import { apiErrorMessage } from "@/lib/apiError";
 
 function ClubCard({ club }: { club: ClubSummary }) {
   return (
@@ -70,7 +71,7 @@ export default function ClubsPage() {
         body: JSON.stringify({ code }),
       });
       if (!res.ok) {
-        showToast(res.status === 404 ? "Código inválido 😕" : "Não foi possível entrar");
+        showToast(res.status === 404 ? "Código inválido 😕" : await apiErrorMessage(res, "Não foi possível entrar"));
         return;
       }
       const data = await res.json();

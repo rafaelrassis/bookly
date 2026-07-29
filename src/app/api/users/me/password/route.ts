@@ -4,6 +4,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { emailLoginEnabled } from "@/lib/featureFlags";
+import { checkRateLimit } from "@/lib/ratelimit";
 
 const schema = z.object({ current: z.string().min(1), next: z.string().min(8) });
 
@@ -12,6 +13,9 @@ export async function POST(req: Request) {
 
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "unauth" }, { status: 401 });
+
+  const limited = await checkRateLimit("write", session.user.id);
+  if (limited) return limited;
 
   const json = await req.json().catch(() => null);
   const parsed = schema.safeParse(json);

@@ -2,11 +2,15 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { generateClubCode } from "@/lib/clubs";
+import { checkRateLimit } from "@/lib/ratelimit";
 
 /** Gera um novo código de convite (só criador; só clubes privados). */
 export async function POST(_req: Request, { params }: { params: { id: string } }) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "unauth" }, { status: 401 });
+
+  const limited = await checkRateLimit("write", session.user.id);
+  if (limited) return limited;
 
   const club = await db.club.findUnique({
     where: { id: params.id },

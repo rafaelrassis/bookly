@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { checkRateLimit } from "@/lib/ratelimit";
 
 export async function POST(_req: Request, { params }: { params: { username: string } }) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "unauth" }, { status: 401 });
+
+  const limited = await checkRateLimit("write", session.user.id);
+  if (limited) return limited;
 
   const target = await db.user.findUnique({
     where: { username: params.username },
@@ -26,6 +30,9 @@ export async function POST(_req: Request, { params }: { params: { username: stri
 export async function DELETE(_req: Request, { params }: { params: { username: string } }) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "unauth" }, { status: 401 });
+
+  const limited = await checkRateLimit("write", session.user.id);
+  if (limited) return limited;
 
   const target = await db.user.findUnique({
     where: { username: params.username },
