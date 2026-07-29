@@ -30,6 +30,7 @@ function Amazon(): OAuthConfig<AmazonProfile> {
     name: "Amazon",
     type: "oauth",
     checks: ["state"], // Login with Amazon não suporta PKCE (default do Auth.js p/ providers oauth)
+    allowDangerousEmailAccountLinking: true, // ver comentário no provider Google acima
     authorization: {
       url: "https://www.amazon.com/ap/oa",
       params: { scope: "profile" },
@@ -80,6 +81,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      // Google e Amazon verificam o e-mail no próprio fluxo OAuth, e o app
+      // trata e-mail como identidade única do usuário (User.email @unique) —
+      // sem isso, quem criou conta por um provider e tenta o outro com o
+      // mesmo e-mail cai em /login?error=OAuthAccountNotLinked.
+      allowDangerousEmailAccountLinking: true,
     }),
     Amazon(),
     // Login por e-mail/senha — desligado por padrão (ver src/lib/featureFlags.ts).
