@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { BookCover } from "@/components/BookCover";
 import { MyDonations } from "@/components/donation/MyDonations";
+import { ReceivedDonations } from "@/components/donation/ReceivedDonations";
 import { FeedPost } from "@/components/FeedPost";
 import { SectionTitle } from "@/components/SectionTitle";
 import { Stars } from "@/components/Stars";
@@ -159,6 +160,13 @@ export default function ProfilePage() {
         <SectionTitle>Minhas doações</SectionTitle>
         <div className="mt-3">
           <MyDonations />
+        </div>
+      </section>
+
+      <section id="recebidos" className="mt-6">
+        <SectionTitle>Recebidos</SectionTitle>
+        <div className="mt-3">
+          <ReceivedDonations />
         </div>
       </section>
 

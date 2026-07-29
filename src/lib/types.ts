@@ -58,6 +58,23 @@ export type ApiMyDonation = {
   donatedAt: string | null;
 };
 
+/** Doação em que o usuário logado é o interessado ESCOLHIDO (GET /api/donations/received) —
+ * usada em "Recebidos" no perfil. Contato do doador só vem preenchido enquanto RESERVADO. */
+export type ApiReceivedDonation = {
+  requestId: string;
+  donationId: string;
+  bookId: string;
+  bookTitle: string;
+  authors: string;
+  photoUrl: string;
+  city: string;
+  state: string;
+  status: DonationStatus;
+  donatedAt: string | null;
+  contact: { whatsapp: string | null; instagram: string | null } | null;
+  donor: { id: string; username: string | null; name: string; avatar: number; avatarUrl: string | null };
+};
+
 /** Lista pública de um usuário da comunidade, exibida na busca sem query. */
 export type ApiCommunityList = {
   id: string;
