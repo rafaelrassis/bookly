@@ -24,5 +24,11 @@ export default withSentryConfig(nextConfig, {
   widenClientFileUpload: true,
   webpack: {
     treeshake: { removeDebugLogging: true },
+    // o auto-wrap de route handlers do Sentry mexe na Response do NextAuth e
+    // derruba os Set-Cookie de state/pkceCodeVerifier no fluxo OAuth — o
+    // callback então falha com InvalidCheck (cookie ausente). Login
+    // Google/Amazon quebrou no dia em que o Sentry entrou; excluir a rota
+    // do auto-instrument resolve.
+    excludeServerRoutes: ["/api/auth/[...nextauth]"],
   },
 });
