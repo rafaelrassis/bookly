@@ -6,12 +6,13 @@ import { useStore } from "./index";
 
 export type FeedScope = "all" | "following" | "liked";
 
-/** Feed real (Spec 3b), paginado por cursor. "following" cai pro "all" no
- * servidor quando o usuário não segue ninguém (fellBackToAll avisa a UI). */
+/** Feed real (Spec 3b), paginado por cursor. "following" retorna lista vazia
+ * (com emptyReason: "no_follows") quando o usuário não segue ninguém — sem
+ * cair pro "all". */
 export function useFeed(scope: FeedScope) {
   const [items, setItems] = useState<ApiReview[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [fellBackToAll, setFellBackToAll] = useState(false);
+  const [emptyReason, setEmptyReason] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(false);
@@ -27,7 +28,7 @@ export function useFeed(scope: FeedScope) {
         if (cancelled) return;
         setItems(data.items ?? []);
         setNextCursor(data.nextCursor ?? null);
-        setFellBackToAll(Boolean(data.fellBackToAll));
+        setEmptyReason(data.emptyReason ?? null);
       })
       .catch(() => !cancelled && setError(true))
       .finally(() => !cancelled && setLoading(false));
@@ -55,7 +56,7 @@ export function useFeed(scope: FeedScope) {
     setRetryCount((n) => n + 1);
   }
 
-  return { items, loading, loadingMore, hasMore: nextCursor !== null, loadMore, fellBackToAll, error, retry };
+  return { items, loading, loadingMore, hasMore: nextCursor !== null, loadMore, emptyReason, error, retry };
 }
 
 type HistogramBar = { value: number; count: number };
