@@ -13,7 +13,7 @@ export async function GET() {
 
   const donations = await db.donation.findMany({
     where: { donorId: session.user.id },
-    include: { book: true },
+    include: { book: true, requests: true },
     orderBy: { createdAt: "desc" },
   });
 
@@ -22,11 +22,14 @@ export async function GET() {
       id: d.id,
       bookId: d.bookId,
       bookTitle: d.book.title,
+      authors: d.book.authors,
       photoUrl: d.photoUrl,
       city: d.city,
       state: d.state,
       status: d.status,
+      pendingRequests: d.requests.filter((r) => r.status === "PENDENTE").length,
       createdAt: d.createdAt,
+      donatedAt: d.donatedAt,
     })),
   });
 }

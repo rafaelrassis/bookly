@@ -43,6 +43,21 @@ export type ApiDonationRequest = {
   requester: { id: string; username: string | null; name: string; avatar: number; avatarUrl: string | null };
 };
 
+/** Doação do próprio doador (GET /api/donations) — usada em "Minhas doações". */
+export type ApiMyDonation = {
+  id: string;
+  bookId: string;
+  bookTitle: string;
+  authors: string;
+  photoUrl: string;
+  city: string;
+  state: string;
+  status: DonationStatus;
+  pendingRequests: number;
+  createdAt: string;
+  donatedAt: string | null;
+};
+
 /** Lista pública de um usuário da comunidade, exibida na busca sem query. */
 export type ApiCommunityList = {
   id: string;
