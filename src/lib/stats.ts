@@ -8,11 +8,13 @@ export type UserStats = {
   reviewCount: number;
   avgRating: number;
   histogram: Record<string, number>;
+  donatedCount: number;
 };
 
-/** Estatísticas do perfil derivadas de ShelfEntry/Review reais (Spec 3a/3b). */
+/** Estatísticas do perfil derivadas de ShelfEntry/Review/Donation reais
+ * (Spec 3a/3b + doação de livros). */
 export async function userStats(userId: string): Promise<UserStats> {
-  const [readEntries, readingEntries, reviews] = await Promise.all([
+  const [readEntries, readingEntries, reviews, donatedCount] = await Promise.all([
     db.shelfEntry.findMany({
       where: { userId, status: "READ" },
       select: { book: { select: { pages: true } } },
@@ -22,6 +24,7 @@ export async function userStats(userId: string): Promise<UserStats> {
       select: { currentPage: true },
     }),
     db.review.findMany({ where: { userId }, select: { rating: true, text: true } }),
+    db.donation.count({ where: { donorId: userId, status: "DOADO" } }),
   ]);
 
   const readCount = readEntries.length;
@@ -41,5 +44,5 @@ export async function userStats(userId: string): Promise<UserStats> {
     if (key in histogram) histogram[key] += 1;
   }
 
-  return { readCount, pagesRead, reviewCount, avgRating, histogram };
+  return { readCount, pagesRead, reviewCount, avgRating, histogram, donatedCount };
 }

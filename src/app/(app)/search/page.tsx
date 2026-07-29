@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
 import { EmptyState } from "@/components/EmptyState";
-import { BookOpenIcon } from "@/components/icons";
+import { BookOpenIcon, GiftIcon } from "@/components/icons";
 import { SectionTitle } from "@/components/SectionTitle";
 import { Spinner } from "@/components/Spinner";
 import { useRecommendations } from "@/lib/store/hooks";
@@ -23,6 +23,12 @@ function BookRow({ book }: { book: Book }) {
         <p className="truncate text-sm text-paperDim">
           {book.authors} · {book.year}
         </p>
+        {book.hasDonation && (
+          <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-foil/15 px-2 py-0.5 text-[10px] font-bold text-foil">
+            <GiftIcon size={10} />
+            Doação disponível
+          </span>
+        )}
       </div>
     </Link>
   );

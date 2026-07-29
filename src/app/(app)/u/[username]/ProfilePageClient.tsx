@@ -194,6 +194,7 @@ export function ProfilePageClient({ params }: { params: { username: string } }) 
           { label: "lidos", value: String(profile.stats.readCount) },
           { label: "páginas", value: formatCount(profile.stats.pagesRead) },
           { label: "reviews", value: String(profile.stats.reviewCount) },
+          { label: "livros doados", value: String(profile.stats.donatedCount) },
         ].map((stat, i) => (
           <div
             key={stat.label}

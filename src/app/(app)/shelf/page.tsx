@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { BookCover } from "@/components/BookCover";
 import { BottomSheet } from "@/components/BottomSheet";
 import { EmptyState } from "@/components/EmptyState";
-import { BookOpenIcon, LockIcon } from "@/components/icons";
+import { BookOpenIcon, GiftIcon, LockIcon } from "@/components/icons";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ReadingGoalCard } from "@/components/ReadingGoalCard";
 import { SectionTitle } from "@/components/SectionTitle";
@@ -354,6 +354,12 @@ export default function ShelfPage() {
                           {t}
                         </span>
                       ))}
+                      {book.hasDonation && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-foil/15 px-2 py-0.5 text-[10px] font-bold text-foil">
+                          <GiftIcon size={10} />
+                          Doação disponível
+                        </span>
+                      )}
                     </div>
                   </div>
                   {rating !== null && <Stars rating={rating} className="shrink-0 text-xs" />}

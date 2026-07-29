@@ -71,6 +71,7 @@ export function useMyStats() {
   const [readCount, setReadCount] = useState(0);
   const [pagesRead, setPagesRead] = useState(0);
   const [reviewCount, setReviewCount] = useState(0);
+  const [donatedCount, setDonatedCount] = useState(0);
   const [avgRating, setAvgRating] = useState<number | null>(null);
   const [histogram, setHistogram] = useState<HistogramBar[]>([]);
   const [ratedBooks, setRatedBooks] = useState<RatedBook[]>([]);
@@ -88,10 +89,12 @@ export function useMyStats() {
           reviewCount: number;
           avgRating: number;
           histogram: Record<string, number>;
+          donatedCount: number;
         };
         setReadCount(s.readCount);
         setPagesRead(s.pagesRead);
         setReviewCount(s.reviewCount);
+        setDonatedCount(s.donatedCount);
         setAvgRating(s.reviewCount > 0 || Object.values(s.histogram).some((c) => c > 0) ? s.avgRating : null);
         setHistogram(
           Object.entries(s.histogram)
@@ -114,7 +117,17 @@ export function useMyStats() {
 
   const maxCount = Math.max(0, ...histogram.map((h) => h.count));
 
-  return { readCount, pagesRead, reviewCount, avgRating, histogram, maxCount, ratedBooks, reviewEntries };
+  return {
+    readCount,
+    pagesRead,
+    reviewCount,
+    donatedCount,
+    avgRating,
+    histogram,
+    maxCount,
+    ratedBooks,
+    reviewEntries,
+  };
 }
 
 /** Recomendações: livros dos gêneros do usuário fora da estante (fallback: primeiros N do catálogo). */

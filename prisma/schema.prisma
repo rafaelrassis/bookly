@@ -58,6 +58,9 @@ model User {
   reviewLikes ReviewLike[]
   comments    Comment[]
   lists       List[]
+
+  donations        Donation[]        @relation("DonorDonations")
+  donationRequests DonationRequest[] @relation("SentRequests")
 }
 
 /// Conta OAuth vinculada a um User (Google/Amazon) — Auth.js PrismaAdapter.
@@ -179,6 +182,7 @@ model Book {
   quotes       Quote[]
   clubs        Club[]
   listBooks    ListBook[]
+  donations    Donation[]
 
   @@index([genre])
 }
@@ -369,4 +373,58 @@ model Message {
   createdAt DateTime  @default(now())
 
   @@index([clubId, createdAt])
+}
+
+enum DonationStatus {
+  DISPONIVEL
+  RESERVADO
+  DOADO
+}
+
+enum RequestStatus {
+  PENDENTE
+  ESCOLHIDO
+  RECUSADO
+}
+
+/// Doação de livro físico entre usuários (feed social). O contato do doador
+/// só é exposto (ver serializeDonation) pro próprio doador ou pro interessado
+/// ESCOLHIDO — nunca pra fila inteira.
+model Donation {
+  id        String         @id @default(cuid())
+  bookId    String
+  book      Book           @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  donorId   String
+  donor     User           @relation("DonorDonations", fields: [donorId], references: [id], onDelete: Cascade)
+  photoUrl  String
+  city      String
+  state     String         @db.Char(2) // UF
+  status    DonationStatus @default(DISPONIVEL)
+  whatsapp  String?
+  instagram String?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  donatedAt DateTime?
+
+  requests DonationRequest[]
+
+  @@index([bookId, status])
+  @@index([state, city, status])
+  @@index([donorId, status])
+}
+
+/// Interesse ("Quero este") de um usuário em uma Donation. ESCOLHIDO libera
+/// o contato do doador pro requester (ver serializeDonation).
+model DonationRequest {
+  id          String        @id @default(cuid())
+  donationId  String
+  donation    Donation      @relation(fields: [donationId], references: [id], onDelete: Cascade)
+  requesterId String
+  requester   User          @relation("SentRequests", fields: [requesterId], references: [id], onDelete: Cascade)
+  status      RequestStatus @default(PENDENTE)
+  createdAt   DateTime      @default(now())
+
+  @@unique([donationId, requesterId])
+  @@index([donationId, status])
+  @@index([requesterId])
 }
