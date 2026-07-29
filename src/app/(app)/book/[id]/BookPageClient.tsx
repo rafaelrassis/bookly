@@ -6,6 +6,9 @@ import Link from "next/link";
 import { Avatar } from "@/components/Avatar";
 import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
+import { BottomSheet } from "@/components/BottomSheet";
+import { CreateDonationForm } from "@/components/donation/CreateDonationForm";
+import { DonationList } from "@/components/donation/DonationList";
 import { ExpandableText } from "@/components/ExpandableText";
 import { RatingInput } from "@/components/RatingInput";
 import { SectionTitle } from "@/components/SectionTitle";
@@ -211,6 +214,8 @@ export function BookPageClient({ params }: { params: { id: string } }) {
   const [quotePage, setQuotePage] = useState("");
   const [publishingReview, setPublishingReview] = useState(false);
   const [savingQuote, setSavingQuote] = useState(false);
+  const [donating, setDonating] = useState(false);
+  const [donationsReload, setDonationsReload] = useState(0);
 
   const bookId = params.id;
 
@@ -617,6 +622,24 @@ export function BookPageClient({ params }: { params: { id: string } }) {
       </section>
 
       <section className="mt-6">
+        <div className="flex items-center justify-between">
+          <SectionTitle>Doação de livros</SectionTitle>
+          <button
+            type="button"
+            onClick={() => setDonating(true)}
+            className="text-xs font-bold text-foil hover:opacity-80"
+          >
+            + Doar este livro
+          </button>
+        </div>
+        <DonationList
+          bookId={bookId}
+          reloadSignal={donationsReload}
+          onToast={showToast}
+        />
+      </section>
+
+      <section className="mt-6">
         <SectionTitle>Reviews da comunidade</SectionTitle>
         <div className="mt-3 flex flex-col gap-3">
           {myReview && (
@@ -677,6 +700,20 @@ export function BookPageClient({ params }: { params: { id: string } }) {
           )}
         </div>
       </section>
+
+      {donating && (
+        <BottomSheet onClose={() => setDonating(false)} title="Doar este livro">
+          <CreateDonationForm
+            bookId={bookId}
+            onCancel={() => setDonating(false)}
+            onToast={showToast}
+            onCreated={() => {
+              setDonating(false);
+              setDonationsReload((n) => n + 1);
+            }}
+          />
+        </BottomSheet>
+      )}
     </div>
   );
 }

@@ -11,6 +11,36 @@ export type Book = {
   synopsis: string;
   /** Capa real (Google Books); ausente nos livros do catálogo semeado, que usam o gradiente. */
   coverUrl?: string;
+  /** true quando há doação DISPONIVEL deste livro — selo na busca/estante. */
+  hasDonation?: boolean;
+};
+
+export type DonationStatus = "DISPONIVEL" | "RESERVADO" | "DOADO";
+export type DonationRequestStatus = "PENDENTE" | "ESCOLHIDO" | "RECUSADO";
+
+/** Doação de um exemplar físico do livro — ver GET /api/books/[id]/donations. */
+export type ApiDonation = {
+  id: string;
+  bookId: string;
+  donorId: string;
+  photoUrl: string;
+  city: string;
+  state: string;
+  status: DonationStatus;
+  createdAt: string;
+  isDonor: boolean;
+  requestCount: number;
+  myRequest: { id: string; status: DonationRequestStatus } | null;
+  /** Só presente pro doador ou pro interessado ESCOLHIDO. */
+  contact: { whatsapp: string | null; instagram: string | null } | null;
+};
+
+/** Item da fila de interessados — só o doador enxerga (GET .../requests). */
+export type ApiDonationRequest = {
+  id: string;
+  status: DonationRequestStatus;
+  createdAt: string;
+  requester: { id: string; username: string | null; name: string; avatar: number; avatarUrl: string | null };
 };
 
 /** Lista pública de um usuário da comunidade, exibida na busca sem query. */

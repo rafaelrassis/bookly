@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { serializeBook } from "@/lib/books";
+import { idsWithDonations } from "@/lib/donations-map";
 
 /** Busca case-insensitive; acentos também são ignorados (mesma normalização do front). */
 function normalize(text: string): string {
@@ -39,10 +40,11 @@ export async function GET(req: Request) {
 
   const genres = Array.from(new Set(entries.map((e) => e.book.genre))).sort();
   const tags = Array.from(new Set(tagRows.map((t) => t.tag))).sort();
+  const withDonation = await idsWithDonations(entries.map((e) => e.bookId));
 
   const items = entries
     .map((e) => ({
-      book: serializeBook(e.book),
+      book: { ...serializeBook(e.book), hasDonation: withDonation.has(e.bookId) },
       entry: {
         status: e.status,
         currentPage: e.currentPage,

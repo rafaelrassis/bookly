@@ -44,8 +44,17 @@ function GearIcon() {
 
 export default function ProfilePage() {
   const user = useStore((s) => s.user);
-  const { readCount, pagesRead, reviewCount, avgRating, histogram, maxCount, ratedBooks, reviewEntries } =
-    useMyStats();
+  const {
+    readCount,
+    pagesRead,
+    reviewCount,
+    donatedCount,
+    avgRating,
+    histogram,
+    maxCount,
+    ratedBooks,
+    reviewEntries,
+  } = useMyStats();
   const recommended = useRecommendations(6);
   const { items: likedFeedReviews } = useFeed("liked");
   const favoriteBooks = useBooksByIds(user.top4);
@@ -65,6 +74,7 @@ export default function ProfilePage() {
     { label: "lidos", value: String(readCount) },
     { label: "páginas", value: formatCount(pagesRead) },
     { label: "reviews", value: String(reviewCount) },
+    { label: "livros doados", value: String(donatedCount) },
   ];
 
   return (

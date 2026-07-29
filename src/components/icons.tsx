@@ -37,6 +37,29 @@ export function BookOpenIcon({ size = 40 }: { size?: number }) {
   );
 }
 
+/** Selo de doação disponível (busca/estante) e ícone do fluxo de doação. */
+export function GiftIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="3" y="8" width="18" height="4" rx="1" />
+      <path d="M12 8v13" />
+      <path d="M19 12v7a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-7" />
+      <path d="M12 8H7.5a2.5 2.5 0 1 1 0-5C11 3 12 8 12 8Z" />
+      <path d="M12 8h4.5a2.5 2.5 0 1 0 0-5C13 3 12 8 12 8Z" />
+    </svg>
+  );
+}
+
 export function CopyIcon({ size = 14 }: { size?: number }) {
   return (
     <svg
