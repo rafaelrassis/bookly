@@ -11,6 +11,7 @@ import { withAt } from "@/lib/handle";
 import { readingDates } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import type { ApiComment, ApiReview } from "@/lib/types";
+import { apiErrorMessage } from "@/lib/apiError";
 import ReviewLoading from "./loading";
 
 export function ReviewPageClient({ params }: { params: { id: string } }) {
@@ -113,7 +114,7 @@ export function ReviewPageClient({ params }: { params: { id: string } }) {
       body: JSON.stringify({ text }),
     });
     if (!res.ok) {
-      showToast("Não foi possível comentar");
+      showToast(await apiErrorMessage(res, "Não foi possível comentar"));
       return;
     }
     const comment: ApiComment = await res.json();

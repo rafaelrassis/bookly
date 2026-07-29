@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
+import { checkRateLimit } from "@/lib/ratelimit";
 
 const CATEGORY_LABEL = {
   erro: "🐞 Erro",
@@ -17,6 +18,9 @@ const schema = z.object({
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "unauth" }, { status: 401 });
+
+  const limited = await checkRateLimit("feedback", session.user.id);
+  if (limited) return limited;
 
   const json = await req.json().catch(() => null);
   const parsed = schema.safeParse(json);

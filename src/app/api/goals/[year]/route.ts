@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { checkRateLimit } from "@/lib/ratelimit";
 
 function parseYear(yearStr: string): number | null {
   const year = Number(yearStr);
@@ -59,6 +60,9 @@ export async function PUT(req: Request, { params }: { params: { year: string } }
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "unauth" }, { status: 401 });
 
+  const limited = await checkRateLimit("write", session.user.id);
+  if (limited) return limited;
+
   const year = parseYear(params.year);
   if (year === null) return NextResponse.json({ error: "ano inválido" }, { status: 400 });
 
@@ -80,6 +84,9 @@ export async function PUT(req: Request, { params }: { params: { year: string } }
 export async function DELETE(_req: Request, { params }: { params: { year: string } }) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "unauth" }, { status: 401 });
+
+  const limited = await checkRateLimit("write", session.user.id);
+  if (limited) return limited;
 
   const year = parseYear(params.year);
   if (year === null) return NextResponse.json({ error: "ano inválido" }, { status: 400 });

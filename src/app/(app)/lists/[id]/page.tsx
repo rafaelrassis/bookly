@@ -11,6 +11,7 @@ import { SectionTitle } from "@/components/SectionTitle";
 import { Spinner } from "@/components/Spinner";
 import { useStore } from "@/lib/store";
 import type { ApiList, Book } from "@/lib/types";
+import { apiErrorMessage } from "@/lib/apiError";
 
 function DeleteListButton({ listId, listName }: { listId: string; listName: string }) {
   const router = useRouter();
@@ -22,7 +23,7 @@ function DeleteListButton({ listId, listName }: { listId: string; listName: stri
     const res = await fetch(`/api/lists/${listId}`, { method: "DELETE" });
     if (!res.ok) {
       setLoading(false);
-      alert("Não foi possível apagar a lista.");
+      alert(await apiErrorMessage(res, "Não foi possível apagar a lista."));
       return;
     }
     router.push("/shelf");

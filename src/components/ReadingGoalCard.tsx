@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { BottomSheet } from "@/components/BottomSheet";
 import { Spinner } from "@/components/Spinner";
 import { useStore } from "@/lib/store";
+import { apiErrorMessage } from "@/lib/apiError";
 
 type GoalData = {
   year: number;
@@ -50,8 +51,7 @@ async function saveGoal(year: number, targetBooks: number): Promise<GoalData> {
     body: JSON.stringify({ targetBooks }),
   });
   if (!res.ok) {
-    const { error } = await res.json().catch(() => ({ error: "Falha ao salvar meta" }));
-    throw new Error(typeof error === "string" ? error : "Falha ao salvar meta");
+    throw new Error(await apiErrorMessage(res, "Falha ao salvar meta"));
   }
   // PUT devolve a linha crua (ReadingGoal); progresso derivado (read/percent/pace)
   // só vem do GET, então recarrega pra manter o card em sincronia.

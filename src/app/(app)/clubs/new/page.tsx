@@ -9,6 +9,7 @@ import { SectionTitle } from "@/components/SectionTitle";
 import { Spinner } from "@/components/Spinner";
 import { useStore } from "@/lib/store";
 import type { Book, Visibility } from "@/lib/types";
+import { apiErrorMessage } from "@/lib/apiError";
 
 export default function NewClubPage() {
   const showToast = useStore((s) => s.showToast);
@@ -32,7 +33,7 @@ export default function NewClubPage() {
         body: JSON.stringify({ name: name.trim(), bookId: book.id, desc: desc.trim(), visibility }),
       });
       if (!res.ok) {
-        showToast("Não foi possível criar o clube");
+        showToast(await apiErrorMessage(res, "Não foi possível criar o clube"));
         return;
       }
       const { id, code } = await res.json();

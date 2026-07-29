@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { checkRateLimit } from "@/lib/ratelimit";
 
 /** Remove um membro do clube (só criador; criador não remove a si mesmo). */
 export async function DELETE(
@@ -9,6 +10,9 @@ export async function DELETE(
 ) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "unauth" }, { status: 401 });
+
+  const limited = await checkRateLimit("write", session.user.id);
+  if (limited) return limited;
 
   const club = await db.club.findUnique({ where: { id: params.id }, select: { creatorId: true } });
   if (!club) return NextResponse.json({ error: "não encontrado" }, { status: 404 });

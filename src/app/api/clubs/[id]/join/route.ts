@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { checkRateLimit } from "@/lib/ratelimit";
 
 /** Entra em clube público sem código. Privado exige POST /api/clubs/join. */
 export async function POST(_req: Request, { params }: { params: { id: string } }) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "unauth" }, { status: 401 });
   const uid = session.user.id;
+
+  const limited = await checkRateLimit("write", uid);
+  if (limited) return limited;
 
   const club = await db.club.findUnique({
     where: { id: params.id },

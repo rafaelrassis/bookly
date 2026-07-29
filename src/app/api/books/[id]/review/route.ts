@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { recomputeBookRating } from "@/lib/books";
+import { checkRateLimit } from "@/lib/ratelimit";
 
 const schema = z.object({
   rating: z.number().min(0).max(5).multipleOf(0.5),
@@ -18,6 +19,9 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   if (!session?.user?.id) return NextResponse.json({ error: "unauth" }, { status: 401 });
   const uid = session.user.id;
   const bookId = params.id;
+
+  const limited = await checkRateLimit("write", uid);
+  if (limited) return limited;
 
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });

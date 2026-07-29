@@ -15,6 +15,7 @@ import { withAt, withoutAt } from "@/lib/handle";
 import { useStore } from "@/lib/store";
 import { useModalA11y } from "@/lib/useModalA11y";
 import type { Book, ClubDetail, ClubMessage } from "@/lib/types";
+import { apiErrorMessage } from "@/lib/apiError";
 
 const POLL_INTERVAL_MS = 4000;
 
@@ -317,7 +318,7 @@ export default function ClubPage({ params }: { params: { id: string } }) {
     try {
       const res = await fetch(`/api/clubs/${club!.id}/join`, { method: "POST" });
       if (!res.ok) {
-        showToast("Não foi possível entrar no clube");
+        showToast(await apiErrorMessage(res, "Não foi possível entrar no clube"));
         return;
       }
       showToast("Você entrou no clube! 🎉");
@@ -333,8 +334,7 @@ export default function ClubPage({ params }: { params: { id: string } }) {
     try {
       const res = await fetch(`/api/clubs/${club!.id}/leave`, { method: "DELETE" });
       if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        showToast(data?.error ?? "Não foi possível sair do clube");
+        showToast(await apiErrorMessage(res, "Não foi possível sair do clube"));
         return;
       }
       showToast("Você saiu do clube");
@@ -360,7 +360,7 @@ export default function ClubPage({ params }: { params: { id: string } }) {
         body: JSON.stringify({ text, replyToId: replyToSnapshot?.id }),
       });
       if (!res.ok) {
-        showToast("Não foi possível publicar");
+        showToast(await apiErrorMessage(res, "Não foi possível publicar"));
         return;
       }
       const message: ClubMessage = await res.json();
@@ -384,7 +384,7 @@ export default function ClubPage({ params }: { params: { id: string } }) {
   async function regenerateCode() {
     const res = await fetch(`/api/clubs/${club!.id}/code/regenerate`, { method: "POST" });
     if (!res.ok) {
-      showToast("Não foi possível gerar um novo código");
+      showToast(await apiErrorMessage(res, "Não foi possível gerar um novo código"));
       return;
     }
     const { code } = await res.json();
@@ -413,7 +413,7 @@ export default function ClubPage({ params }: { params: { id: string } }) {
         body: JSON.stringify({ name, bookId: editBook.id, desc: editDesc.trim() }),
       });
       if (!res.ok) {
-        showToast("Não foi possível atualizar o clube");
+        showToast(await apiErrorMessage(res, "Não foi possível atualizar o clube"));
         return;
       }
       setEditing(false);
@@ -427,7 +427,7 @@ export default function ClubPage({ params }: { params: { id: string } }) {
   async function removeMember(userId: string, user: string) {
     const res = await fetch(`/api/clubs/${club!.id}/members/${userId}`, { method: "DELETE" });
     if (!res.ok) {
-      showToast("Não foi possível remover o membro");
+      showToast(await apiErrorMessage(res, "Não foi possível remover o membro"));
       return;
     }
     showToast(`${user} removido(a) do clube`);
@@ -438,7 +438,7 @@ export default function ClubPage({ params }: { params: { id: string } }) {
     if (!window.confirm("Excluir este clube apaga o mural pra sempre. Confirma?")) return;
     const res = await fetch(`/api/clubs/${club!.id}`, { method: "DELETE" });
     if (!res.ok) {
-      showToast("Não foi possível excluir o clube");
+      showToast(await apiErrorMessage(res, "Não foi possível excluir o clube"));
       return;
     }
     window.location.href = "/clubs";
