@@ -162,6 +162,10 @@ model Book {
   synopsis     String
   /// Capa real (Google Books); nula pro catálogo semeado, que usa o gradiente.
   coverUrl     String?
+  /// ISBN-13 (ou ISBN-10 se não houver 13) da edição resolvida — permite
+  /// deduplicar por livro já importado sem gastar cota do Google Books
+  /// (import de CSV do Goodreads).
+  isbn         String?  @unique
   avg          Float    @default(0)
   count        Int      @default(0)
   createdAt    DateTime @default(now())

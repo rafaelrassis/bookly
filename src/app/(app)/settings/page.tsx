@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signOut } from "next-auth/react";
 import { BackHeader } from "@/components/BackHeader";
 import { FeedbackModal } from "@/components/FeedbackModal";
+import { GoodreadsImport } from "@/components/GoodreadsImport";
 import { SectionTitle } from "@/components/SectionTitle";
 import { emailLoginEnabled } from "@/lib/featureFlags";
 import { useStore } from "@/lib/store";
@@ -180,6 +181,13 @@ export default function SettingsPage() {
               </button>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="mt-7">
+        <SectionTitle>Importar biblioteca</SectionTitle>
+        <div className="mt-3 rounded-2xl border border-line bg-card p-4">
+          <GoodreadsImport />
         </div>
       </section>
 
