@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { put } from "@vercel/blob";
+import * as Sentry from "@sentry/nextjs";
 import sharp from "sharp";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -62,6 +63,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ url: cacheBustedUrl });
   } catch (err) {
     console.error("avatar upload failed", err);
+    Sentry.captureException(err);
     return NextResponse.json(
       { error: "Falha ao enviar imagem. Tente novamente." },
       { status: 502 },

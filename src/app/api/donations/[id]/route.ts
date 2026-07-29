@@ -31,8 +31,13 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
   const session = await auth();
+  if (!session?.user?.id) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+
+  const limited = await checkRateLimit("write", session.user.id);
+  if (limited) return limited;
+
   const donation = await db.donation.findUnique({ where: { id: params.id } });
-  if (!donation || donation.donorId !== session?.user?.id)
+  if (!donation || donation.donorId !== session.user.id)
     return NextResponse.json({ error: "Não autorizado" }, { status: 403 });
   await db.donation.delete({ where: { id: params.id } });
   return NextResponse.json({ ok: true });

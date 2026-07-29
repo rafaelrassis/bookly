@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getOrCreateBook } from "@/lib/books";
@@ -53,13 +54,18 @@ export async function POST(req: Request) {
     book = await getOrCreateBook(bookId);
   } catch (err) {
     console.error("[donations] Google Books falhou:", err);
+    Sentry.captureException(err);
     return NextResponse.json({ error: "Não foi possível validar o livro" }, { status: 502 });
   }
   if (!book) return NextResponse.json({ error: "Livro não encontrado" }, { status: 404 });
 
-  const donation = await db.donation.create({
-    data: { ...data, bookId, donorId: session.user.id },
-  });
-
-  return NextResponse.json({ id: donation.id }, { status: 201 });
+  try {
+    const donation = await db.donation.create({
+      data: { ...data, bookId, donorId: session.user.id },
+    });
+    return NextResponse.json({ id: donation.id }, { status: 201 });
+  } catch (err) {
+    Sentry.captureException(err);
+    return NextResponse.json({ error: "Erro interno" }, { status: 500 });
+  }
 }

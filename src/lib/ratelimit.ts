@@ -28,6 +28,13 @@ export const limiters = {
 
 export type LimiterKey = keyof typeof limiters;
 
+/** Identificador pra rotas sem sessão (cadastro, reset de senha): IP do
+ * cliente via x-forwarded-for (Vercel injeta esse header). */
+export function clientIp(req: Request): string {
+  const xff = req.headers.get("x-forwarded-for");
+  return xff?.split(",")[0]?.trim() || "anon";
+}
+
 /**
  * Retorna null se liberado; um NextResponse 429 se estourou o limite.
  * Fail-open: se Redis não está configurado (dev) ou cai (prod), não bloqueia

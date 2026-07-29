@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -25,26 +26,31 @@ export async function PATCH(
   if (!donation || donation.donorId !== session.user.id)
     return NextResponse.json({ error: "Não autorizado" }, { status: 403 });
 
-  if (parsed.data.action === "recusar") {
-    await db.donationRequest.update({
-      where: { id: params.requestId },
-      data: { status: "RECUSADO" },
-    });
+  try {
+    if (parsed.data.action === "recusar") {
+      await db.donationRequest.update({
+        where: { id: params.requestId },
+        data: { status: "RECUSADO" },
+      });
+      return NextResponse.json({ ok: true });
+    }
+
+    if (donation.status !== "DISPONIVEL")
+      return NextResponse.json({ error: "Doação já reservada" }, { status: 409 });
+
+    await db.$transaction([
+      db.donationRequest.update({
+        where: { id: params.requestId },
+        data: { status: "ESCOLHIDO" },
+      }),
+      db.donation.update({
+        where: { id: params.id },
+        data: { status: "RESERVADO" },
+      }),
+    ]);
     return NextResponse.json({ ok: true });
+  } catch (err) {
+    Sentry.captureException(err);
+    return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   }
-
-  if (donation.status !== "DISPONIVEL")
-    return NextResponse.json({ error: "Doação já reservada" }, { status: 409 });
-
-  await db.$transaction([
-    db.donationRequest.update({
-      where: { id: params.requestId },
-      data: { status: "ESCOLHIDO" },
-    }),
-    db.donation.update({
-      where: { id: params.id },
-      data: { status: "RESERVADO" },
-    }),
-  ]);
-  return NextResponse.json({ ok: true });
 }

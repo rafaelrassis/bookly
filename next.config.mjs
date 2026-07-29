@@ -1,3 +1,5 @@
+import { withSentryConfig } from "@sentry/nextjs";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -7,6 +9,20 @@ const nextConfig = {
       { protocol: "https", hostname: "books.googleusercontent.com" },
     ],
   },
+  // instrumentation.ts (init do Sentry no server/edge) é experimental até o
+  // Next 15 — nesse projeto (Next 14.2) precisa do opt-in explícito.
+  experimental: {
+    instrumentationHook: true,
+  },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  // sem SENTRY_AUTH_TOKEN o plugin pula o upload de source maps (não falha o build).
+  silent: !process.env.CI,
+  widenClientFileUpload: true,
+  webpack: {
+    treeshake: { removeDebugLogging: true },
+  },
+});
