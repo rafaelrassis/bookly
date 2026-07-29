@@ -29,6 +29,7 @@ function Amazon(): OAuthConfig<AmazonProfile> {
     id: "amazon",
     name: "Amazon",
     type: "oauth",
+    checks: ["state"], // Login with Amazon não suporta PKCE (default do Auth.js p/ providers oauth)
     authorization: {
       url: "https://www.amazon.com/ap/oa",
       params: { scope: "profile" },
