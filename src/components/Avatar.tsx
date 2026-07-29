@@ -10,8 +10,8 @@ type AvatarProps = {
   user: string;
   size?: number;
   className?: string;
-  /** Índice em AVATAR_CHOICES pra usuários reais (vindos da API), que não
-   * estão no mock MOCK_USERS. Ignorado para o próprio usuário logado. */
+  /** Índice em AVATAR_CHOICES pra usuários reais (vindos da API).
+   * Ignorado para o próprio usuário logado. */
   avatarIndex?: number;
   /** Foto de perfil (Vercel Blob) de usuários reais, vinda da API. Ignorada
    * para o próprio usuário logado, que usa o avatarUrl do store. */

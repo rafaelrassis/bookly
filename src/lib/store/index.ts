@@ -3,15 +3,14 @@
 import { useMemo } from "react";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { SEED_NOTIFICATIONS } from "@/lib/notifications-seed";
 import type { Notification, UserState } from "@/lib/types";
 
 /**
  * Estado local (Zustand + localStorage) pro que ainda não é servidor:
- * notificações (mock) e efêmero de UI (toast/tema). Identidade/perfil
- * (Spec 2), estante/notas/reviews (Spec 3a), feed social/likes/comentários/
- * listas (Spec 3b) e clubes/chat (Spec 4) já vêm da API — ver AuthSync e
- * src/app/(app)/book, /shelf, /home, /clubs.
+ * notificações (sem model no Prisma, ficam só no store) e efêmero de UI
+ * (toast/tema). Identidade/perfil (Spec 2), estante/notas/reviews (Spec 3a),
+ * feed social/likes/comentários/listas (Spec 3b) e clubes/chat (Spec 4) já
+ * vêm da API — ver AuthSync e src/app/(app)/book, /shelf, /home, /clubs.
  */
 const EMPTY_USER: UserState = {
   loggedIn: false,
@@ -63,7 +62,7 @@ export const useStore = create<Store>()(
       user: EMPTY_USER,
       toast: null,
       theme: "dark",
-      notifications: [...SEED_NOTIFICATIONS],
+      notifications: [],
       clearedAt: null,
       readAt: null,
       hasHydrated: false,
@@ -88,7 +87,7 @@ export const useStore = create<Store>()(
       logout: () =>
         set({
           user: { ...EMPTY_USER, loggedIn: false },
-          notifications: [...SEED_NOTIFICATIONS],
+          notifications: [],
           clearedAt: null,
           readAt: null,
         }),

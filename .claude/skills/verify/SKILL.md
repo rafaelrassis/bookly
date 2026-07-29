@@ -5,11 +5,12 @@ description: Build, run and drive the bookly frontend to verify changes end-to-e
 
 # Verificando o bookly
 
-App Next.js 14 (App Router) com backend real: Postgres/Prisma + NextAuth
-(Credentials). Precisa de `DATABASE_URL`/`AUTH_SECRET` (copie `.env.example`
-pra `.env`) e de um Postgres rodando **antes** de buildar/testar. Tema
-claro/escuro via CSS variables + `data-theme`. Notificações são o único
-domínio ainda mocado (store local, sem tabela).
+App Next.js 14 (App Router) com backend real: Postgres/Prisma + Auth.js v5
+(Google/Amazon OAuth; Credentials por e-mail/senha opcional via flag).
+Precisa de `DATABASE_URL`/`AUTH_SECRET` (copie `.env.example` pra `.env`) e de
+um Postgres rodando **antes** de buildar/testar. Tema claro/escuro via CSS
+variables + `data-theme`. Notificações ainda não têm model no Prisma — ficam
+só no store local (client-only, sem seed/conteúdo fabricado).
 
 ## Banco, build e execução
 

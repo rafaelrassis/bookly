@@ -2,7 +2,7 @@
 
 Web app de avaliação e review de livros — um "Letterboxd de livros".
 
-**Backend real:** Postgres/Prisma + NextAuth (credentials), com auth, perfil/follow, catálogo/estante/reviews, clubes com chat, feed social e listas todos persistidos no banco (rotas em `src/app/api/**`). Não há mais nenhum dado de domínio mocado em `src/` — o único mock restante é a lista de **notificações** (`src/lib/notifications-seed.ts`, guardado no store local), já que notificações não têm model no Prisma. Não existe mais seed automático em nenhum ambiente: o catálogo nasce vazio e é populado pela busca real (Google Books, `getOrCreateBook`); contas são só as criadas via `/api/auth/register`.
+**Backend real:** Postgres/Prisma + Auth.js v5 (Google/Amazon OAuth), com auth, perfil/follow, catálogo/estante/reviews, clubes com chat, feed social e listas todos persistidos no banco (rotas em `src/app/api/**`). Não há nenhum dado de domínio mocado em `src/`: **notificações** (`src/lib/store`) ainda não têm model no Prisma, então ficam só no store local (client-only, sem seed) — o sino/página zeram e resetam com `localStorage.clear()`, sem atividade fabricada. Não existe mais seed automático em nenhum ambiente: o catálogo nasce vazio e é populado pela busca real (Google Books, `getOrCreateBook`); contas são só as criadas via OAuth ou `/api/auth/register`.
 
 📄 Especificação completa do produto (visão, fluxos, modelos de dados, roadmap, stack alvo): [`docs/ESPECIFICACAO.md`](docs/ESPECIFICACAO.md).
 
@@ -14,7 +14,7 @@ Principais features (v2 + v3):
 - Estante com filtros compostos (status/gênero/tag) e **listas** públicas/privadas (as públicas aparecem no perfil)
 - **Clubes do livro** públicos e privados (código de convite de 6 caracteres), criação de clube e mural em formato de **chat** com respostas citadas, menções `@` e mensagens de sistema de progresso
 - Perfil com histograma de notas, favoritos editáveis, faixa de estatísticas e **edição de perfil** (username, foto, bio, top 4)
-- **Configurações** com conta mocada, troca de senha fake e **tema claro/escuro** funcional (tokens em CSS variables)
+- **Configurações** com dados de conta reais (e-mail, troca de senha via `/api/users/me/password` quando o login por e-mail está habilitado), import do Goodreads, feedback e **tema claro/escuro** funcional (tokens em CSS variables)
 
 ## Rodando
 
@@ -87,7 +87,7 @@ de verdade sobre o estado do banco de produção.
 
 - Next.js 14 (App Router) + TypeScript estrito
 - Postgres + Prisma (`prisma/schema.prisma`, `prisma/migrations/`)
-- NextAuth (Credentials) para auth real — sessão via `src/middleware.ts`
+- NextAuth (Auth.js v5) — login via Google/Amazon OAuth (Credentials com e-mail/senha existe no código mas fica desligado por padrão, ver `NEXT_PUBLIC_EMAIL_LOGIN_ENABLED`); sessão via `src/middleware.ts`
 - Tailwind CSS com tokens próprios do design system
 - Fontes: Fraunces (marca, títulos de livro, números) e Karla (todo o resto) via `next/font/google`
 - **Zustand** — cache/estado de UI em `src/lib/store`, sincronizado com a sessão e a API (`AuthSync`); notificações ainda vivem só no store
@@ -98,7 +98,7 @@ de verdade sobre o estado do banco de produção.
 src/
   app/              rotas (App Router)
     page.tsx        landing (deslogado)
-    login/ signup/  auth real (NextAuth Credentials)
+    login/ signup/  auth real (NextAuth — Google/Amazon OAuth; Credentials por e-mail/senha opcional via flag)
     onboarding/     nome, username, bio e gêneros — grava via /api/users/me
     (app)/          rotas logadas (guard no middleware + tab bar)
       home/  search/  book/[id]/  shelf/  lists/[id]/
@@ -108,8 +108,7 @@ src/
   lib/
     db.ts           singleton do Prisma Client
     auth.ts / auth.config.ts   config do NextAuth
-    store/          store zustand (cache de sessão/perfil + notificações) e hooks derivados
-    notifications-seed.ts   notificações mocadas (único dado sem backend — sem model no Prisma)
+    store/          store zustand (cache de sessão/perfil + notificações, sem model no Prisma — client-only) e hooks derivados
     genres.ts / avatars.ts  constantes de UI (gêneros do onboarding, gradientes de avatar)
     types.ts        Book, ApiReview, Club, ShelfEntry, UserState…
     format.ts       formatação pt-BR (vírgula decimal, milhar, progresso)

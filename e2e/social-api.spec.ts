@@ -39,7 +39,7 @@ test("review com título aparece no feed geral e some do feed ao zerar a nota", 
   ).toBeUndefined();
 });
 
-test("feed 'seguindo' cai pro geral quando não segue ninguém, e filtra quando segue", async ({
+test("feed 'seguindo' fica vazio (emptyReason: no_follows) quando não segue ninguém, e filtra quando segue", async ({
   page,
   browser,
 }) => {
@@ -56,12 +56,12 @@ test("feed 'seguindo' cai pro geral quando não segue ninguém, e filtra quando 
   await pageB.request.put("/api/books/1984/review", { data: { rating: 5, text: "Obra-prima." } });
 
   const noFollowYet = await (await pageB.request.get("/api/feed?scope=following")).json();
-  expect(noFollowYet.fellBackToAll).toBe(true);
-  expect(noFollowYet.items.length).toBeGreaterThan(0);
+  expect(noFollowYet.emptyReason).toBe("no_follows");
+  expect(noFollowYet.items.length).toBe(0);
 
   await pageB.request.post(`/api/users/${a.username}/follow`);
   const followingFeed = await (await pageB.request.get("/api/feed?scope=following")).json();
-  expect(followingFeed.fellBackToAll).toBe(false);
+  expect(followingFeed.emptyReason).toBeUndefined();
   expect(
     followingFeed.items.every((r: { user: { username: string } }) => r.user.username === a.username)
   ).toBe(true);

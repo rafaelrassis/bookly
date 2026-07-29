@@ -46,6 +46,14 @@ async function main() {
       stdio: "inherit",
     });
     console.log("resolve-stuck-migration: resolvida, migrate deploy vai reaplicar a versão corrigida.");
+  } catch (err) {
+    // Banco novinho (primeiro `migrate deploy` de todos): `_prisma_migrations`
+    // ainda não existe, então não tem migração travada pra resolver — no-op.
+    if (err instanceof Error && err.message.includes("_prisma_migrations") && err.message.includes("does not exist")) {
+      console.log("resolve-stuck-migration: banco novo (_prisma_migrations ainda não existe), nada a fazer.");
+      return;
+    }
+    throw err;
   } finally {
     await db.$disconnect();
   }
