@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { BookCover } from "@/components/BookCover";
+import { MyDonations } from "@/components/donation/MyDonations";
 import { FeedPost } from "@/components/FeedPost";
 import { SectionTitle } from "@/components/SectionTitle";
 import { Stars } from "@/components/Stars";
@@ -125,18 +126,41 @@ export default function ProfilePage() {
       )}
 
       <div className="mt-6 flex rounded-2xl border border-line bg-card py-4">
-        {stats.map((stat, i) => (
-          <div
-            key={stat.label}
-            className={`flex-1 text-center ${i > 0 ? "border-l border-line" : ""}`}
-          >
-            <p className="font-display text-2xl font-bold text-foil">{stat.value}</p>
-            <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-paperDim">
-              {stat.label}
-            </p>
-          </div>
-        ))}
+        {stats.map((stat, i) => {
+          const isDonated = stat.label === "livros doados";
+          const content = (
+            <>
+              <p className="font-display text-2xl font-bold text-foil">{stat.value}</p>
+              <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-paperDim">
+                {stat.label}
+              </p>
+            </>
+          );
+          return isDonated ? (
+            <a
+              key={stat.label}
+              href="#minhas-doacoes"
+              className={`flex-1 text-center ${i > 0 ? "border-l border-line" : ""}`}
+            >
+              {content}
+            </a>
+          ) : (
+            <div
+              key={stat.label}
+              className={`flex-1 text-center ${i > 0 ? "border-l border-line" : ""}`}
+            >
+              {content}
+            </div>
+          );
+        })}
       </div>
+
+      <section id="minhas-doacoes" className="mt-6">
+        <SectionTitle>Minhas doações</SectionTitle>
+        <div className="mt-3">
+          <MyDonations />
+        </div>
+      </section>
 
       <section className="mt-6">
         <SectionTitle>Suas notas</SectionTitle>
