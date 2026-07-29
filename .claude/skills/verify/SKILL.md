@@ -39,8 +39,9 @@ mode esconde (ex.: batching de state updates do React).
 
 Use Playwright com o Chromium pré-instalado
 (`executablePath: "/opt/pw-browsers/chromium"`, viewport 390×844). Também dá
-pra rodar a suíte existente direto: `npx playwright test` (44 specs em
-`e2e/*.spec.ts`, cobrindo auth, books, clubs, social e users via API + UI).
+pra rodar a suíte existente direto: `npx playwright test` (6 arquivos, 35
+testes em `e2e/*.spec.ts`, cobrindo auth, books, clubs, social e users via
+API + UI).
 
 Fluxo completo a exercitar manualmente:
 

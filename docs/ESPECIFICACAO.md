@@ -1,9 +1,8 @@
-# 📚 BOOKLY - Especificação Completa & Unificada
+# 📚 BOOKLY — Especificação do Produto (estado real)
 
-**Versão:** 1.0  
-**Data:** 2024-07-20  
-**Status:** 🟢 Pronto para Desenvolvimento  
-**Timeline:** 12 semanas (4 sprints de 2-3 semanas)
+**Versão:** 2.0
+**Status:** 🟢 Em produção
+**Escopo:** este documento descreve o Bookly **como ele existe hoje** no repositório — não um plano futuro. A v1.0 (2024-07-20) era uma especificação-alvo escrita antes de qualquer código; o produto evoluiu de forma diferente dela em praticamente todo detalhe técnico (stack, schema, endpoints, até funcionalidades incluídas/excluídas). Esta versão substitui a anterior integralmente.
 
 ---
 
@@ -11,8 +10,8 @@
 
 1. [Visão Geral](#1-visão-geral)
 2. [Arquitetura do Produto](#2-arquitetura-do-produto)
-3. [Especificações Funcionais Detalhadas](#3-especificações-funcionais-detalhadas)
-4. [Mocks e Wireframes](#4-mocks-e-wireframes)
+3. [Especificações Funcionais](#3-especificações-funcionais)
+4. [Guia de Telas](#4-guia-de-telas)
 5. [Modelos de Dados](#5-modelos-de-dados)
 6. [Fluxos de Negócio](#6-fluxos-de-negócio)
 7. [Componentes UI](#7-componentes-ui)
@@ -20,12 +19,12 @@
 9. [Tratamento de Erros](#9-tratamento-de-erros)
 10. [Stack Técnico](#10-stack-técnico)
 11. [Arquitetura de Pastas](#11-arquitetura-de-pastas)
-12. [Roadmap & Sprints](#12-roadmap--sprints)
+12. [Histórico de Entregas & Próximos Passos](#12-histórico-de-entregas--próximos-passos)
 13. [Endpoints da API](#13-endpoints-da-api)
 14. [Schema do Banco (Prisma)](#14-schema-do-banco-prisma)
 15. [Environment Variables](#15-environment-variables)
-16. [Métricas & KPIs](#16-métricas--kpis)
-17. [Riscos & Mitigação](#17-riscos--mitigação)
+16. [Riscos & Mitigação](#16-riscos--mitigação)
+17. [Definição de Pronto (DoD)](#17-definição-de-pronto-dod)
 
 ---
 
@@ -33,2640 +32,970 @@
 
 ## 1.1 Sobre o Produto
 
-**Bookly** é uma plataforma social de comunidades de leitura que conecta leitores através de clubes de livros, avaliações e discussões em tempo real.
+**Bookly** é um "Letterboxd de livros": uma rede social de leitura onde usuários avaliam livros, acompanham o progresso de leitura, seguem outros leitores e participam de clubes do livro com mural em formato de chat.
 
-**Objetivo Principal:** Criar um espaço onde leitores possam descobrir novos livros, compartilhar opiniões, acompanhar seu progresso de leitura e formar comunidades ao redor de obras literárias.
+## 1.2 Público-alvo
 
-## 1.2 Público Alvo
+- Leitores casuais e assíduos que já usam ou usariam Goodreads/Letterboxd
+- Pessoas que quer registrar o que leem, dar nota e escrever review curta
+- Grupos/clubes de leitura que já se organizam informalmente e querem um espaço próprio
 
-- Leitores casual (18-65 anos)
-- Fãs de livros em geral
-- Pessoas interessadas em comunidades online
-- Usuários que querem acompanhar leitura em grupo
+## 1.3 Funcionalidades entregues
 
-## 1.3 Principais Funcionalidades (MVP)
+1. ✅ Autenticação via Google/Amazon OAuth (Auth.js v5); login por e-mail/senha existe no código mas fica desligado por padrão (`NEXT_PUBLIC_EMAIL_LOGIN_ENABLED`)
+2. ✅ Onboarding pós-primeiro-login (username, nome, bio, gêneros favoritos)
+3. ✅ Catálogo de livros populado sob demanda via Google Books API (sem seed em produção)
+4. ✅ Página do livro: nota agregada, estante (Quero ler/Lendo/Lido), progresso de leitura (páginas ou %), avaliação com meia estrela, review, tags e citações
+5. ✅ Feed social (Geral/Seguindo/Curtidas) com curtidas e comentários em reviews
+6. ✅ Sistema de follow (seguir/deixar de seguir, listas de seguidores/seguindo, sugestões de leitores)
+7. ✅ Estante pessoal com filtros compostos (status/gênero/tag) e listas de livros públicas/privadas
+8. ✅ Clubes do livro públicos e privados (código de convite de 6 caracteres), com mural em formato de chat (respostas citadas, menções `@`, mensagens de sistema de progresso)
+9. ✅ Perfil público (`/u/[username]`) e próprio, com histograma de notas, favoritos (top 4), estatísticas e abas de atividade
+10. ✅ Metas de leitura anuais com anel de progresso e indicador de ritmo
+11. ✅ Import de biblioteca via CSV do Goodreads (dedupe + relatório)
+12. ✅ Configurações: tema claro/escuro, troca de senha real (quando login por e-mail habilitado), formulário de feedback
+13. ✅ Notificações (curtida/comentário/follow) — só no store local, sem tabela no Prisma
+14. ✅ Upload de foto de perfil via Vercel Blob (crop + resize para WebP 400×400)
+15. ✅ Rate limiting (sliding window) via Upstash Redis nas rotas de escrita, fail-open sem Redis configurado
 
-1. ✅ Autenticação completa (login, signup, password reset)
-2. ✅ Perfil de usuário (foto, bio, dados pessoais)
-3. ✅ Verificação de email (código 6 dígitos)
-4. ✅ Página de livro (informações + ratings agregados)
-5. ✅ Sistema de reviews (avaliações com ratings e datas)
-6. ✅ Clubes de leitura (criação, gerenciamento, membros)
-7. ✅ Chat em tempo real (WebSocket com scroll)
-8. ✅ Gerenciamento de clube (apenas criador)
-9. ✅ Código de acesso privado (para clubes privados)
-10. ✅ Configurações de conta (email, senha)
+## 1.4 Fora de escopo (não construído, e sem plano concreto de construir)
 
-## 1.4 Não Incluído no MVP
-
-- ❌ Telefone (será adicionado em atualização rápida - Sprint 2)
-- ❌ Notificações push
-- ❌ Reações no chat
-- ❌ Integração Goodreads
+- ❌ Telefone/SMS como método de verificação
+- ❌ Autenticação de dois fatores (2FA)
+- ❌ Gerenciamento de sessões ativas (múltiplos dispositivos)
+- ❌ Chat em tempo real via WebSocket — o mural de clube usa fetch/refresh, não push
+- ❌ Notificações push ou com backend persistente
+- ❌ Reações com emoji no chat do clube
 - ❌ App mobile nativo
-- ❌ Recomendações com IA
-- ❌ Badges/Gamificação
+- ❌ Recomendações com IA (as recomendações atuais são regra simples: gêneros do usuário menos o que já está na estante)
+- ❌ Badges/gamificação
 
 ---
 
 # 2. ARQUITETURA DO PRODUTO
 
-## 2.1 Mapa de Páginas
+## 2.1 Mapa de Rotas
 
 ```
-├── Home (Não Logado) - Landing page pública
-├── Login - Autenticação
-├── Signup - Registro
-├── Home (Logado) - Dashboard
-├── Perfil do Usuário - Visualizar perfil
-├── Editar Perfil - Atualizar dados + foto
-├── Página do Livro - Detalhes + reviews
-├── Página do Livro / Adicionar Review - Modal/Page para nova avaliação
-├── Clube Específico - Visualizar clube + chat + membros
-├── Clube Criado (Gerenciamento) - Painel de admin do criador
-└── Configuração - Settings (email, telefone, senha)
+Público (sem sessão)
+├── /                      Landing (redireciona para /home se logado)
+├── /login                 Login (Google, Amazon; e-mail/senha se habilitado)
+├── /signup                Cadastro (idem)
+├── /forgot-password       Recuperação de senha (só com login por e-mail habilitado)
+└── /onboarding            1º acesso pós-OAuth: username, nome, bio, gêneros
+
+Logado (grupo (app) — guard no middleware + layout; tab bar fixa)
+├── /home                  Feed (Geral/Seguindo), leituras atuais, em alta
+├── /search                Busca de livros (catálogo interno + Google Books) e listas da comunidade
+├── /book/[id]              Detalhe do livro, estante, progresso, avaliação, tags, citações
+├── /review/[id]             Review individual (permalink, likes/comentários)
+├── /shelf                  Estante pessoal (filtros) + minhas listas + metas de leitura
+├── /lists/[id]              Detalhe de uma lista (adicionar/remover livro, visibilidade)
+├── /clubs                  Meus clubes / clubes públicos, criar/entrar por código
+├── /clubs/new              Criar clube
+├── /clubs/[id]              Clube: mural (chat), membros, progresso, gerenciamento (criador)
+├── /profile                Perfil próprio
+├── /profile/edit           Editar perfil (username, foto, bio, top 4, gêneros)
+├── /u/[username]            Perfil público de outro usuário
+├── /notifications          Notificações (client-only, sem backend)
+└── /settings               Conta, senha, tema, import Goodreads, feedback, sair
 ```
 
-## 2.2 Fluxo de Usuário Principal
+Tab bar (mobile, `src/components/TabBar.tsx`): **Início · Estante · Clube · Perfil**.
+
+## 2.2 Guarda de acesso
+
+`src/middleware.ts` roda no Edge (Auth.js) e redireciona para `/login` qualquer rota protegida sem sessão — exceto para crawlers de preview de link (WhatsApp/Telegram, ver `src/lib/bot.ts`), que precisam renderizar a árvore para a metadata (title/OG image) chegar até eles. `src/app/(app)/layout.tsx` reforça o mesmo gate no server e redireciona para `/onboarding` quando `User.onboarded` é falso.
+
+## 2.3 Fluxo Principal do Usuário
 
 ```
-Home (não logado)
+Landing (/) 
     ↓
-Login / Signup
+Login/Signup (Google ou Amazon OAuth)
     ↓
-Home (logado)
-    ├─→ Buscar Livro
-    │    ├─→ Página do Livro
-    │    │    ├─→ Adicionar Review
-    │    │    └─→ Ver Reviews
-    │    └─→ Criar Clube
-    │
-    ├─→ Meus Clubes
-    │    ├─→ Clube Específico
-    │    │    ├─→ Chat (enviar msgs)
-    │    │    └─→ Ver Membros
-    │    └─→ Gerenciar Clube (se criador)
-    │         ├─→ Editar dados
-    │         ├─→ Remover membros
-    │         └─→ Ver código de acesso
-    │
-    └─→ Perfil
-         ├─→ Editar Perfil
-         │    └─→ Upload de Foto
-         └─→ Configurações
-              ├─→ Alterar Email (com verificação)
-              ├─→ Adicionar Telefone (com verificação)
-              └─→ Alterar Senha (com verificação)
+Onboarding (1ª vez: username, nome, bio, gêneros) — grava via PATCH /api/users/me
+    ↓
+Home
+    ├─→ Buscar livro → Página do livro → estante/progresso/avaliação/review/tags/citações
+    ├─→ Feed (Geral/Seguindo) → Review → curtir/comentar
+    ├─→ Estante → filtros, listas, metas de leitura
+    ├─→ Clubes → criar, entrar por código, mural em chat, gerenciar (criador)
+    └─→ Perfil → editar perfil, seguir/seguidores, configurações (tema, senha, import, feedback, sair)
 ```
 
 ---
 
-# 3. ESPECIFICAÇÕES FUNCIONAIS DETALHADAS
+# 3. ESPECIFICAÇÕES FUNCIONAIS
 
-## 3.1 PÁGINA DO LIVRO & ADICIONAR REVIEW
+## 3.1 Autenticação & Onboarding
 
-### 3.1.1 Exibição de Informações do Livro
+- **Login/cadastro:** Google e Amazon (Login with Amazon, provider OAuth2 genérico — Auth.js não tem provider nativo). E-mail é a identidade única (`User.email @unique`); `allowDangerousEmailAccountLinking: true` em ambos os providers permite logar com qualquer um dos dois usando o mesmo e-mail sem cair em `OAuthAccountNotLinked`.
+- **Login por e-mail/senha:** existe no código (`Credentials` + bcrypt, `/signup`, `/forgot-password`, verificação de e-mail por código de 6 dígitos), mas fica **desligado por padrão** atrás de `NEXT_PUBLIC_EMAIL_LOGIN_ENABLED`. Reativar essa flag religa esse fluxo completo.
+- **Onboarding:** conta OAuth nasce com `onboarded: false` e sem `username`. `/onboarding` coleta nome, username (validado em tempo real via `check-username`), bio e gêneros favoritos; ao concluir, `PATCH /api/users/me` com `onboarded: true` libera o acesso ao grupo `(app)`.
+- **Sessão:** JWT (Auth.js, `session: { strategy: "jwt" }`), decodificado no middleware Edge sem round-trip ao banco.
 
-**Localização na página:**
-- Capa do livro (lado esquerdo ou topo)
-- Informações básicas (título, autor, ano)
-- ⭐ **Média de avaliações** (ex: 4.5) - À ESQUERDA junto aos outros textos
-- 📊 **Número total de avaliações** (ex: 247 avaliações) - À ESQUERDA
-- Descrição
-- Gênero(s)
-- Botões: "Comece a Ler", "Ler Amostra", "Comprar"
+## 3.2 Livro & Avaliação
 
-**Exemplo:**
-```
-┌─────────────┐  ┌──────────────────────────┐
-│   [Capa]    │  │ Dom Casmurro             │
-│             │  │ Machado de Assis         │
-│             │  │ ⭐ 4.5 (247 reviews)     │ ← Média e nº à esquerda
-│             │  │ Romance Brasileiro       │
-│             │  │ Publicado em 1899        │
-│             │  │ 📖 Descrição...          │
-│             │  │ [Comece a Ler]           │
-│             │  │ [Ler Amostra]            │
-│             │  │ [Comprar]                │
-└─────────────┘  └──────────────────────────┘
-```
+- **Catálogo:** cresce sob demanda. `getOrCreateBook(id)` busca no Google Books na primeira vez que um `id` é referenciado e faz cache local (`Book`), revalidando campos voláteis (capa/sinopse) a cada 30 dias.
+- **Nota:** rating e review são a **mesma entidade** (`Review`, 1 por usuário+livro). Escala 0–5 em passos de 0,5 (meia estrela). Nota ≤ 0 apaga a review inteira. Avaliar marca o livro como **Lido** automaticamente (se ainda não estava).
+- **Estante (por livro):** status `WANT_TO_READ` / `READING` / `READ`; progresso (`currentPage`/`lastPage`) na unidade escolhida pelo usuário (páginas ou %, `User.progressUnit`). Datas de início/fim de leitura ficam no `ShelfEntry` e são copiadas para a `Review` quando existem.
+- **Tags:** livres, por usuário+livro (`BookTag`), usadas como filtro na estante.
+- **Citações:** texto + página opcional (`Quote`), por usuário+livro.
+- **Nota agregada do livro:** `Book.avg`/`Book.count` são cache, recalculados (`recomputeBookRating`) a cada gravação/remoção de review.
 
-### 3.1.2 Visualização de Reviews
+## 3.3 Feed Social & Follow
 
-**Features:**
-- Reviews exibidas como cards abaixo do livro
-- Cada review mostra: Avatar do usuário, nome, rating (⭐), texto truncado
-- **Clicar na review abre visualização completa** (modal ou página dedicada)
-- Reviews longas podem ser truncadas (ex: 3 linhas max, depois "Ler Mais")
+- **Feed** (`GET /api/feed?scope=`): `all` (toda review com texto não vazio), `following` (só de quem eu sigo — **sem tabela** quando não sigo ninguém: retorna `emptyReason: "no_follows"`, sem cair no feed geral), `liked` (reviews que curti). Paginado por cursor.
+- **Curtidas/comentários** em reviews (`ReviewLike`, `Comment` — thread flat, sem resposta a comentário).
+- **Follow:** `Follow` único por par (seguidor, seguido). "Descobrir leitores" sugere até 6 contas onboardadas que o usuário ainda não segue (exclui a si mesmo).
 
-**Informações da review:**
-- ⭐ Rating (1-5 estrelas)
-- Nome e avatar do autor
-- Data de início da leitura (ex: "Leu de 01/06/2024")
-- Data de término da leitura (ex: "até 15/07/2024")
-- Texto da avaliação
-- Botões: "Ler Mais", "👍 12", "💬 3"
+## 3.4 Estante, Listas & Metas de Leitura
 
-**Exemplo card:**
-```
-┌────────────────────────────────────────┐
-│ Sofia ⭐⭐⭐⭐⭐                          │
-│ "Uma obra-prima! A escrita é poética  │
-│  e a trama é envolvente. Leia!"       │
-│ [Ler Mais]  👍 12  💬 3               │
-│ Leu de 01/06 até 15/07/2024           │
-└────────────────────────────────────────┘
-```
+- **Estante** (`/shelf`): filtros compostos por status, gênero e tag, busca por título/autor.
+- **Listas** (`List`/`ListBook`): nome, visibilidade pública/privada, livros ordenados. Listas públicas aparecem no perfil do dono e na busca sem query ("Listas da comunidade").
+- **Metas de leitura** (`ReadingGoal`): meta anual de livros; progresso é **derivado** da estante (`ShelfEntry` `READ` com `finishedAt` no ano, não persistido na meta) — mostra anel de progresso e ritmo (livros lidos vs. esperado pelo dia do ano).
 
-### 3.1.3 Adicionar Review (Modal/Form)
+## 3.5 Clubes do Livro
 
-**Campos obrigatórios:**
-1. **Classificação** (1-5 estrelas - interativo, clicar para alterar)
-2. **Título** (opcional, max 150 caracteres)
-3. **Conteúdo de texto** (obrigatório, 10-5000 caracteres)
+- **Criação:** nome, livro (do catálogo), descrição opcional, público ou privado.
+- **Código de convite:** 6 caracteres, só para clubes privados, gerado na criação e regenerável pelo criador (`generateClubCode`, retry em colisão via `P2002`).
+- **Entrar:** direto (público) ou por código de 6 chars (privado, `POST /api/clubs/join`).
+- **Mural (chat):** mensagens (`Message`) com resposta citada (`replyTo`), menção `@`, e mensagens de sistema (`system: true`) emitidas automaticamente quando um membro atualiza o progresso de leitura do livro do clube — uma vez por mudança de percentual, não a cada request.
+- **Gerenciamento (só criador):** editar nome/descrição/livro, remover membro, ver/regenerar código, excluir clube.
+- **Progresso do clube:** média do progresso de leitura de todos os membros no livro do clube (`averageClubProgress`).
 
-**Campos adicionais:**
-4. **Data de Início da Leitura** (data picker)
-5. **Data de Término da Leitura** (data picker)
-6. **Contém Spoiler** (checkbox)
-7. **Apenas para meus amigos** (checkbox - privacidade)
+Não é WebSocket: o mural busca mensagens via fetch (paginação simples), sem push em tempo real.
 
-**Validações:**
-- Rating: 1-5 obrigatório
-- Conteúdo: 10-5000 caracteres
-- Data fim >= Data início
-- Mostrar contador de caracteres em tempo real
+## 3.6 Perfil & Configurações
 
-**Botões:** Cancelar | Publicar
+- **Perfil próprio/público:** histograma de notas, favoritos editáveis (top 4 livros), estatísticas (livros lidos, páginas lidas, nº de reviews, média), abas de atividade (notas/reviews/curtidas), listas públicas, recomendações.
+- **Editar perfil:** username (único, citext — case-insensitive), nome, bio, top 4, gêneros, foto.
+- **Upload de avatar:** crop client-side (`react-easy-crop`) → `sharp` redimensiona para 400×400 WebP → Vercel Blob (`avatars/<userId>.webp`, `allowOverwrite`, URL com cache-bust `?v=timestamp`).
+- **Configurações:** e-mail (somente leitura — imutável via OAuth), troca de senha real (só com login por e-mail habilitado), tema claro/escuro (Zustand + CSS variables `data-theme`), import de biblioteca do Goodreads, formulário de feedback (Resend), sair da conta.
+
+## 3.7 Notificações
+
+Curtida, comentário e novo seguidor. **Sem model no Prisma** — vivem só no Zustand local (client-only), sincronizadas por sessão/`localStorage`. Sino mostra contagem de não lidas; página lista e permite marcar como lidas / limpar tudo. Sem seed nem conteúdo fabricado: uma conta nova não vê nenhuma notificação até gerar atividade real.
+
+## 3.8 Import Goodreads
+
+`GoodreadsImport` (Configurações) aceita o CSV de export do Goodreads. Cada linha é resolvida contra o catálogo (por ISBN, evitando gastar cota do Google Books) ou busca no Google Books (limite de 200 lookups por import). Grava estante (status mapeado de `shelf`) e review (se `myRating > 0`) via upsert idempotente — reimportar o mesmo CSV atualiza, não duplica.
+
+## 3.9 Feedback
+
+Formulário simples em Configurações (`FeedbackModal`) que envia e-mail via Resend (`POST /api/feedback`, rate limit dedicado e mais agressivo).
 
 ---
 
-## 3.2 PÁGINA DE CONFIGURAÇÃO
-
-### 3.2.1 Gerenciamento de Email
-
-**Fluxo:**
-1. Usuário está na página de Configurações
-2. Vê campo: "Email Atual: sofia@email.com ✓"
-3. Clica em "Alterar Email"
-4. Abre modal com:
-   - Campo: Email Atual (read-only)
-   - Campo: Novo Email (input)
-   - Botão: "Continuar"
-5. Após clicar "Continuar":
-   - Sistema envia código para o NOVO email
-   - Modal muda para: "Verificar Email"
-   - Campo: Código (6 dígitos)
-   - Opção: "Reenviar (30s)"
-6. Usuário insere código
-7. Email é atualizado ✓
-
-**Validações:**
-- Novo email válido (RFC 5322)
-- Novo email único no sistema
-- Código correto (TTL: 15 minutos)
-
-**Feedback:**
-- "Email atualizado com sucesso"
-- "Código expirado. Solicite um novo."
-- "Código inválido"
-
-### 3.2.2 Gerenciamento de Telefone
-
-**Fluxo (se usuário não tem telefone):**
-1. Seção "TELEFONE" mostra "Nenhum telefone registrado"
-2. Clica "Adicionar Telefone"
-3. Modal abre com:
-   - Seletor de país (padrão: Brasil +55)
-   - Campo: Número de telefone
-   - Botão: "Continuar"
-4. Após clicar "Continuar":
-   - Sistema envia código via SMS
-   - Modal muda para: "Verificar Telefone"
-   - Campo: Código (6 dígitos)
-   - Opção: "Reenviar (30s)"
-5. Usuário insere código
-6. Telefone é registrado ✓
-
-**Validações:**
-- Formato correto (Brasil: +55 11 98765-4321)
-- Telefone único no sistema
-- Código correto (TTL: 15 minutos)
-
-### 3.2.3 Gerenciamento de Senha
-
-**Fluxo:**
-1. Clica "Alterar Senha"
-2. Modal abre com:
-   - Campo: Senha Atual (input password)
-   - Campo: Nova Senha
-   - Campo: Confirmar Nova Senha
-   - Requisitos visíveis em tempo real:
-     * ☐ Mínimo 8 caracteres
-     * ☐ Pelo menos 1 MAIÚSCULA
-     * ☐ Pelo menos 1 minúscula
-     * ☐ Pelo menos 1 número
-     * ☐ Pelo menos 1 caractere especial (@#$%&)
-3. Após preencher:
-   - Sistema envia link/código de verificação para email
-   - Usuário clica no link ou insere código
-4. Após verificação:
-   - Senha é atualizada
-   - Usuário é desconectado (logout de todas as sessões)
-
-**Validações:**
-- Senha atual correta
-- Nova senha diferente da anterior
-- Confirma quer atender todos os requisitos
-- Senhas correspondem
-
----
-
-## 3.3 PÁGINA DO CLUBE ESPECÍFICO
-
-### 3.3.1 Visualização de Membros
-
-**Layout:**
-- Mostra primeiros 3-4 membros com avatar, nome, status
-- Botão: "+ X outros membros"
-
-**Ao clicar em "+ X outros membros":**
-- Abre modal/drawer com lista completa
-- Para cada membro exibir:
-  * Avatar
-  * Nome
-  * Status: "✓ Finalizou em 15/07" ou "◐ 45% completado"
-  * Última atividade (ex: "online agora" ou "online há 2h")
-
-**Ordenação:** Membros ativos primeiro
-
-### 3.3.2 Chat do Clube
-
-**Comportamento CRÍTICO:**
-- ⚠️ O chat NÃO deve expandir a tela com a quantidade de mensagens
-- ⚠️ Deve ter SCROLL vertical com altura máxima fixa
-- Altura máxima: 400px (mobile) ou 600px (desktop)
-- Overflow: auto (mostrar scroll bar)
-
-**Funcionalidades:**
-- Exibir últimas 50 mensagens por padrão
-- Scroll up carrega mensagens mais antigas (lazy load)
-- Cada mensagem mostra:
-  * Avatar + Nome do usuário
-  * Conteúdo do texto
-  * Hora/data (no hover)
-  * Número de reações (futuro)
-
-**Input de mensagem:**
-- Campo de texto expandível (max 500 caracteres)
-- Botão: "Enviar" ou Enter key
-- Mostrar indicador "escrevendo..." quando outro usuário está digitando
-
----
-
-## 3.4 PÁGINA DO CLUBE CRIADO (GERENCIAMENTO)
-
-### 3.4.1 Permissões do Criador
-
-**O criador pode:**
-- ✓ Editar nome do clube
-- ✓ Editar livro lido/seleção de livros futuros
-- ✓ Editar bio/descrição do clube
-- ✓ Listar todos os membros
-- ✓ Remover membros do clube
-- ✓ Ver código de acesso (se privado)
-- ✓ Regenerar código de acesso
-
-**Membros normais:**
-- ✓ Ver informações do clube
-- ✓ Enviar mensagens no chat
-- ✓ Adicionar reviews do livro lido
-- ✗ Editar dados do clube
-- ✗ Remover outros membros
-- ✗ Ver código de acesso
-
-### 3.4.2 Código de Acesso para Clubes Privados
-
-**Apenas para clubes com `isPrivate: true`**
-
-**Visibilidade:**
-- SOMENTE o criador pode ver o código
-- Membros não veem o código
-
-**Formato:**
-- Código aleatório de 8 caracteres (ex: A7K3M9Z2)
-- Gerado automaticamente ao criar clube privado
-
-**Componentes:**
-1. Campo de exibição do código (read-only com background especial)
-2. Botão "Copiar Código" (copia para clipboard)
-3. Botão "Regenerar Código" (com confirmação)
-
-**Regenerar:**
-- Ao clicar "Regenerar":
-  * Modal de confirmação aparece
-  * "⚠️ O código atual não funcionará mais"
-  * "Membros existentes não serão afetados"
-  * Botões: "Cancelar" | "Regenerar"
-- Após confirmar:
-  * Novo código é gerado
-  * Código anterior é invalidado
-  * Toast: "Novo código: K2N8P5Q3"
-
-### 3.4.3 Painel de Gerenciamento (Layout)
-
-```
-┌─────────────────────────────────────────────┐
-│ ⚙️ GERENCIAR CLUBE                          │
-├─────────────────────────────────────────────┤
-│                                             │
-│ Nome do Clube:                             │
-│ ┌──────────────────────────────────────┐   │
-│ │ Dom Casmurro Lovers                  │   │
-│ └──────────────────────────────────────┘   │
-│ [Salvar]                                   │
-│                                             │
-│ ─────────────────────────────────────────  │
-│                                             │
-│ Livro:                                     │
-│ ┌──────────────────────────────────────┐   │
-│ │ Dom Casmurro - Machado [x]           │   │
-│ └──────────────────────────────────────┘   │
-│ [Salvar]                                   │
-│                                             │
-│ ─────────────────────────────────────────  │
-│                                             │
-│ Bio/Descrição:                             │
-│ ┌──────────────────────────────────────┐   │
-│ │ Clube para leitores que amam...     │   │
-│ │ (234 / 500)                         │   │
-│ └──────────────────────────────────────┘   │
-│ [Salvar]                                   │
-│                                             │
-│ ─────────────────────────────────────────  │
-│                                             │
-│ Tipo de Clube:                             │
-│ ○ Público   ● Privado                     │
-│                                             │
-│ ─────────────────────────────────────────  │
-│                                             │
-│ CÓDIGO DE ACESSO (PRIVADO)                 │
-│ A7K3M9Z2  [Copiar] [Regenerar]            │
-│                                             │
-│ ─────────────────────────────────────────  │
-│                                             │
-│ MEMBROS (15)                               │
-│ ┌──────────────────────────────────────┐   │
-│ │ Sofia (criador)       [Remover]     │   │
-│ │ João                  [Remover]     │   │
-│ │ Maria                 [Remover]     │   │
-│ │ ... (mais 12)                        │   │
-│ └──────────────────────────────────────┘   │
-│                                             │
-│ [Excluir Clube]  [Voltar]                  │
-│                                             │
-└─────────────────────────────────────────────┘
-```
-
----
-
-## 3.5 EDITAR PERFIL
-
-### 3.5.1 Upload de Foto de Perfil
-
-**Layout:**
-- Avatar atual (200x200px, com fallback de iniciais)
-- Botão: "Alterar Foto"
-
-**Fluxo de upload:**
-1. Usuário clica "Alterar Foto"
-2. Abre file picker (ou clica direto na foto)
-3. Seleciona imagem (JPG, PNG, GIF)
-4. Preview da imagem é mostrado em modal
-5. Dimensões esperadas: 200x200px (redimencionaremos)
-6. Tamanho máximo: 5MB
-7. Botões: "Cancelar" | "Confirmar"
-8. Após confirmar:
-   - Upload para AWS S3/Cloud Storage
-   - Thumbnail 200x200px é gerado
-   - Perfil é atualizado
-   - Toast: "Foto de perfil atualizada!"
-
-**Validações:**
-- Tipos aceitos: JPG, PNG, GIF, WebP
-- Tamanho máximo: 5MB
-- Gerar thumbnail quadrado 200x200px
-
-### 3.5.2 Outros Campos Editáveis
-
-```
-Nome Completo:
-┌──────────────────────────────────────┐
-│ Sofia Mendoza                        │
-└──────────────────────────────────────┘
-
-Nome de Usuário:
-┌──────────────────────────────────────┐
-│ sofiam.reads                         │
-└──────────────────────────────────────┘
-(verificar unicidade em tempo real)
-
-Bio (até 500 caracteres):
-┌──────────────────────────────────────┐
-│ Leitora de ficção científica e       │
-│ mystery. Sempre buscando novas       │
-│ histórias!                           │
-│ 78 / 500                             │
-└──────────────────────────────────────┘
-
-Cidade:
-┌──────────────────────────────────────┐
-│ São Paulo, SP              [↓]       │
-└──────────────────────────────────────┘
-(auto-complete com lista de cidades)
-
-Livro Favorito:
-┌──────────────────────────────────────┐
-│ O Cortiço                            │
-└──────────────────────────────────────┘
-
-Gêneros Favoritos:
-☑ Romance   ☑ Ficção Científica
-☐ Mistério  ☑ Histórico
-
-☑ Perfil Público
-
-[Cancelar]  [Salvar Alterações]
-```
-
----
-
-## 3.6 PÁGINA DE LOGIN
-
-### 3.6.1 Placeholders com Referências Literárias
-
-**REMOVER:** Textos sugeridos pré-preenchidos (auto-complete)
-**IMPLEMENTAR:** Placeholders com nomes fantasmas (referências literárias)
-
-**Exemplos de Placeholders:**
-- Email input: "capitu@biblioteca.com"
-- Username input: "Frankenstein" ou "Alice" ou "Sherlock"
-- Password: deixar vazio (apenas mostrar dots)
-
-**Referências Literárias Sugeridas:**
-- Capitu (Dom Casmurro - Machado)
-- Frankenstein (Frankenstein - Mary Shelley)
-- Elizabeth (Cumberlandm - Cronenberg)
-- Jane (Jane Eyre - Brontë)
-- Heathcliff (Wuthering Heights - Brontë)
-- Alice (Alice in Wonderland - Carroll)
-- Sherlock (Sherlock Holmes - Conan Doyle)
-- Gatsby (The Great Gatsby - Fitzgerald)
-
-### 3.6.2 Ícones de Botões
-
-**REMOVER:** Ícones/símbolos dos botões
-- ❌ Remover ícone do botão "Começar a Ler"
-- ❌ Remover ícones similares de outros botões do app
-- ✅ Manter apenas texto simples ou usar ícones muito sutis
-
-### 3.6.3 Layout da Página
-
-```
-┌──────────────────────────────────────┐
-│   ENTRAR NA SUA CONTA                │
-├──────────────────────────────────────┤
-│                                      │
-│ Email ou Usuário:                   │
-│ ┌──────────────────────────────────┐ │
-│ │ capitu                           │ │ ← Placeholder
-│ └──────────────────────────────────┘ │
-│                                      │
-│ Senha:                              │
-│ ┌──────────────────────────────────┐ │
-│ │ ••••••••••                       │ │
-│ └──────────────────────────────────┘ │
-│                                      │
-│ [Entrar]                            │
-│                                      │
-│ Não tem conta? [Criar Conta]        │
-│ [Esqueci minha senha]               │
-│                                      │
-└──────────────────────────────────────┘
-```
-
-**Validações:**
-- Email/Username: não vazio
-- Senha: não vazio
-- Feedback: "Credenciais inválidas" (genérico por segurança)
-
----
-
-## 3.7 HOME NÃO LOGADA
-
-### 3.7.1 Hero Section
-
-```
-┌──────────────────────────────────────┐
-│ Bem-vindo a Bookly                  │
-│ Comunidades de Leitura              │
-│                                      │
-│ Conecte-se com outros leitores,     │
-│ descubra novos livros e forme       │
-│ comunidades ao seu redor.            │
-│                                      │
-│ [Comece a Ler Agora] [Explorar]     │
-└──────────────────────────────────────┘
-```
-
-### 3.7.2 Blocos de Apresentação (Alterar Títulos)
-
-**Atual (ruim):**
-- "Encontre Leitores" ❌
-- "Avalie Livros" ❌
-- "Faça Amigos" ❌
-
-**Novo (bom):**
-- "Descubra Comunidades" ✅
-- "Leia e Avalie" ✅
-- "Conecte-se com Leitores" ✅
-
-**Layout:**
-
-```
-┌──────────────────────────────────────────┐
-│                                          │
-│  BLOCO 1: Descubra Comunidades          │
-│  ┌────────────────────────────────────┐ │
-│  │ Encontre clubes de leitura sobre  │ │
-│  │ seus livros favoritos             │ │
-│  │ [Explorar Clubes]                 │ │
-│  └────────────────────────────────────┘ │
-│                                          │
-│  BLOCO 2: Leia e Avalie                 │
-│  ┌────────────────────────────────────┐ │
-│  │ Compartilhe suas opiniões sobre   │ │
-│  │ livros e veja o que outros        │ │
-│  │ leitores acham                    │ │
-│  │ [Começar a Ler]                   │ │
-│  └────────────────────────────────────┘ │
-│                                          │
-│  BLOCO 3: Conecte-se com Leitores       │
-│  ┌────────────────────────────────────┐ │
-│  │ Faça amizade com pessoas que      │ │
-│  │ compartilham seus interesses      │ │
-│  │ literários                        │ │
-│  │ [Ver Leitores]                    │ │
-│  └────────────────────────────────────┘ │
-│                                          │
-└──────────────────────────────────────────┘
-```
-
----
-
-# 4. MOCKS E WIREFRAMES
-
-## 4.1 HOME NÃO LOGADA (Desktop)
-
-```
-┌─────────────────────────────────────────────┐
-│         BOOKLY - Comunidades de Leitura    │
-├─────────────────────────────────────────────┤
-│                                             │
-│    ┌───────────────────────────────────┐   │
-│    │ Bem-vindo a Bookly                │   │
-│    │ Conecte-se com outros leitores    │   │
-│    │ [Comece a Ler Agora]  [Explorar]  │   │
-│    └───────────────────────────────────┘   │
-│                                             │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  │
-│  │Descubra  │  │ Leia e   │  │Conecte-  │  │
-│  │Comunidades│  │ Avalie  │  │se com... │  │
-│  │[>]       │  │[>]       │  │[>]       │  │
-│  └──────────┘  └──────────┘  └──────────┘  │
-│                                             │
-│  ┌──────────────────────────────────────┐  │
-│  │ DEPOIMENTOS / ESTATÍSTICAS           │  │
-│  │ "Adorei encontrar outros fãs do...  │  │
-│  │  Agora lemos juntos!" - Maria       │  │
-│  └──────────────────────────────────────┘  │
-│                                             │
-│                                             │
-│                     [Footer]                │
-│                                             │
-└─────────────────────────────────────────────┘
-```
-
-## 4.2 PÁGINA DE LOGIN
-
-```
-┌──────────────────────────────────────────────┐
-│                                              │
-│           ENTRAR NA SUA CONTA                │
-│                                              │
-│  Email ou Usuário:                          │
-│  ┌──────────────────────────────────────┐   │
-│  │ Capitu                               │   │ ← Placeholder
-│  └──────────────────────────────────────┘   │
-│                                              │
-│  Senha:                                     │
-│  ┌──────────────────────────────────────┐   │
-│  │ ••••••••••                           │   │
-│  └──────────────────────────────────────┘   │
-│                                              │
-│  [Entrar]                                   │
-│                                              │
-│  Não tem conta? [Criar Conta]               │
-│  [Esqueci minha senha]                      │
-│                                              │
-└──────────────────────────────────────────────┘
-```
-
-## 4.3 HOME LOGADA
-
-```
-┌──────────────────────────────────────────────┐
-│ Bookly        🔍  👤  ⚙️                     │
-├──────────────────────────────────────────────┤
-│                                              │
-│ Olá, Sofia! 👋                               │
-│                                              │
-│ SEÇÃO 1: Meus Clubes                        │
-│ ┌──────────────────────────────────────────┐│
-│ │ 📚 Clube de Mystery  [Ver +]             ││
-│ │ 5 membros, lendo: "Código Da Vinci"      ││
-│ │ Progresso: 45%                            ││
-│ └──────────────────────────────────────────┘│
-│                                              │
-│ SEÇÃO 2: Livros em Leitura                  │
-│ ┌───────┐  ┌───────┐  ┌───────┐            │
-│ │ Livro │  │ Livro │  │ Livro │            │
-│ │ 1     │  │ 2     │  │ 3     │            │
-│ │ 35%   │  │ 62%   │  │ 89%   │            │
-│ └───────┘  └───────┘  └───────┘            │
-│                                              │
-│ SEÇÃO 3: Feed de Reviews                    │
-│ ┌──────────────────────────────────────────┐│
-│ │ João ⭐⭐⭐⭐⭐ "Livro Incrível!"          ││
-│ │ "Não consegui parar de ler"               ││
-│ │ em 15/07/2024                             ││
-│ └──────────────────────────────────────────┘│
-│                                              │
-└──────────────────────────────────────────────┘
-```
-
-## 4.4 PÁGINA DO LIVRO
-
-```
-┌──────────────────────────────────────────────┐
-│ ← BOOKLY        🔍  👤  ⚙️                  │
-├──────────────────────────────────────────────┤
-│                                              │
-│ ┌─────────────┐  ┌──────────────────────┐   │
-│ │   [Capa]    │  │ Dom Casmurro         │   │
-│ │             │  │ Machado de Assis     │   │
-│ │             │  │                      │   │
-│ │ ⭐⭐⭐⭐⭐    │  │ ⭐ 4.5 (247 reviews) │   │ ← À esquerda
-│ │ (247)       │  │                      │   │
-│ │             │  │ Romance Brasileiro   │   │
-│ │ [Adicionar  │  │ Publicado em 1899    │   │
-│ │  ao Club]   │  │                      │   │
-│ │             │  │ 📖 Descrição...      │   │
-│ │             │  │                      │   │
-│ │             │  │ [Comece a Ler]       │   │
-│ │             │  │ [Ler Amostra]        │   │
-│ │             │  │ [Comprar]            │   │
-│ └─────────────┘  └──────────────────────┘   │
-│                                              │
-│ AVALIAÇÕES                                   │
-│ ┌──────────────────────────────────────────┐│
-│ │ Sofia ⭐⭐⭐⭐⭐                           ││
-│ │ "Uma obra-prima! A escrita é poética    ││
-│ │  e a trama é envolvente. Leia!"         ││
-│ │ [Ler Mais]  👍 12  💬 3                   ││
-│ │ Leu de 01/06 até 15/07/2024              ││
-│ └──────────────────────────────────────────┘│
-│                                              │
-│ ┌──────────────────────────────────────────┐│
-│ │ Bruno ⭐⭐⭐⭐                            ││
-│ │ "Bom livro, recomendo aos fãs de..." ││
-│ │ [Ler Mais]  👍 5  💬 1                    ││
-│ │ Leu de 20/06 até 10/07/2024              ││
-│ └──────────────────────────────────────────┘│
-│                                              │
-│ [Adicionar Minha Avaliação]                  │
-│                                              │
-└──────────────────────────────────────────────┘
-```
-
-### 4.4.1 Modal - Adicionar Review
-
-```
-┌──────────────────────────────────────────────┐
-│ Sua Avaliação - Dom Casmurro              X  │
-├──────────────────────────────────────────────┤
-│                                              │
-│ Classificação: ⭐⭐⭐⭐⭐                    │
-│ (Clique para mudar)                         │
-│                                              │
-│ Título (opcional):                          │
-│ ┌──────────────────────────────────────────┐│
-│ │ Uma obra-prima de Machado                │
-│ └──────────────────────────────────────────┘│
-│                                              │
-│ Sua Avaliação:                              │
-│ ┌──────────────────────────────────────────┐│
-│ │ A escrita é poética e hipnotizante...   │
-│ │                                          │
-│ │ (min: 10 caracteres, max: 5000)         │
-│ └──────────────────────────────────────────┘│
-│ Caracteres: 156 / 5000                      │
-│                                              │
-│ Data de Início:                             │
-│ ┌──────────────────────────────────────────┐│
-│ │ 01/06/2024  [📅]                        │
-│ └──────────────────────────────────────────┘│
-│                                              │
-│ Data de Término:                            │
-│ ┌──────────────────────────────────────────┐│
-│ │ 15/07/2024  [📅]                        │
-│ └──────────────────────────────────────────┘│
-│                                              │
-│ ☐ Contém Spoiler                            │
-│ ☐ Apenas para meus amigos (privada)        │
-│                                              │
-│        [Cancelar]    [Publicar]              │
-│                                              │
-└──────────────────────────────────────────────┘
-```
-
-## 4.5 PÁGINA DE EDITAR PERFIL
-
-```
-┌──────────────────────────────────────────────┐
-│ ← Meu Perfil                          [✓]   │
-├──────────────────────────────────────────────┤
-│                                              │
-│              [Foto do Perfil]                │
-│            ┌────────────────────┐            │
-│            │   [Avatar 200x200]  │            │
-│            └────────────────────┘            │
-│              [Alterar Foto]                  │
-│                                              │
-│ Nome Completo:                              │
-│ ┌──────────────────────────────────────────┐│
-│ │ Sofia Mendoza                            │
-│ └──────────────────────────────────────────┘│
-│                                              │
-│ Nome de Usuário:                            │
-│ ┌──────────────────────────────────────────┐│
-│ │ sofiam.reads                             │
-│ └──────────────────────────────────────────┘│
-│                                              │
-│ Bio (até 500 caracteres):                   │
-│ ┌──────────────────────────────────────────┐│
-│ │ Leitora de ficção científica e mystery   │
-│ │ Sempre buscando novas histórias!          │
-│ │ 78 / 500                                  │
-│ └──────────────────────────────────────────┘│
-│                                              │
-│ Cidade:                                     │
-│ ┌──────────────────────────────────────────┐│
-│ │ São Paulo, SP              [↓]           │
-│ └──────────────────────────────────────────┘│
-│                                              │
-│ Livro Favorito:                             │
-│ ┌──────────────────────────────────────────┐│
-│ │ O Cortiço                                │
-│ └──────────────────────────────────────────┘│
-│                                              │
-│ Gêneros Favoritos:                          │
-│ ☑ Romance   ☑ Ficção Científica            │
-│ ☐ Mistério  ☑ Histórico                     │
-│                                              │
-│ ☑ Perfil Público                            │
-│                                              │
-│        [Cancelar]    [Salvar Alterações]    │
-│                                              │
-└──────────────────────────────────────────────┘
-```
-
-### 4.5.1 Modal - Upload de Foto
-
-```
-┌──────────────────────────────────────────────┐
-│ Alterar Foto de Perfil                    X  │
-├──────────────────────────────────────────────┤
-│                                              │
-│ Selecione uma imagem:                       │
-│ [Escolher Arquivo] (JPG, PNG, GIF)          │
-│                                              │
-│ ┌──────────────────────────────────────────┐│
-│ │ Preview da Imagem                        │
-│ │ ┌────────────────────────────────────┐   │
-│ │ │   [Foto Selecionada]               │   │
-│ │ │   200x200 pixels                   │   │
-│ │ └────────────────────────────────────┘   │
-│ └──────────────────────────────────────────┘│
-│                                              │
-│ Tamanho: 2.3 MB / 5 MB máximo                │
-│ Status: ✅ Pronto para enviar                │
-│                                              │
-│        [Cancelar]    [Enviar Foto]          │
-│                                              │
-└──────────────────────────────────────────────┘
-```
-
-## 4.6 PÁGINA DE CONFIGURAÇÃO
-
-### 4.6.1 Tab - Conta
-
-```
-┌──────────────────────────────────────────────┐
-│ ← Configurações         [Conta] [Segurança]  │
-├──────────────────────────────────────────────┤
-│                                              │
-│ EMAIL                                        │
-│ Email atual: sofia@email.com ✓              │
-│                                              │
-│ ┌──────────────────────────────────────────┐│
-│ │ sofiam@newemail.com                      │
-│ │ [Verificado] ou [Não verificado]         │
-│ └──────────────────────────────────────────┘│
-│ [Alterar Email]                             │
-│                                              │
-│ ─────────────────────────────────────────── │
-│                                              │
-│ TELEFONE                                     │
-│ Nenhum telefone registrado                  │
-│                                              │
-│ ┌──────────────────────────────────────────┐│
-│ │ +55 11 98765-4321         [×]            │
-│ │ Verificado em 15/07/2024                 │
-│ └──────────────────────────────────────────┘│
-│ [Adicionar Telefone]                        │
-│                                              │
-│ ─────────────────────────────────────────── │
-│                                              │
-│ SESSÕES ATIVAS                               │
-│ ✓ Chrome - São Paulo, SP - 2h atrás        │
-│ ✓ Safari - São Paulo, SP - 1h atrás        │
-│ [Encerrar todas as sessões]                 │
-│                                              │
-└──────────────────────────────────────────────┘
-```
-
-### 4.6.2 Modal - Alterar Email (Passo 1)
-
-```
-┌──────────────────────────────────────────────┐
-│ Alterar Email                              X  │
-├──────────────────────────────────────────────┤
-│                                              │
-│ Email Atual:                                │
-│ sofia@email.com                             │
-│                                              │
-│ Novo Email:                                 │
-│ ┌──────────────────────────────────────────┐│
-│ │ sofiam@newemail.com                      │
-│ └──────────────────────────────────────────┘│
-│                                              │
-│        [Cancelar]    [Continuar]            │
-│                                              │
-└──────────────────────────────────────────────┘
-```
-
-### 4.6.3 Modal - Verificar Email (Passo 2)
-
-```
-┌──────────────────────────────────────────────┐
-│ Verificar Email                            X  │
-├──────────────────────────────────────────────┤
-│                                              │
-│ Enviamos um código de verificação para:     │
-│ sofiam@newemail.com                         │
-│                                              │
-│ Código (6 dígitos):                         │
-│ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐   │
-│ │ 1   │ │ 2   │ │ 3   │ │ 4   │ │ 5   │   │
-│ └─────┘ └─────┘ └─────┘ └─────┘ └─────┘   │
-│ ┌─────┐                                    │
-│ │ 6   │                                    │
-│ └─────┘                                    │
-│                                              │
-│ Não recebeu? [Reenviar (30s)]               │
-│                                              │
-│        [Cancelar]    [Verificar]            │
-│                                              │
-└──────────────────────────────────────────────┘
-```
-
-### 4.6.4 Tab - Segurança
-
-```
-┌──────────────────────────────────────────────┐
-│ ← Configurações         [Conta] [Segurança]  │
-├──────────────────────────────────────────────┤
-│                                              │
-│ SENHA                                        │
-│ Última mudança: 45 dias atrás                │
-│ [Alterar Senha]                             │
-│                                              │
-│ ─────────────────────────────────────────── │
-│                                              │
-│ AUTENTICAÇÃO DE DOIS FATORES                │
-│ Status: Desativada                          │
-│ [Ativar 2FA]                                │
-│                                              │
-│ ─────────────────────────────────────────── │
-│                                              │
-│ DISPOSITIVOS CONFIÁVEIS                     │
-│ ✓ Laptop Dell (Chrome)                      │
-│ ✓ iPhone (Safari)                           │
-│ [Gerenciar]                                 │
-│                                              │
-│ ─────────────────────────────────────────── │
-│                                              │
-│ PRIVACIDADE                                 │
-│ ☑ Perfil visível para outros leitores      │
-│ ☑ Reviews visíveis publicamente             │
-│ ☐ Adicionar em buscas (indexar)            │
-│                                              │
-└──────────────────────────────────────────────┘
-```
-
-### 4.6.5 Modal - Alterar Senha
-
-```
-┌──────────────────────────────────────────────┐
-│ Alterar Senha                              X  │
-├──────────────────────────────────────────────┤
-│                                              │
-│ Senha Atual:                                │
-│ ┌──────────────────────────────────────────┐│
-│ │ ••••••••••                               │
-│ └──────────────────────────────────────────┘│
-│                                              │
-│ Nova Senha:                                 │
-│ ┌──────────────────────────────────────────┐│
-│ │                                          │
-│ └──────────────────────────────────────────┘│
-│ Requisitos:                                 │
-│ ☐ Mínimo 8 caracteres                      │
-│ ☐ Pelo menos 1 MAIÚSCULA                   │
-│ ☐ Pelo menos 1 minúscula                   │
-│ ☐ Pelo menos 1 número                      │
-│ ☐ Pelo menos 1 caractere especial          │
-│                                              │
-│ Confirme Nova Senha:                        │
-│ ┌──────────────────────────────────────────┐│
-│ │ ••••••••••                               │
-│ └──────────────────────────────────────────┘│
-│                                              │
-│        [Cancelar]    [Alterar Senha]       │
-│                                              │
-│ ℹ️ Você será desconectado de todos os       │
-│    dispositivos após alterar a senha       │
-│                                              │
-└──────────────────────────────────────────────┘
-```
-
-## 4.7 PÁGINA DO CLUBE ESPECÍFICO
-
-```
-┌──────────────────────────────────────────────┐
-│ ← Dom Casmurro Lovers  👥 [Menu]             │
-├──────────────────────────────────────────────┤
-│                                              │
-│ 📚 Dom Casmurro                              │
-│ ⭐⭐⭐⭐⭐  Machado de Assis                   │
-│                                              │
-│ Progresso do Clube:                         │
-│ ███████░░░░░░░░░░  45% concluído (9/20)    │
-│                                              │
-│ ┌──────────────────────────────────────────┐│
-│ │ MEMBROS DO CLUBE                         │
-│ │ Sofia ✓ 100% (Finalizou)                │
-│ │ João ◐ 67% (Lendo)                      │
-│ │ Maria ◐ 45% (Lendo)                     │
-│ │ + 6 outros membros                       │
-│ │ [Ver Todos +6]                           │
-│ └──────────────────────────────────────────┘│
-│                                              │
-│ ┌──────────────────────────────────────────┐│
-│ │ CHAT DO CLUBE                            │
-│ │                                          │
-│ │ Sofia: "Que livro incrível! Capitu      │
-│ │ é um personagem único..."                │
-│ │ [16:30] 👍 3                              │
-│ │                                          │
-│ │ João: "Concordo! A escrita de           │
-│ │ Machado é hipnotizante"                 │
-│ │ [16:45] 👍 2                              │
-│ │                                          │
-│ │ Maria: "Alguém mais acha Capitu         │
-│ │ manipuladora?"                          │
-│ │ [17:00] 👍 1  💬 4                        │
-│ │                                          │
-│ │ [scroll para ver mais mensagens ↑]       │
-│ │                                          │
-│ │ ┌────────────────────────────────────┐   │
-│ │ │ Digite sua mensagem aqui...        │   │
-│ │ │                      [Enviar]      │   │
-│ │ └────────────────────────────────────┘   │
-│ └──────────────────────────────────────────┘│
-│                                              │
-└──────────────────────────────────────────────┘
-```
-
-### 4.7.1 Modal - Ver Todos os Membros
-
-```
-┌──────────────────────────────────────────────┐
-│ Membros do Clube (15)                      X  │
-├──────────────────────────────────────────────┤
-│                                              │
-│ [🔍 Buscar membro]                          │
-│                                              │
-│ ┌──────────────────────────────────────────┐│
-│ │ Sofia ✓ Finalizou em 15/07              │
-│ │ sofiam.reads • São Paulo                 │
-│ │ @sofiam                                  │
-│ └──────────────────────────────────────────┘│
-│                                              │
-│ ┌──────────────────────────────────────────┐│
-│ │ João ◐ 67% completado                    │
-│ │ joaoreads • Rio de Janeiro                │
-│ │ @joaolisboa                              │
-│ └──────────────────────────────────────────┘│
-│                                              │
-│ ┌──────────────────────────────────────────┐│
-│ │ Maria ◐ 45% completado                   │
-│ │ mariabooks • São Paulo                    │
-│ │ @mariasv                                  │
-│ └──────────────────────────────────────────┘│
-│                                              │
-│ [scroll para ver mais...]                   │
-│                                              │
-└──────────────────────────────────────────────┘
-```
-
-## 4.8 PÁGINA DO CLUBE CRIADO (GERENCIAMENTO)
-
-```
-┌──────────────────────────────────────────────┐
-│ ← Dom Casmurro Lovers  [Gerenciar]           │
-├──────────────────────────────────────────────┤
-│                                              │
-│ ⚙️ GERENCIAR CLUBE                           │
-│                                              │
-│ Nome do Clube:                              │
-│ ┌──────────────────────────────────────────┐│
-│ │ Dom Casmurro Lovers                      │
-│ └──────────────────────────────────────────┘│
-│ [Salvar]                                    │
-│                                              │
-│ ─────────────────────────────────────────── │
-│                                              │
-│ Livro:                                      │
-│ ┌──────────────────────────────────────────┐│
-│ │ Dom Casmurro - Machado de Assis [x]      │
-│ └──────────────────────────────────────────┘│
-│ [Salvar]                                    │
-│                                              │
-│ ─────────────────────────────────────────── │
-│                                              │
-│ Bio/Descrição:                              │
-│ ┌──────────────────────────────────────────┐│
-│ │ Clube para leitores que amam obras      │
-│ │ de Machado de Assis. Vamos analisar    │
-│ │ juntos!                                 │
-│ │ (234 / 500)                             │
-│ └──────────────────────────────────────────┘│
-│ [Salvar]                                    │
-│                                              │
-│ ─────────────────────────────────────────── │
-│                                              │
-│ Tipo de Clube:                              │
-│ ○ Público   ● Privado                      │
-│ [Salvar]                                    │
-│                                              │
-│ ─────────────────────────────────────────── │
-│                                              │
-│ CÓDIGO DE ACESSO (PRIVADO)                  │
-│ A7K3M9Z2  [Copiar] [Regenerar]             │
-│                                              │
-│ ─────────────────────────────────────────── │
-│                                              │
-│ MEMBROS (15)                                │
-│ ┌──────────────────────────────────────────┐│
-│ │ Sofia (criador)       [Remover]         │
-│ │ João                  [Remover]         │
-│ │ Maria                 [Remover]         │
-│ │ ... (mais 12)                            │
-│ └──────────────────────────────────────────┘│
-│                                              │
-│ ─────────────────────────────────────────── │
-│                                              │
-│ [Excluir Clube]  [Voltar]                   │
-│                                              │
-└──────────────────────────────────────────────┘
-```
-
-## 4.9 Componentes Reutilizáveis
-
-### 4.9.1 AvatarUpload
-
-```
-┌─ Avatar Upload ────────────────────────┐
-│                                        │
-│         ┌──────────────────┐           │
-│         │ [Avatar 200px]   │           │
-│         └──────────────────┘           │
-│    [Alterar Foto de Perfil]            │
-│                                        │
-│ Tipos: JPG, PNG, GIF (max: 5MB)       │
-│                                        │
-└────────────────────────────────────────┘
-```
-
-### 4.9.2 VerificationModal
-
-```
-┌─ Verification Code ────────────────────┐
-│                                        │
-│ Enviamos código para:                  │
-│ sofia@email.com                        │
-│                                        │
-│ Código (6 dígitos):                    │
-│ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ ┌───┐ │
-│ │   │ │   │ │   │ │   │ │   │ │   │ │
-│ └───┘ └───┘ └───┘ └───┘ └───┘ └───┘ │
-│                                        │
-│ Não recebeu? [Reenviar em 30s]         │
-│                                        │
-│ [Cancelar]  [Verificar]                │
-│                                        │
-└────────────────────────────────────────┘
-```
-
-### 4.9.3 ReviewCard
-
-```
-┌─ Review ───────────────────────────────┐
-│                                        │
-│ Sofia ⭐⭐⭐⭐⭐                          │
-│ "Uma obra-prima! A escrita é poética  │
-│  e a trama é envolvente. Leia!"       │
-│ [Ler Mais] 👍 12 💬 3                 │
-│                                        │
-│ Leu: 01/06/2024 → 15/07/2024         │
-│                                        │
-└────────────────────────────────────────┘
-     ↓ Expandido
-┌─ Review - Completo ────────────────────┐
-│                                        │
-│ Sofia ⭐⭐⭐⭐⭐                          │
-│                                        │
-│ "Uma obra-prima! A escrita é          │
-│  poética e hipnotizante. A trama      │
-│  é envolvente do início ao fim.       │
-│  Machado de Assis é um gênio.         │
-│  Leia!" [continua...]                 │
-│                                        │
-│ Leu: 01/06/2024 → 15/07/2024         │
-│                                        │
-│ 👍 12 💬 3  🔗 Compartilhar             │
-│                                        │
-└────────────────────────────────────────┘
-```
-
-## 4.10 Responsividade
-
-### Mobile (375px)
-- Stack vertical de todas as seções
-- Modals full-screen
-- Thumbs ups para tocar
-- Scroll horizontal para carrossel de livros
-- Chat com altura máxima 400px
-
-### Tablet (768px)
-- 2-coluna em algumas seções
-- Modals em 80% da tela
-- Chat com altura máxima 500px
-
-### Desktop (1024px+)
-- Layouts lado-a-lado
-- Modals centralizadas (600px width)
-- Chat com altura máxima 600px
-
-## 4.11 Estados Visuais
-
-### Loading
-```
-⏳ Carregando...
-[████░░░░░░░] 40%
-```
-
-### Success
-```
-✅ Alterações salvas com sucesso!
-```
-
-### Error
-```
-❌ Email inválido
-Tente novamente.
-```
-
-### Empty State
-```
-📚 Nenhuma avaliação ainda
-Seja o primeiro a avaliar este livro!
-[Adicionar Avaliação]
-```
+# 4. GUIA DE TELAS
+
+Este documento não recria wireframes ASCII da UI — a UI real já existe em código (`src/app/**`, `src/components/**`) e reflete o design system "leather/paper/ribbon/foil" (tokens em CSS variables, ver `tailwind.config.ts` e `globals.css`), viewport mobile-first (390×844), fontes Fraunces (display) e Karla (texto). Para consultar o layout exato de uma tela, ler o componente correspondente é mais confiável que qualquer mockup estático.
+
+Resumo de conteúdo por tela (não pixel-a-pixel):
+
+| Tela | Conteúdo principal |
+|---|---|
+| `/home` | Leituras atuais (todas, sem botão de progresso), "Em alta esta semana" (trending), feed Geral/Seguindo com empty states reais |
+| `/search` | Busca no catálogo interno + Google Books; "Listas da comunidade" quando sem query |
+| `/book/[id]` | Capa, nota, estante (3 status), progresso (páginas/%), avaliação (meia estrela), reviews, tags, citações |
+| `/shelf` | Filtros (status/gênero/tag), lista de livros com badge de status e tags, seção de listas, meta de leitura anual |
+| `/clubs` | Meus clubes / clubes públicos, botão criar, entrar por código |
+| `/clubs/[id]` | Progresso médio do clube, membros, mural (chat com citação/menção), painel de gerenciamento (criador) |
+| `/profile`, `/u/[username]` | Histograma, favoritos, estatísticas, abas de atividade, listas públicas, recomendações |
+| `/profile/edit` | Foto (upload + crop), nome, username, bio, top 4, gêneros |
+| `/settings` | Conta (e-mail, senha), aparência (tema), import Goodreads, feedback, sair |
+| `/notifications` | Lista de notificações locais ou empty state ("Nenhuma notificação por aqui ainda.") |
+
+Estados visuais reais (loading/empty/error) usam componentes dedicados: `Skeleton`, `Spinner`, `EmptyState`, `SectionError` — cada seção que busca dado tem seu próprio tratamento, sem um estado global genérico de app.
 
 ---
 
 # 5. MODELOS DE DADOS
 
-## 5.1 User Model
+O schema real vive em `prisma/schema.prisma` (fonte de verdade — reproduzido integralmente na Seção 14). Resumo por domínio:
 
-```typescript
-{
-  id: UUID,
-  email: String (unique),
-  username: String (unique),
-  password: String (hashed with bcrypt),
-  phone: String (optional, unique),
-  fullName: String,
-  bio: String (max 500),
-  avatar: String (URL to S3),
-  city: String,
-  favGenre: [String],
-  favBook: String,
-  isPublic: Boolean (default: true),
-  emailVerified: Boolean (default: false),
-  phoneVerified: Boolean (default: false),
-  createdAt: DateTime,
-  updatedAt: DateTime,
-  
-  // Relations
-  reviews: Review[],
-  clubs: Club[] (created clubs),
-  clubMembers: Club[], (clubs joined)
-  messages: Message[]
-}
-```
+- **Auth:** `User`, `Account` (OAuth via Auth.js `PrismaAdapter`), `Session`/`VerificationToken` (exigidos pelo tipo do adapter, não usados em runtime — sessão real é JWT), `VerificationCode` (só e-mail/senha, atrás da feature flag).
+- **Social:** `Follow` (seguidor/seguido, único por par).
+- **Catálogo:** `Book` (cache do Google Books + campos de UI como gradiente de capa para livros sem `coverUrl`).
+- **Leitura:** `ShelfEntry` (status + progresso por usuário+livro), `ReadingGoal` (meta anual).
+- **Avaliação:** `Review` (rating+texto, 1 por usuário+livro), `ReviewLike`, `Comment`.
+- **Organização:** `List`/`ListBook` (listas de livros), `BookTag`, `Quote`.
+- **Clubes:** `Club`, `ClubMember` (role creator/member + progresso), `Message` (mural, com `replyTo` e flag `system`).
 
-## 5.2 Book Model
-
-```typescript
-{
-  id: UUID,
-  title: String,
-  author: String,
-  isbn: String (unique, optional),
-  coverUrl: String (URL to S3),
-  year: Int (optional),
-  genre: [String],
-  description: String (long text),
-  createdAt: DateTime,
-  updatedAt: DateTime,
-  
-  // Relations
-  reviews: Review[],
-  clubs: Club[]
-}
-```
-
-## 5.3 Review Model
-
-```typescript
-{
-  id: UUID,
-  rating: Int (1-10, cada passo = meia estrela; ex.: 9 = 4,5 estrelas),
-  title: String (optional, max 150),
-  content: String (10-5000 chars),
-  readStartDate: DateTime (optional),
-  readEndDate: DateTime (optional),
-  isSpoiler: Boolean (default: false),
-  isPublic: Boolean (default: true),
-  createdAt: DateTime,
-  updatedAt: DateTime,
-  
-  // Relations
-  book: Book,
-  bookId: UUID,
-  user: User,
-  userId: UUID,
-  
-  // Computed
-  avgRating: Float (agregado de todos)
-  totalReviews: Int (agregado)
-  
-  // Constraints
-  @@unique([userId, bookId]) // 1 review per user per book
-}
-```
-
-## 5.4 Club Model
-
-```typescript
-{
-  id: UUID,
-  name: String,
-  description: String (optional, max 500),
-  isPrivate: Boolean (default: false),
-  accessCode: String (8 chars, optional, unique if set),
-  createdAt: DateTime,
-  updatedAt: DateTime,
-  
-  // Relations
-  book: Book,
-  bookId: UUID,
-  creator: User,
-  creatorId: UUID,
-  members: User[],
-  messages: Message[]
-}
-```
-
-## 5.5 Message Model
-
-```typescript
-{
-  id: UUID,
-  content: String (max 500),
-  mentions: [UUID], // @mentions
-  reactions: [String], // emoji reactions
-  createdAt: DateTime,
-  updatedAt: DateTime,
-  
-  // Relations
-  club: Club,
-  clubId: UUID,
-  user: User,
-  userId: UUID
-}
-```
-
-## 5.6 VerificationCode Model
-
-```typescript
-{
-  id: UUID,
-  email: String (optional),
-  phone: String (optional),
-  code: String (6 digits),
-  type: String, // "email" | "phone" | "password"
-  expiresAt: DateTime (TTL: 15 mins),
-  createdAt: DateTime
-}
-```
+Diferenças notáveis em relação ao plano original (v1.0): não há `phone`/`phoneVerified` no `User`; não há model de `Session` de aplicação com múltiplos dispositivos (a `Session` do Prisma é só para satisfazer o `PrismaAdapter`); rating é `Float` 0–5 em passos de 0,5 (não inteiro 1–5); `Book` guarda um único `genre`/`authors` como string (não array), refletindo o shape retornado pelo Google Books; não há model de `Notification`.
 
 ---
 
 # 6. FLUXOS DE NEGÓCIO
 
-## 6.1 Email Verification Flow
+## 6.1 Login OAuth + Onboarding
 
 ```
-User edits email
+Usuário clica "Continuar com Google/Amazon"
     ↓
-System validates email format
+Auth.js troca o code OAuth, cria/atualiza User + Account (PrismaAdapter)
     ↓
-System checks email is unique
+Se User.onboarded == false → redireciona /onboarding
     ↓
-Send verification code to NEW email (SendGrid)
+Preenche username (validado em tempo real), nome, bio, gêneros
     ↓
-User receives email with 6-digit code
+PATCH /api/users/me { onboarded: true, ... } 
     ↓
-User enters code in modal (TTL: 15 min)
-    ↓
-System validates code matches
-    ↓
-Email is updated in database ✓
-    ↓
-Toast: "Email atualizado com sucesso"
-    ↓
-VerificationCode is deleted/marked used
+Redireciona /home
 ```
 
-## 6.2 Phone Verification Flow
+## 6.2 Avaliar um Livro
 
 ```
-User adds phone
+Usuário está em /book/[id], escolhe nota (meia estrela)
     ↓
-System validates phone format (regional)
+PUT /api/books/[id]/review { rating, title?, text? }
     ↓
-System checks phone is unique
+rating <= 0 → deleta a review, recalcula avg/count
+rating > 0  → upsert da review, marca ShelfEntry como READ (se ainda não), 
+              copia startedAt/finishedAt, recalcula avg/count
     ↓
-Send verification code via SMS (Twilio)
-    ↓
-User receives SMS with 6-digit code
-    ↓
-User enters code in modal (TTL: 15 min)
-    ↓
-System validates code matches
-    ↓
-Phone is updated in database ✓
-    ↓
-Toast: "Telefone confirmado com sucesso"
-    ↓
-VerificationCode is deleted/marked used
+Review aparece no feed geral (se text não vazio) e na página do livro
 ```
 
-## 6.3 Password Change Flow
+## 6.3 Criar Clube e Convidar
 
 ```
-User clicks "Alterar Senha"
+Usuário preenche nome + livro (do catálogo) + descrição + público/privado
     ↓
-Modal opens asking for current password
+POST /api/clubs → cria Club; se privado, gera code (6 chars, único)
     ↓
-User enters current password + new password
+Criador é adicionado como ClubMember (role: "creator")
     ↓
-System validates current password is correct
+Convite: compartilha o código (só o criador vê/regenera)
     ↓
-System validates new password meets requirements
-    ↓
-System validates new != old
-    ↓
-Send verification link/code to email
-    ↓
-User clicks link or enters code (TTL: 30 min)
-    ↓
-Password is updated in database (hashed with bcrypt) ✓
-    ↓
-Toast: "Senha alterada com sucesso"
-    ↓
-LOGOUT all sessions (force re-login)
-    ↓
-Redirect to login page
+Outro usuário → POST /api/clubs/join { code } → vira ClubMember (role: "member")
 ```
 
-## 6.4 Club Creation Flow
+## 6.4 Progresso de Clube → Mensagem de Sistema
 
 ```
-User clicks "Criar Clube"
+Membro atualiza progresso de leitura do livro do clube (PUT /api/books/[id]/progress)
     ↓
-Modal/Form opens with fields:
-  - Nome (3-100 chars)
-  - Livro (select from list)
-  - Bio (optional, max 500)
-  - Privado/Público (toggle)
+Percentual calculado (currentPage / book.pages)
     ↓
-User fills form
+Se mudou desde o último progresso publicado (ClubMember.progress) →
+  cria Message { system: true, text: "<nome> chegou a X%" }
     ↓
-System validates fields
-    ↓
-If Privado selected:
-  - Generate random 8-char access code
-  - accessCode = random code
-    ↓
-Create Club in database
-    ↓
-Set creator = current user
-    ↓
-Add creator to members array
-    ↓
-Toast: "Clube criado com sucesso"
-    ↓
-Redirect to Club Detail page
+Não repete a mesma mensagem em requests subsequentes sem mudança de %
 ```
 
-## 6.5 Join Club with Access Code Flow
+## 6.5 Upload de Avatar
 
 ```
-User is on Club List
+Usuário seleciona imagem em /profile/edit
     ↓
-Clicks "Entrar em Clube Privado"
+Crop client-side (AvatarCropModal, react-easy-crop)
     ↓
-Modal opens asking for access code
+POST /api/upload/avatar (FormData) — valida tipo (jpeg/png/webp) e tamanho (<=5MB)
     ↓
-User enters 8-char code
+sharp: resize 400x400 cover → WebP qualidade 80
     ↓
-System validates code matches club.accessCode
+Vercel Blob put(`avatars/<userId>.webp`, { allowOverwrite: true, addRandomSuffix: false })
     ↓
-If invalid:
-  - Toast: "Código inválido"
-  - Modal stays open
-    ↓
-If valid:
-  - Add user to club.members
-  - Save to database
-  - Toast: "Você entrou no clube!"
-  - Redirect to Club Detail
+User.avatarUrl = url + "?v=<timestamp>" (cache-bust; chave do blob é fixa por usuário)
 ```
 
-## 6.6 Avatar Upload Flow
+## 6.6 Import Goodreads
 
 ```
-User clicks "Alterar Foto"
+Usuário sobe o CSV de export do Goodreads em Configurações
     ↓
-File picker opens (JPG, PNG, GIF, WebP)
+Parse (papaparse) + validação de tamanho (<=5MB)
     ↓
-User selects image (<= 5MB)
+Por linha: resolve o livro (ISBN no catálogo local, senão busca Google Books;
+           limite de 200 lookups por import)
     ↓
-Preview shows in modal
+Upsert ShelfEntry (status mapeado de "shelf") + Review (se myRating > 0)
     ↓
-User clicks "Confirmar"
-    ↓
-System uploads to AWS S3
-    ↓
-System generates 200x200px thumbnail
-    ↓
-System updates user.avatar = new S3 URL
-    ↓
-Toast: "Foto de perfil atualizada!"
-    ↓
-Avatar updates in UI
+Relatório final: quantos livros importados/atualizados/pulados
 ```
 
-## 6.7 Create Review Flow
+## 6.7 Meta de Leitura Anual
 
 ```
-User is on Book Detail page
+Usuário define targetBooks para o ano (Estante → card de meta)
     ↓
-Clicks "[Adicionar Minha Avaliação]"
+PUT /api/goals/[year] { targetBooks }
     ↓
-Modal opens with form:
-  - Rating picker (1-5 stars)
-  - Title input (optional)
-  - Content textarea
-  - Start date picker
-  - End date picker
-  - Spoiler checkbox
-  - Private checkbox
-    ↓
-User fills form
-    ↓
-System validates:
-  - Rating: 1-5 (required)
-  - Content: 10-5000 chars (required)
-  - Start date <= End date
-    ↓
-If validation fails:
-  - Show error messages
-  - Don't allow submit
-    ↓
-If valid:
-  - Create Review in database
-  - Calculate new avgRating
-  - Toast: "Avaliação publicada!"
-  - Modal closes
-  - Review appears in list
+GET /api/goals/[year] deriva:
+  read = count(ShelfEntry READ com finishedAt no ano)
+  percent = read / target
+  pace = read - esperado-pelo-dia-do-ano (ritmo: adiantado/atrasado)
 ```
 
 ---
 
 # 7. COMPONENTES UI
 
-## 7.1 Tabela de Componentes Reutilizáveis
+Componentes reais em `src/components/`:
 
-| Componente | Uso | Props | Estados |
-|-----------|-----|-------|--------|
-| `AvatarUpload` | Foto de perfil | `onUpload`, `currentImage`, `size` | loading, preview, success, error |
-| `VerificationModal` | Códigos de verificação | `type`, `onSubmit`, `onResend`, `email` | input, countdown, error, success |
-| `ReviewCard` | Preview de review | `review`, `onClick`, `expandable` | collapsed, expanded, loading |
-| `MemberList` | Lista de membros | `members`, `isCreator`, `onRemove` | loading, empty, list |
-| `ChatContainer` | Chat com scroll | `messages`, `onSend`, `maxHeight` | loading, message-focus, error |
-| `CodeDisplay` | Código privado | `code`, `onCopy`, `onRegenerate` | normal, copying, regenerating |
-| `PasswordStrength` | Validação senha | `password`, `requirements` | weak, medium, strong |
-| `RatingPicker` | Seleção de stars | `value`, `onChange`, `size` | interactive, readonly |
-| `DatePicker` | Seleção de data | `value`, `onChange`, `format` | open, selected |
-| `LoadingSpinner` | Indicador carregamento | `size`, `color` | spinning |
-| `Toast` | Notificação | `message`, `type`, `duration` | success, error, info, warning |
-| `Modal` | Dialog genérico | `isOpen`, `onClose`, `title`, `children` | open, closing |
-| `InputField` | Campo de texto | `value`, `onChange`, `label`, `error` | normal, error, focused |
-| `Button` | Botão genérico | `onClick`, `variant`, `disabled`, `loading` | primary, secondary, disabled, loading |
+| Componente | Uso |
+|---|---|
+| `AuthSync` | Sincroniza sessão NextAuth → identidade no store (Zustand) |
+| `Avatar` | Avatar circular: foto (Blob) ou gradiente (`AVATAR_CHOICES`) com iniciais |
+| `AvatarUpload` / `AvatarCropModal` | Upload de foto de perfil com crop client-side |
+| `BackHeader` | Cabeçalho com botão voltar, usado nas páginas internas |
+| `BookCover` | Capa do livro: imagem real ou gradiente + título quando sem `coverUrl` |
+| `BookPicker` | Seletor de livro do catálogo (criar clube, listas, top 4) |
+| `BottomSheet` | Sheet inferior modal (ex.: editor de tags na estante) |
+| `DiscoverReaders` | "Descobrir leitores" — sugestões de quem seguir |
+| `EmptyState` / `SeguindoEmptyState` | Estados vazios reais (feed sem follows, seção sem dado) |
+| `ExpandableText` | Texto truncado com "Ler mais" (reviews longas) |
+| `FeedPost` | Card de review no feed (avatar, nota, texto, curtir/comentar) |
+| `FeedbackModal` | Formulário "Ajude a melhorar o Bookly" |
+| `GoodreadsImport` | Upload + relatório do import de CSV |
+| `NotificationBell` | Sino com contagem de não lidas (store local) |
+| `RatingInput` / `Stars` | Seleção/exibição de nota em meia estrela |
+| `ReadingGoalCard` | Anel de progresso + ritmo da meta de leitura anual |
+| `SectionError` / `Skeleton` / `Spinner` / `PageLoader` | Estados de loading/erro por seção |
+| `SocialLoginButtons` | Botões Google/Amazon em login/signup |
+| `TabBar` | Navegação inferior (Início/Estante/Clube/Perfil) |
+| `TagEditor` | Editor de tags por livro na estante |
+| `ThemeSync` | Aplica `data-theme` no `<html>` a partir do store |
+| `Toaster` | Toasts (~1,8s, reaproveita o mesmo nó DOM) |
+| `TopNav` | Cabeçalho superior (desktop) |
+| `VerificationModal` | Código de 6 dígitos (fluxo de e-mail, atrás da feature flag) |
 
 ---
 
 # 8. VALIDAÇÕES E REGRAS
 
-## 8.1 Email
+Validação de entrada é feita com **Zod** em cada rota (`src/app/api/**/route.ts`); não há uma camada central de DTO.
 
-- ✅ Formato válido (RFC 5322)
-- ✅ Não pode estar em branco
-- ✅ Único no banco (não pode haver 2 usuários com mesmo email)
-- ✅ Confirmação obrigatória via código de 6 dígitos
-- ✅ Código expira em 15 minutos
+## 8.1 Usuário / Perfil
 
-## 8.2 Telefone
+- `username`: único, case-insensitive (`citext`), validado por `src/lib/validators/username.ts`; checado em tempo real via `GET /api/users/check-username`
+- `name`: 1–60 caracteres
+- `bio`: até 500 caracteres
+- `top4`: até 4 ids de `Book` existentes (rejeitado com 400 se algum id não existir no catálogo)
+- `avatar`: índice inteiro em `AVATAR_CHOICES` (≥ 0)
 
-- ✅ Formato regional correto
-  - Brasil: +55 (xx) 9xxxx-xxxx (11 dígitos)
-  - USA: +1 (xxx) xxx-xxxx
-- ✅ Único no banco
-- ✅ Confirmação obrigatória via SMS
-- ✅ Código expira em 15 minutos
+## 8.2 Review / Avaliação
 
-## 8.3 Senha
+- `rating`: 0–5, múltiplo de 0,5 (meia estrela)
+- `title`: até 150 caracteres, opcional
+- `text`: até 5000 caracteres, opcional (review some do feed geral se vazia — mas a nota continua valendo)
+- 1 review por usuário+livro (`@@unique([userId, bookId])`)
 
-- ✅ Mínimo 8 caracteres
-- ✅ Pelo menos 1 MAIÚSCULA (A-Z)
-- ✅ Pelo menos 1 minúscula (a-z)
-- ✅ Pelo menos 1 número (0-9)
-- ✅ Pelo menos 1 caractere especial (@#$%^&*)
-- ✅ Diferente da senha anterior
-- ✅ Hashed com bcrypt (salt rounds: 10)
+## 8.3 Clube
 
-## 8.4 Username
+- `name`: 1–80 caracteres
+- `desc`: até 500 caracteres, opcional
+- `visibility`: `public` | `private`
+- Código de convite: 6 caracteres, só clubes privados, único; regenerar/ver código é restrito ao criador (403 caso contrário)
 
-- ✅ 3-20 caracteres
-- ✅ Alfanumérico + ponto, hífen, underscore
-- ✅ Único no banco
-- ✅ Sem espaços
-- ✅ Case-insensitive na busca
+## 8.4 Mensagem de Clube
 
-## 8.5 Perfil do Usuário
+- `text`: até 500 caracteres
+- Só membro do clube pode postar (403 para não-membro)
+- Rate limit dedicado (`chat`: 20/min)
 
-- ✅ Full Name: 2-100 caracteres (required)
-- ✅ Bio: 0-500 caracteres (optional)
-- ✅ City: seleção de lista (optional)
-- ✅ Avatar: JPG, PNG, GIF, WebP (max 5MB)
+## 8.5 Lista
 
-## 8.6 Review
+- `name`: até 80 caracteres
+- `visibility`: `public` | `private`
+- Só o dono edita/exclui/altera visibilidade
 
-- ✅ Rating: 1-5 (required)
-- ✅ Título: 0-150 caracteres (optional)
-- ✅ Conteúdo: 10-5000 caracteres (required)
-- ✅ Read Start Date: datetime (optional)
-- ✅ Read End Date: datetime >= Start Date (optional)
-- ✅ 1 review por usuário por livro (unique constraint)
+## 8.6 Meta de Leitura
 
-## 8.7 Clube
+- `targetBooks`: inteiro entre 1 e 1000
+- `year`: 2000–2100
 
-- ✅ Nome: 3-100 caracteres (required)
-- ✅ Bio: 0-500 caracteres (optional)
-- ✅ Access Code (if private): 8 caracteres alphanumeric
-- ✅ Access Code: único
-- ✅ Apenas criador pode editar
+## 8.7 Upload de Avatar
 
-## 8.8 Mensagem
+- Tipos aceitos: `image/jpeg`, `image/png`, `image/webp`
+- Tamanho máximo: 5MB
+- Redimensionado para 400×400 (cover) e reencodado em WebP no servidor (`sharp`), independentemente do formato de entrada
 
-- ✅ Conteúdo: 1-500 caracteres (required)
-- ✅ Não pode ser enviada por non-member
-- ✅ Timestamp automático
+## 8.8 Senha (só com `NEXT_PUBLIC_EMAIL_LOGIN_ENABLED=true`)
 
-## 8.9 Upload de Arquivo
-
-- ✅ Tipos: JPG, PNG, GIF, WebP
-- ✅ Tamanho máximo: 5MB
-- ✅ Dimensions (opcional): redimensionar para 200x200px
-- ✅ Store em AWS S3 com hash filename
+- Mínimo 8 caracteres
+- Senha atual precisa ser validada antes de trocar
+- Nova senha precisa ser diferente da atual
+- Hash com bcrypt
 
 ---
 
 # 9. TRATAMENTO DE ERROS
 
-## 9.1 Mensagens de Erro (Usuário Final)
+## 9.1 HTTP Status Codes usados
 
-```javascript
-{
-  // Auth
-  "INVALID_EMAIL": "Email inválido. Verifique o formato.",
-  "EMAIL_EXISTS": "Email já cadastrado. Tente login ou recuperação de senha.",
-  "INVALID_PHONE": "Telefone inválido. Use o formato (xx) xxxxx-xxxx",
-  "PHONE_EXISTS": "Telefone já cadastrado.",
-  "WEAK_PASSWORD": "Senha não atende os requisitos (8 chars, maiús, número, especial)",
-  "INVALID_CODE": "Código de verificação inválido.",
-  "CODE_EXPIRED": "Código expirou. Solicite um novo (válido por 15 min).",
-  
-  // User
-  "UNAUTHORIZED": "Você não tem permissão para esta ação.",
-  "USER_NOT_FOUND": "Usuário não encontrado.",
-  "PROFILE_UPDATE_FAILED": "Erro ao atualizar perfil. Tente novamente.",
-  
-  // Upload
-  "FILE_TOO_LARGE": "Arquivo muito grande. Máximo 5MB.",
-  "INVALID_FILE_TYPE": "Tipo de arquivo não suportado. Use JPG, PNG ou GIF.",
-  "UPLOAD_FAILED": "Erro ao enviar arquivo. Tente novamente.",
-  
-  // Club
-  "CLUB_NOT_FOUND": "Clube não encontrado.",
-  "CLUB_FULL": "Clube atingiu o limite de membros.",
-  "INVALID_ACCESS_CODE": "Código de acesso inválido ou expirado.",
-  "ALREADY_IN_CLUB": "Você já é membro deste clube.",
-  "NOT_CLUB_CREATOR": "Apenas o criador pode fazer esta ação.",
-  "CANNOT_REMOVE_YOURSELF": "Você não pode se remover do clube.",
-  
-  // Review
-  "BOOK_NOT_FOUND": "Livro não encontrado.",
-  "REVIEW_NOT_FOUND": "Avaliação não encontrada.",
-  "ALREADY_REVIEWED": "Você já avaliou este livro.",
-  
-  // General
-  "NETWORK_ERROR": "Erro de conexão. Verifique sua internet.",
-  "SERVER_ERROR": "Erro no servidor. Tente novamente mais tarde.",
-  "SOMETHING_WENT_WRONG": "Algo deu errado. Tente novamente.",
-}
-```
+- `400` — corpo/parâmetro inválido (falha de validação Zod)
+- `401` — sem sessão (`session?.user?.id` ausente)
+- `403` — autenticado mas sem permissão (ex.: não é criador do clube, não é membro)
+- `404` — recurso não existe (livro, review, clube, código de convite)
+- `409` — violação de unicidade (username em uso, `P2002` do Prisma)
+- `429` — rate limit excedido (`Retry-After`, `X-RateLimit-*` nos headers)
+- `502` — dependência externa falhou (Google Books inacessível/quota) — nunca mascarado como 404
 
-## 9.2 Tratamento por Camada
+## 9.2 Padrão por rota
 
-### Frontend
-- Validação de form antes de enviar
-- Mostrar error toast/modal
-- Retry buttons para erros de rede
-- Fallback UI para dados faltantes
+Toda rota autenticada segue o mesmo formato: `auth()` → 401 se sem sessão → `checkRateLimit(key, uid)` quando é rota de escrita → `schema.safeParse(body)` → 400 se inválido → checagem de permissão específica (403/404) → operação no Prisma → resposta JSON. `src/lib/apiError.ts` centraliza a extração de mensagem de erro no client (`apiErrorMessage(res, fallback)`).
 
-### Backend
-- Validar todos os inputs com Zod/Joi
-- Verificar permissões (authguard)
-- Tratar exceptions com proper HTTP status codes
-- Log errors to Sentry
+## 9.3 Rate Limiting
 
-### HTTP Status Codes
-- `400 Bad Request` - Validação falhou
-- `401 Unauthorized` - Token inválido/expirado
-- `403 Forbidden` - Sem permissão
-- `404 Not Found` - Recurso não existe
-- `409 Conflict` - Violação de unique constraint
-- `500 Internal Server Error` - Erro no servidor
+`src/lib/ratelimit.ts` (Upstash, sliding window) — **fail-open**: sem `UPSTASH_REDIS_REST_URL`/`TOKEN` configurado (dev) ou se o Redis cair (prod), a checagem não bloqueia, só loga um warning. Perder rate limit é considerado melhor que derrubar o app. Tiers: `write` (30/min), `upload` (5/min), `feedback` (4/min), `chat` (20/min), `import` (2/60min).
+
+## 9.4 Frontend
+
+- Cada seção que busca dado trata seu próprio estado de erro (`SectionError`, com botão de retry) — não há um error boundary genérico de app cobrindo tudo, mas `error.tsx`/`loading.tsx` do App Router cobrem cada rota.
+- Toasts (`useStore().showToast`) para feedback de ações (sucesso/erro pontual).
 
 ---
 
 # 10. STACK TÉCNICO
 
-## 10.1 Frontend
+## 10.1 Aplicação
 
-- **Framework:** React 18+ com TypeScript
-- **Build tool:** Vite
-- **CSS:** Tailwind CSS + CSS Modules
-- **State Management:** Redux Toolkit / Zustand
-- **Form Handling:** React Hook Form
-- **Validation:** Zod
-- **UI Components:** Radix UI / shadcn/ui
-- **HTTP Client:** Axios / TanStack Query
-- **Real-time:** Socket.io Client
-- **File Upload:** multer (frontend: file input)
-- **Date Picker:** React DatePicker / Day.js
-- **Testing:** Vitest + React Testing Library
-- **CI/CD:** GitHub Actions
-- **Hosting:** Vercel / Netlify
+- **Framework:** Next.js 14 (App Router) + TypeScript estrito, um único projeto full-stack (não há backend separado)
+- **Banco:** PostgreSQL (Neon em produção) + Prisma (`prisma-client`, adapter `@prisma/adapter-pg`)
+- **Autenticação:** Auth.js v5 (`next-auth@beta`) — Google e Amazon OAuth (PrismaAdapter); Credentials + bcrypt existe atrás de feature flag
+- **Estado client:** Zustand (`src/lib/store`) — só cache de sessão/perfil e UI transiente (tema, toast, notificações locais); tudo que é domínio (estante, reviews, feed, clubes, listas) vem de fetch para as rotas em `src/app/api/**`
+- **CSS:** Tailwind CSS com tokens próprios (design system "leather/paper/ribbon/foil"), tema claro/escuro via CSS variables + `data-theme`
+- **Fontes:** Fraunces (display) e Karla (texto), via `next/font/google`
+- **Validação:** Zod em toda rota de API
+- **Catálogo externo:** Google Books API (busca + enriquecimento de metadados)
+- **Upload de imagem:** Vercel Blob + `sharp` (resize/reencode server-side) + `react-easy-crop` (crop client-side)
+- **E-mail:** Resend (feedback; e verificação de e-mail quando `EMAIL_LOGIN_ENABLED`)
+- **Rate limiting:** Upstash Redis (`@upstash/ratelimit`), fail-open
+- **Import de dados:** `papaparse` (CSV do Goodreads)
 
-## 10.2 Backend
+## 10.2 Testes & CI
 
-- **Runtime:** Node.js 20 LTS
-- **Framework:** NestJS (TypeScript first)
-- **Database:** PostgreSQL 15+
-- **ORM:** Prisma
-- **Authentication:** JWT (access + refresh tokens)
-- **Password Hashing:** bcrypt
-- **Email Service:** SendGrid
-- **SMS Service:** Twilio
-- **File Storage:** AWS S3 / Google Cloud Storage
-- **Real-time:** Socket.io Server
-- **Input Validation:** Zod / class-validator
-- **Logging:** Winston / Pino
-- **Error Tracking:** Sentry
-- **Testing:** Jest + Supertest
-- **CI/CD:** GitHub Actions
-- **Hosting:** AWS / DigitalOcean / Railway
+- **E2E:** Playwright (`e2e/*.spec.ts`, 6 arquivos / 35 testes — auth, books, clubs, social, users), cobrindo API + UI
+- **Tipos/Lint:** `tsc --noEmit`, `next lint` (ESLint + `eslint-plugin-jsx-a11y`)
+- **CI:** GitHub Actions (`.github/workflows/ci.yml`)
+- **Guarda de regressão:** `npm run guard:no-seed` — falha se seed legado voltar (arquivo recriado, referência no build, ou usuário de seed no banco)
 
-## 10.3 DevOps
+## 10.3 Deploy
 
-- **Version Control:** GitHub
-- **Container:** Docker + Docker Compose
-- **CI/CD:** GitHub Actions
-- **Database Migrations:** Prisma Migrate
-- **Monitoring:** Sentry + DataDog (opcional)
-- **CDN:** CloudFront (para S3)
+- **Hosting:** Vercel — só a branch `main` gera deployment (`vercel.json` `ignoreCommand` bloqueia qualquer outra branch, incluindo `claude/*`)
+- **Build:** `tsx scripts/resolve-stuck-migration.ts && prisma migrate deploy && next build` — migrations aplicadas automaticamente a cada deploy
+- **Storage de imagem:** Vercel Blob
 
 ---
 
 # 11. ARQUITETURA DE PASTAS
 
-## 11.1 Backend - NestJS
-
 ```
-bookly-api/
-├── src/
-│   ├── auth/
-│   │   ├── auth.controller.ts
-│   │   ├── auth.service.ts
-│   │   ├── auth.module.ts
-│   │   ├── dto/
-│   │   │   ├── register.dto.ts
-│   │   │   ├── login.dto.ts
-│   │   │   └── refresh.dto.ts
-│   │   └── strategies/
-│   │       ├── jwt.strategy.ts
-│   │       └── refresh.strategy.ts
-│   │
-│   ├── users/
-│   │   ├── users.controller.ts
-│   │   ├── users.service.ts
-│   │   ├── users.module.ts
-│   │   ├── dto/
-│   │   │   ├── create-user.dto.ts
-│   │   │   ├── update-user.dto.ts
-│   │   │   └── update-email.dto.ts
-│   │   └── entities/
-│   │       └── user.entity.ts
-│   │
-│   ├── books/
-│   │   ├── books.controller.ts
-│   │   ├── books.service.ts
-│   │   ├── books.module.ts
-│   │   └── entities/
-│   │       └── book.entity.ts
-│   │
-│   ├── reviews/
-│   │   ├── reviews.controller.ts
-│   │   ├── reviews.service.ts
-│   │   ├── reviews.module.ts
-│   │   └── dto/
-│   │       └── create-review.dto.ts
-│   │
-│   ├── clubs/
-│   │   ├── clubs.controller.ts
-│   │   ├── clubs.service.ts
-│   │   ├── clubs.module.ts
-│   │   ├── dto/
-│   │   │   └── create-club.dto.ts
-│   │   └── entities/
-│   │       └── club.entity.ts
-│   │
-│   ├── chat/
-│   │   ├── chat.gateway.ts (WebSocket)
-│   │   ├── chat.service.ts
-│   │   ├── chat.module.ts
-│   │   └── dto/
-│   │       └── message.dto.ts
-│   │
-│   ├── verification/
-│   │   ├── verification.service.ts
-│   │   ├── verification.module.ts
-│   │   └── strategies/
-│   │       ├── email-verification.ts
-│   │       └── phone-verification.ts
-│   │
-│   ├── uploads/
-│   │   ├── uploads.controller.ts
-│   │   ├── uploads.service.ts
-│   │   ├── uploads.module.ts
-│   │   └── strategies/
-│   │       └── s3-upload.ts
-│   │
-│   ├── config/
-│   │   ├── database.config.ts
-│   │   ├── jwt.config.ts
-│   │   ├── mail.config.ts
-│   │   └── sms.config.ts
-│   │
-│   ├── common/
-│   │   ├── filters/
-│   │   │   └── http-exception.filter.ts
-│   │   ├── interceptors/
-│   │   │   └── logging.interceptor.ts
-│   │   ├── decorators/
-│   │   │   ├── is-auth-user.ts
-│   │   │   └── roles.decorator.ts
-│   │   └── pipes/
-│   │       └── validation.pipe.ts
-│   │
-│   ├── database/
-│   │   ├── migrations/ (managed by Prisma)
-│   │   └── seeders/
-│   │
-│   ├── app.module.ts
-│   └── main.ts
-│
-├── prisma/
-│   ├── schema.prisma
-│   └── migrations/
-│
-├── test/
-│   ├── app.e2e-spec.ts
-│   └── setup.ts
-│
-├── .env.example
-├── docker-compose.yml
-├── Dockerfile
-├── package.json
-└── tsconfig.json
-```
-
-## 11.2 Frontend - React + Vite
-
-```
-bookly-app/
-├── src/
-│   ├── components/
-│   │   ├── auth/
-│   │   │   ├── LoginForm.tsx
-│   │   │   ├── SignupForm.tsx
-│   │   │   └── ForgotPasswordForm.tsx
-│   │   │
-│   │   ├── common/
-│   │   │   ├── Header.tsx
-│   │   │   ├── Sidebar.tsx
-│   │   │   ├── Footer.tsx
-│   │   │   ├── LoadingSpinner.tsx
-│   │   │   └── Toast.tsx
-│   │   │
-│   │   ├── book/
-│   │   │   ├── BookCard.tsx
-│   │   │   ├── BookDetail.tsx
-│   │   │   ├── ReviewCard.tsx
-│   │   │   ├── ReviewForm.tsx
-│   │   │   └── ReviewList.tsx
-│   │   │
-│   │   ├── club/
-│   │   │   ├── ClubCard.tsx
-│   │   │   ├── ClubDetail.tsx
-│   │   │   ├── ClubChat.tsx
-│   │   │   ├── MemberList.tsx
-│   │   │   ├── ClubSettings.tsx
-│   │   │   └── ClubAccessCode.tsx
-│   │   │
-│   │   ├── user/
-│   │   │   ├── ProfileCard.tsx
-│   │   │   ├── ProfileEdit.tsx
-│   │   │   ├── AvatarUpload.tsx
-│   │   │   ├── UserSettings.tsx
-│   │   │   └── SettingsTabs.tsx
-│   │   │
-│   │   ├── modals/
-│   │   │   ├── VerificationModal.tsx
-│   │   │   ├── ConfirmModal.tsx
-│   │   │   └── ErrorModal.tsx
-│   │   │
-│   │   └── forms/
-│   │       ├── EmailVerificationForm.tsx
-│   │       ├── PhoneVerificationForm.tsx
-│   │       ├── PasswordChangeForm.tsx
-│   │       └── PasswordStrengthIndicator.tsx
-│   │
-│   ├── pages/
-│   │   ├── home/
-│   │   │   ├── HomePage.tsx
-│   │   │   └── HomeNotLogged.tsx
-│   │   │
-│   │   ├── auth/
-│   │   │   ├── LoginPage.tsx
-│   │   │   └── SignupPage.tsx
-│   │   │
-│   │   ├── books/
-│   │   │   ├── BooksListPage.tsx
-│   │   │   ├── BookDetailPage.tsx
-│   │   │   └── AddReviewPage.tsx
-│   │   │
-│   │   ├── clubs/
-│   │   │   ├── ClubsListPage.tsx
-│   │   │   ├── ClubDetailPage.tsx
-│   │   │   ├── ClubManagementPage.tsx
-│   │   │   └── CreateClubPage.tsx
-│   │   │
-│   │   ├── profile/
-│   │   │   ├── ProfilePage.tsx
-│   │   │   ├── EditProfilePage.tsx
-│   │   │   └── SettingsPage.tsx
-│   │   │
-│   │   └── 404.tsx
-│   │
-│   ├── hooks/
-│   │   ├── useAuth.ts
-│   │   ├── useUser.ts
-│   │   ├── useBooks.ts
-│   │   ├── useClubs.ts
-│   │   ├── useReviews.ts
-│   │   ├── useForm.ts
-│   │   ├── usePagination.ts
-│   │   └── useVerification.ts
-│   │
-│   ├── services/
-│   │   ├── api.ts (Axios instance)
-│   │   ├── authService.ts
-│   │   ├── userService.ts
-│   │   ├── bookService.ts
-│   │   ├── reviewService.ts
-│   │   ├── clubService.ts
-│   │   ├── chatService.ts
-│   │   ├── uploadService.ts
-│   │   └── verificationService.ts
-│   │
-│   ├── store/
-│   │   ├── authSlice.ts
-│   │   ├── userSlice.ts
-│   │   ├── booksSlice.ts
-│   │   ├── clubsSlice.ts
-│   │   ├── reviewsSlice.ts
-│   │   └── store.ts
-│   │
-│   ├── types/
-│   │   ├── auth.types.ts
-│   │   ├── user.types.ts
-│   │   ├── book.types.ts
-│   │   ├── review.types.ts
-│   │   ├── club.types.ts
-│   │   ├── chat.types.ts
-│   │   └── api.types.ts
-│   │
-│   ├── utils/
-│   │   ├── validators.ts
-│   │   ├── formatters.ts
-│   │   ├── constants.ts
-│   │   └── helpers.ts
-│   │
-│   ├── styles/
-│   │   ├── globals.css
-│   │   ├── variables.css
-│   │   └── animations.css
-│   │
-│   ├── App.tsx
-│   ├── main.tsx
-│   └── vite-env.d.ts
-│
-├── public/
-├── tests/
-│   ├── unit/
-│   ├── integration/
-│   └── e2e/
-│
-├── .env.example
-├── vite.config.ts
-├── tailwind.config.ts
-├── tsconfig.json
-└── package.json
+src/
+  app/
+    page.tsx                    landing (deslogado)
+    login/ signup/               auth real (Google/Amazon OAuth; Credentials opcional)
+    forgot-password/             reset de senha (só com login por e-mail habilitado)
+    onboarding/                  1º acesso: username, nome, bio, gêneros
+    (app)/                       rotas logadas (guard no middleware + layout + tab bar)
+      home/  search/  book/[id]/  shelf/  lists/[id]/
+      clubs/  clubs/new/  clubs/[id]/
+      profile/  profile/edit/  u/[username]/  settings/  notifications/  review/[id]/
+    api/                         rotas reais: auth, users, books, shelf, clubs, feed,
+                                  lists, reviews, quotes, goals, import, verification,
+                                  upload, feedback
+  components/                    BookCover, Stars, RatingInput, FeedPost, Avatar,
+                                  TabBar, AuthSync, GoodreadsImport, ReadingGoalCard…
+  lib/
+    db.ts                        singleton do Prisma Client
+    auth.ts / auth.config.ts     config do Auth.js (config edge-safe separada do
+                                  restante, que usa Node APIs/Prisma)
+    books.ts / books/            getOrCreateBook, recomputeBookRating, integração
+                                  Google Books
+    clubs.ts                     geração de código, progresso médio do clube
+    import/                      parser + resolução de livros do CSV do Goodreads
+    store/                       store Zustand (cache de sessão/perfil + UI
+                                  transiente + notificações client-only) e hooks
+                                  derivados (useFeed, useMyStats, useBooksByIds…)
+    ratelimit.ts                 tiers de rate limit (Upstash), fail-open
+    featureFlags.ts               NEXT_PUBLIC_EMAIL_LOGIN_ENABLED
+    genres.ts / avatars.ts        constantes de UI (gêneros do onboarding, gradientes)
+    types.ts                      Book, ApiReview, Club, ShelfEntry, UserState…
+    format.ts                     formatação pt-BR (vírgula decimal, milhar, progresso)
+prisma/
+  schema.prisma                  models reais (User, Book, ShelfEntry, Review, Club,
+                                  Message…)
+  migrations/                    histórico de migrations
+scripts/
+  purge-seed.ts                  utilitário pontual pra remover registros de seed
+                                  legado do banco (dry-run por padrão, --apply)
+  assert-no-seed.ts               guarda de regressão (npm run guard:no-seed, no CI)
+  resolve-stuck-migration.ts      destrava `migrate deploy` se uma migração ficou
+                                  "failed" em produção; no-op em banco novo/normal
+e2e/                             suíte Playwright — 6 arquivos, 35 testes;
+                                  e2e/global-setup.ts semeia só a fixture mínima de
+                                  catálogo (duna/1984/verity) usada pelos testes
+docs/VALIDATION_REPORT.md        relatório de validação do backend (histórico)
 ```
 
 ---
 
-# 12. ROADMAP & SPRINTS
+# 12. HISTÓRICO DE ENTREGAS & PRÓXIMOS PASSOS
 
-## 12.1 Timeline Geral
+A v1.0 deste documento descrevia um roadmap de 6 sprints sobre uma stack que nunca foi adotada (NestJS + React/Vite + Redux + Socket.io). O produto real foi entregue feature por feature diretamente em Next.js + Prisma, sem esse plano de sprints — a lista abaixo é retrospectiva, não prospectiva.
 
-```
-Semana 1-2:   Sprint 1 - Auth + Email + Perfil
-Semana 3-4:   Sprint 2 - Upload + Telefone + Config
-Semana 5-6:   Sprint 3 - Livros + Reviews
-Semana 7-9:   Sprint 4 - Clubes + Chat
-Semana 10:    Bug fixes, testes, performance
-Semana 11:    Closed beta interno
-Semana 12:    Launch MVP v1.0 🎉
-```
+## 12.1 Já entregue (ordem aproximada)
 
-## 12.2 Sprint 1: Autenticação & Perfil (2 semanas)
+1. Auth OAuth (Google/Amazon) + onboarding + guard de acesso
+2. Perfil (identidade, bio, gêneros, top 4, avatar)
+3. Catálogo sob demanda (Google Books) + estante + reviews + tags + citações
+4. Feed social (curtidas, comentários, filtro Geral/Seguindo/Curtidas) + follow + listas
+5. Clubes do livro (público/privado, código de convite, mural em chat, gerenciamento)
+6. Metas de leitura anuais
+7. Import de biblioteca via CSV do Goodreads
+8. Upload de avatar real (Vercel Blob)
+9. Rate limiting (Upstash) nas rotas de escrita
+10. Limpeza de seed legado (migração one-time em produção) + guarda de regressão no CI
 
-### Backend Tasks
-- [ ] Setup NestJS + PostgreSQL + Prisma
-- [ ] Configurar JWT authentication (access + refresh tokens)
-- [ ] Hash passwords com bcrypt
-- [ ] POST /auth/register - registrar usuário
-- [ ] POST /auth/login - fazer login
-- [ ] POST /auth/refresh - renovar token
-- [ ] POST /auth/logout - fazer logout
-- [ ] Criar User model no Prisma
-- [ ] GET /users/me - dados do usuário logado
-- [ ] PUT /users/profile - atualizar dados básicos
-- [ ] POST /verification/send-email-code - enviar código
-- [ ] POST /verification/verify-email-code - verificar código
-- [ ] PUT /users/email - atualizar email (com verificação)
-- [ ] PUT /users/password - alterar senha (com verificação)
-- [ ] Configurar SendGrid para emails
-- [ ] Testes unitários para auth service
-- [ ] Testes E2E para fluxos de auth
+## 12.2 Próximos passos plausíveis (sem compromisso de prazo)
 
-### Frontend Tasks
-- [ ] Setup React + TypeScript + Tailwind + Redux
-- [ ] Configurar Axios client com interceptors
-- [ ] Componente: LoginForm (com placeholders literários)
-- [ ] Componente: SignupForm
-- [ ] Página: LoginPage
-- [ ] Página: SignupPage
-- [ ] Componente: ProfileCard
-- [ ] Página: EditProfilePage (basico - sem upload ainda)
-- [ ] Componente: VerificationModal (para email)
-- [ ] Hook: useAuth (login, logout, signup)
-- [ ] Hook: useUser (fetch profile)
-- [ ] Proteção de rotas (PrivateRoute wrapper)
-- [ ] Integração com API backend
-- [ ] Testes de componentes críticos
-- [ ] LocalStorage para tokens
-
-### Definition of Done Sprint 1
-- [ ] User pode fazer signup com email/senha
-- [ ] User pode fazer login com credenciais válidas
-- [ ] User recebe código de verificação por email
-- [ ] User pode verificar email com código
-- [ ] Senha é validada (requisitos)
-- [ ] JWT tokens armazenados e usados
-- [ ] Rotas protegidas funcionando
-- [ ] Erro handling implementado
-
----
-
-## 12.3 Sprint 2: Upload & Telefone (2 semanas)
-
-### Backend Tasks
-- [ ] Configurar AWS S3 upload
-- [ ] POST /uploads/avatar - fazer upload
-- [ ] Validar tipo de arquivo (JPG, PNG, GIF)
-- [ ] Validar tamanho (<5MB)
-- [ ] Gerar thumbnail 200x200px
-- [ ] PUT /users/avatar - salvar URL do avatar
-- [ ] POST /verification/send-phone-code - enviar SMS
-- [ ] POST /verification/verify-phone-code - verificar
-- [ ] PUT /users/phone - adicionar/atualizar telefone
-- [ ] Configurar Twilio para SMS
-- [ ] GET /users/settings - obter configurações
-- [ ] PUT /users/privacy - atualizar privacidade
-- [ ] Adicionar campos phone, phoneVerified ao User model
-- [ ] Testes para upload
-- [ ] Testes para phone verification
-
-### Frontend Tasks
-- [ ] Componente: AvatarUpload (preview + upload)
-- [ ] Página: SettingsPage (abas: Conta | Segurança)
-- [ ] Componente: EmailChangeForm
-- [ ] Componente: PhoneAddForm
-- [ ] Componente: PasswordChangeForm
-- [ ] Componente: PasswordStrengthIndicator
-- [ ] Integração upload com S3 (signed URLs)
-- [ ] Tratamento de erros de upload
-- [ ] Loading states durante upload
-- [ ] Tab navigation em SettingsPage
-
-### Definition of Done Sprint 2
-- [ ] Avatar upload + thumbnail geração funcionando
-- [ ] Telefone pode ser adicionado + verificado via SMS
-- [ ] Senha pode ser alterada com verificação
-- [ ] Settings page com abas funcionando
-- [ ] Erro handling para upload
-
----
-
-## 12.4 Sprint 3: Livros & Reviews (2 semanas)
-
-### Backend Tasks
-- [ ] Criar Book model no Prisma
-- [ ] Criar Review model no Prisma
-- [ ] GET /books - listar livros (com paginação)
-- [ ] GET /books/search - buscar livros
-- [ ] GET /books/:id - detalhes do livro
-- [ ] POST /books/:id/reviews - criar review
-- [ ] GET /books/:id/reviews - listar reviews de um livro
-- [ ] PUT /reviews/:id - editar própria review
-- [ ] DELETE /reviews/:id - deletar própria review
-- [ ] Cálculo de avgRating (agregação)
-- [ ] Seed: Popular alguns livros no banco
-- [ ] Paginação de reviews
-- [ ] Testes para reviews CRUD
-
-### Frontend Tasks
-- [ ] Página: BooksListPage
-- [ ] Componente: BookCard
-- [ ] Página: BookDetailPage
-- [ ] Componente: ReviewCard (truncado)
-- [ ] Componente: ReviewList com paginação
-- [ ] Componente: ReviewForm (modal/page)
-- [ ] Componente: RatingPicker (interactive stars)
-- [ ] DatePicker para data de início/fim
-- [ ] Preview expandível de reviews
-- [ ] Hook: useBooks
-- [ ] Hook: useReviews
-- [ ] Cálculo de rating médio exibido
-
-### Definition of Done Sprint 3
-- [ ] Livros podem ser listados e buscados
-- [ ] Página de detalhes do livro mostra média + nº de reviews
-- [ ] Reviews podem ser criadas/editadas/deletadas
-- [ ] Datas de leitura são exibidas
-- [ ] Reviews longas podem ser expandidas
-
----
-
-## 12.5 Sprint 4: Clubes & Chat (3 semanas)
-
-### Backend Tasks
-- [ ] Criar Club model no Prisma
-- [ ] Criar Message model no Prisma
-- [ ] POST /clubs - criar clube
-- [ ] GET /clubs - listar clubs (com paginação)
-- [ ] GET /clubs/:id - detalhes do club
-- [ ] PUT /clubs/:id - editar (apenas criador)
-- [ ] DELETE /clubs/:id - deletar (apenas criador)
-- [ ] POST /clubs/:id/members - adicionar membro
-- [ ] DELETE /clubs/:id/members/:userId - remover (apenas criador)
-- [ ] GET /clubs/:id/members - listar membros
-- [ ] Geração de access code (8 chars)
-- [ ] POST /clubs/:id/access - entrar com code
-- [ ] GET /clubs/:id/messages - histórico (com paginação)
-- [ ] WebSocket: chat.gateway.ts
-- [ ] WebSocket: message:send event
-- [ ] WebSocket: message:receive event
-- [ ] Validação de permissões (criador vs membro)
-- [ ] Testes para clubs CRUD
-- [ ] Testes para WebSocket
-
-### Frontend Tasks
-- [ ] Página: ClubsListPage
-- [ ] Componente: ClubCard
-- [ ] Componente: CreateClubModal
-- [ ] Página: ClubDetailPage
-- [ ] Componente: ClubChat (WebSocket)
-- [ ] Componente: MessageList (com scroll fixo)
-- [ ] Componente: MessageInput
-- [ ] Componente: MemberList
-- [ ] Componente: MemberModal (expandir membros com progresso)
-- [ ] Página: ClubManagementPage (apenas criador)
-- [ ] Componente: ClubSettings (editar nome, livro, bio)
-- [ ] Componente: AccessCodeDisplay (copiar, regenerar)
-- [ ] Componente: RemoveMemberButton
-- [ ] Hook: useClubs
-- [ ] Hook: useChat (WebSocket)
-- [ ] Integração Socket.io
-- [ ] Lazy load de mensagens antigas
-- [ ] Indicador "escrevendo..."
-
-### Definition of Done Sprint 4
-- [ ] Clubes podem ser criados (público/privado)
-- [ ] Código de acesso funciona para privados
-- [ ] Chat funciona em tempo real
-- [ ] Chat tem scroll (não expande com mensagens)
-- [ ] Membros podem ser visualizados e removidos (criador)
-- [ ] Dados do clube podem ser editados (criador)
-- [ ] Código de acesso pode ser regenerado (criador)
-
----
-
-## 12.6 Sprint 5: Polish & Testing (1 semana)
-
-- [ ] Bug fixes
-- [ ] Performance optimization
-- [ ] Code review / refactor
-- [ ] Teste completo de funcionalidades
-- [ ] Lighthouse score > 85
-- [ ] Responsividade em mobile/tablet
-- [ ] Accessibility audit
-
----
-
-## 12.7 Sprint 6: Beta & Launch (2 semanas)
-
-- [ ] Internal closed beta testing
-- [ ] Bug fixes encontrados em beta
-- [ ] Performance tuning
-- [ ] Documentation
-- [ ] Deploy para produção
-- [ ] Launch MVP v1.0 🎉
+- Model de `Notification` no Prisma, com triggers reais nos eventos de like/comment/follow (hoje é só client-only)
+- Mural de clube em tempo real (hoje é fetch/refresh, não WebSocket/SSE)
+- Reações com emoji no chat
+- Métricas de produto reais (hoje não há dashboard formal de KPIs)
 
 ---
 
 # 13. ENDPOINTS DA API
 
-## 13.1 Auth Endpoints
+Todas as rotas ficam em `src/app/api/**` (Next.js Route Handlers). Autenticação via sessão Auth.js (`auth()`); rotas sem sessão retornam `401`.
+
+## 13.1 Auth
 
 ```
-POST   /auth/register
-  Body: { email, username, password, fullName }
-  Response: { id, email, username, token, refreshToken }
-
-POST   /auth/login
-  Body: { email/username, password }
-  Response: { user, token, refreshToken }
-
-POST   /auth/refresh
-  Body: { refreshToken }
-  Response: { token }
-
-POST   /auth/logout
-  Response: { message: "Logged out" }
+GET/POST /api/auth/[...nextauth]     Auth.js (OAuth callbacks, sessão)
+POST     /api/auth/register          cadastro por e-mail/senha (feature flag)
+POST     /api/auth/forgot            solicitar reset de senha (feature flag)
+POST     /api/auth/reset             concluir reset de senha (feature flag)
 ```
 
-## 13.2 User Endpoints
+## 13.2 Usuários
 
 ```
-GET    /users/me
-  Response: { id, email, username, fullName, avatar, bio, city, ... }
-
-PUT    /users/profile
-  Body: { fullName, bio, city, favGenre, favBook, isPublic }
-  Response: { user }
-
-POST   /users/avatar
-  Body: FormData(file)
-  Response: { avatarUrl }
-
-PUT    /users/avatar
-  Body: { avatarUrl }
-  Response: { user }
-
-PUT    /users/email
-  Body: { newEmail, verificationCode }
-  Response: { user }
-
-PUT    /users/phone
-  Body: { phone, verificationCode }
-  Response: { user }
-
-PUT    /users/password
-  Body: { currentPassword, newPassword }
-  Response: { message: "Password updated" }
-
-GET    /users/:id
-  Response: { user (public profile) }
-
-GET    /users/:id/reviews
-  Response: { reviews[] }
-
-GET    /users/settings
-  Response: { email, phone, emailVerified, phoneVerified, isPublic }
-
-PUT    /users/privacy
-  Body: { isPublic, reviewsPublic, indexable }
-  Response: { user }
+GET    /api/users/me                 perfil próprio (identidade + stats)
+PATCH  /api/users/me                 atualizar perfil (username, nome, bio, avatar,
+                                       top4, gêneros, progressUnit, onboarded)
+POST   /api/users/me/password        trocar senha (feature flag; exige senha atual)
+GET    /api/users/check-username     disponibilidade de username em tempo real
+GET    /api/users/suggestions        "descobrir leitores" (até 6, exclui quem já sigo)
+GET    /api/users/[username]         perfil público
+GET    /api/users/[username]/reviews reviews públicas do usuário
+GET    /api/users/[username]/followers
+GET    /api/users/[username]/following
+POST   /api/users/[username]/follow  seguir
+DELETE /api/users/[username]/follow  deixar de seguir
 ```
 
-## 13.3 Verification Endpoints
+## 13.3 Verificação de E-mail (feature flag)
 
 ```
-POST   /verification/send-email-code
-  Body: { email }
-  Response: { message: "Code sent" }
-
-POST   /verification/verify-email-code
-  Body: { email, code }
-  Response: { valid: boolean }
-
-POST   /verification/send-phone-code
-  Body: { phone }
-  Response: { message: "Code sent" }
-
-POST   /verification/verify-phone-code
-  Body: { phone, code }
-  Response: { valid: boolean }
-
-POST   /verification/send-password-reset
-  Body: { email }
-  Response: { message: "Reset link sent" }
+POST /api/verification/email/send    envia código de 6 dígitos
+POST /api/verification/email/verify  valida código
 ```
 
-## 13.4 Book Endpoints
+## 13.4 Livros
 
 ```
-GET    /books
-  Query: { page, limit, genre, sort }
-  Response: { books[], total, page, limit }
-
-GET    /books/search
-  Query: { q, genre, author }
-  Response: { books[] }
-
-GET    /books/:id
-  Response: { book, avgRating, totalReviews }
-
-POST   /books
-  Body: { title, author, year, genre, description, isbn, coverUrl }
-  Response: { book }
-  Note: Admin only
+GET  /api/books               catálogo interno (busca por título/autor, ids=, sort=trending|top)
+GET  /api/books/search        busca ao vivo no Google Books (pra adicionar ao catálogo)
+GET  /api/books/[id]          detalhe (getOrCreateBook)
+PUT  /api/books/[id]/shelf    status na estante (WANT_TO_READ/READING/READ)
+PUT  /api/books/[id]/progress progresso de leitura (currentPage/lastPage)
+PUT  /api/books/[id]/review   nota + review (rating <= 0 apaga)
+GET  /api/books/[id]/reviews  reviews do livro
+POST/DELETE /api/books/[id]/tags   tags do usuário no livro
+GET/POST    /api/books/[id]/quotes citações do usuário no livro
+DELETE      /api/quotes/[quoteId]
 ```
 
-## 13.5 Review Endpoints
+## 13.5 Reviews
 
 ```
-POST   /books/:id/reviews
-  Body: { rating, title, content, readStartDate, readEndDate, isSpoiler, isPublic }
-  Response: { review }
-
-GET    /books/:id/reviews
-  Query: { page, limit, sort }
-  Response: { reviews[], total }
-
-GET    /reviews/:id
-  Response: { review }
-
-PUT    /reviews/:id
-  Body: { rating, title, content, readStartDate, readEndDate, isSpoiler, isPublic }
-  Response: { review }
-
-DELETE /reviews/:id
-  Response: { message: "Review deleted" }
+GET  /api/reviews/[id]                   review por id (permalink)
+POST/DELETE /api/reviews/[id]/like        curtir/descurtir
+GET/POST    /api/reviews/[id]/comments    comentários
 ```
 
-## 13.6 Club Endpoints
+## 13.6 Feed & Estante
 
 ```
-POST   /clubs
-  Body: { name, description, bookId, isPrivate }
-  Response: { club, accessCode (if private) }
-
-GET    /clubs
-  Query: { page, limit, isPrivate }
-  Response: { clubs[], total }
-
-GET    /clubs/:id
-  Response: { club, members, avgReadProgress }
-
-PUT    /clubs/:id
-  Body: { name, description, bookId }
-  Response: { club }
-  Note: Only creator
-
-DELETE /clubs/:id
-  Response: { message: "Club deleted" }
-  Note: Only creator
-
-POST   /clubs/:id/join
-  Body: { accessCode (if private) }
-  Response: { club }
-
-POST   /clubs/:id/access
-  Body: { accessCode }
-  Response: { valid: boolean }
-
-GET    /clubs/:id/members
-  Response: { members[] (with progress) }
-
-DELETE /clubs/:id/members/:userId
-  Response: { message: "Member removed" }
-  Note: Only creator
-
-POST   /clubs/:id/members/:userId/remove
-  Response: { message: "Member removed" }
-  Note: Only creator
-
-GET    /clubs/:id/messages
-  Query: { page, limit }
-  Response: { messages[], total }
-
-POST   /clubs/:id/regenerate-code
-  Response: { newAccessCode }
-  Note: Only creator
+GET /api/feed?scope=all|following|liked    feed paginado por cursor
+GET /api/shelf?status=&genre=&tag=&q=      estante do usuário logado
 ```
 
-## 13.7 WebSocket Events
+## 13.7 Listas
 
 ```
-// Client to Server
-message:send
-  Data: { clubId, content }
+GET/POST     /api/lists                 minhas listas / criar
+GET/PATCH/DELETE /api/lists/[id]         detalhe / editar (nome, visibilidade) / excluir
+POST/DELETE  /api/lists/[id]/books       adicionar/remover livro
+GET          /api/lists/community        listas públicas de todos (busca sem query)
+```
 
-typing:start
-  Data: { clubId }
+## 13.8 Clubes
 
-typing:stop
-  Data: { clubId }
+```
+GET/POST     /api/clubs                        meus clubes + públicos / criar
+GET/PATCH/DELETE /api/clubs/[id]               detalhe / editar (criador) / excluir (criador)
+POST         /api/clubs/join                   entrar por código
+POST         /api/clubs/[id]/join              entrar (público, sem código)
+DELETE       /api/clubs/[id]/leave             sair
+DELETE       /api/clubs/[id]/members/[userId]  remover membro (criador)
+POST         /api/clubs/[id]/code/regenerate   regenerar código (criador, só privado)
+GET/POST     /api/clubs/[id]/messages          mural: listar / postar mensagem
+```
 
-// Server to Client
-message:receive
-  Data: { messageId, userId, username, avatar, content, createdAt }
+## 13.9 Metas de Leitura
 
-member:joined
-  Data: { userId, username }
+```
+GET/PUT/DELETE /api/goals/[year]   ver / definir / remover meta anual
+```
 
-member:left
-  Data: { userId, username }
+## 13.10 Outros
 
-typing:indicator
-  Data: { userId, username, isTyping }
-
-error
-  Data: { message }
+```
+POST /api/upload/avatar         upload de foto de perfil (Vercel Blob)
+POST /api/import/goodreads      import de CSV do Goodreads
+POST /api/feedback              formulário de feedback (Resend)
 ```
 
 ---
 
 # 14. SCHEMA DO BANCO (PRISMA)
 
-```prisma
-// prisma/schema.prisma
+Fonte de verdade: `prisma/schema.prisma`. Reproduzido abaixo (sem os comentários `///` de cada campo — ver o arquivo original para o racional de cada um).
 
+```prisma
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  extensions = [citext]
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  username      String    @unique
-  passwordHash  String
-  phone         String?   @unique
-  fullName      String
-  bio           String?   @db.VarChar(500)
+  id            String       @id @default(cuid())
+  email         String       @unique
+  username      String?      @unique @db.Citext
+  name          String
+  passwordHash  String?
+  emailVerified DateTime?
+  bio           String?      @db.VarChar(500)
+  avatar        Int          @default(0)
   avatarUrl     String?
-  city          String?
-  favGenres     String[]
-  favBook       String?
-  isPublic      Boolean   @default(true)
-  emailVerified Boolean   @default(false)
-  phoneVerified Boolean   @default(false)
-  
-  reviews       Review[]
-  createdClubs  Club[]    @relation("creator")
-  clubMembers   Club[]    @relation("members")
-  messages      Message[]
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  genres        String[]     @default([])
+  top4          String[]     @default([])
+  progressUnit  ProgressUnit @default(pages)
+  onboarded     Boolean      @default(false)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  accounts Account[]
+  sessions Session[]
+
+  followedBy Follow[] @relation("following")
+  following  Follow[] @relation("follower")
+
+  shelfEntries ShelfEntry[]
+  reviews      Review[]
+  bookTags     BookTag[]
+  quotes       Quote[]
+  readingGoals ReadingGoal[]
+
+  createdClubs Club[]       @relation("clubCreator")
+  clubMembers  ClubMember[]
+  messages     Message[]
+
+  reviewLikes ReviewLike[]
+  comments    Comment[]
+  lists       List[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Follow {
+  id            String   @id @default(cuid())
+  followerId    String
+  follower      User     @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId   String
+  followingUser User     @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([followingId])
+}
+
+model VerificationCode {
+  id        String           @id @default(cuid())
+  email     String
+  code      String
+  type      VerificationType
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([email, type])
+}
+
+enum ShelfStatus {
+  WANT_TO_READ
+  READING
+  READ
+}
+
+enum Visibility {
+  public
+  private
+}
+
+enum ProgressUnit {
+  pages
+  percent
+}
+
+enum VerificationType {
+  email
+  password
 }
 
 model Book {
-  id          String    @id @default(cuid())
-  title       String
-  author      String
-  isbn        String?   @unique
-  coverUrl    String?
-  year        Int?
-  genres      String[]
-  description String?   @db.Text
-  
-  reviews     Review[]
-  clubs       Club[]
-  
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id           String   @id
+  title        String
+  authors      String
+  year         Int
+  pages        Int
+  genre        String
+  gradientFrom String
+  gradientTo   String
+  synopsis     String
+  coverUrl     String?
+  isbn         String?  @unique
+  avg          Float    @default(0)
+  count        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  shelfEntries ShelfEntry[]
+  reviews      Review[]
+  tags         BookTag[]
+  quotes       Quote[]
+  clubs        Club[]
+  listBooks    ListBook[]
+
+  @@index([genre])
+}
+
+model ShelfEntry {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId      String
+  book        Book        @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  status      ShelfStatus
+  currentPage Int?
+  lastPage    Int?
+  startedAt   DateTime?
+  finishedAt  DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@unique([userId, bookId])
+  @@index([bookId])
+}
+
+model ReadingGoal {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  year        Int
+  targetBooks Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, year])
 }
 
 model Review {
-  id            String    @id @default(cuid())
-  rating        Int       @db.SmallInt // 1-10; cada passo = meia estrela (produto usa 0,5-5 com incrementos de 0,5, ex.: 9 = 4,5★)
-  title         String?   @db.VarChar(150)
-  content       String    @db.VarChar(5000)
-  readStartDate DateTime?
-  readEndDate   DateTime?
-  isSpoiler     Boolean   @default(false)
-  isPublic      Boolean   @default(true)
-  
-  bookId        String
-  book          Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
-  
-  userId        String
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId     String
+  book       Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  rating     Float
+  title      String?   @db.VarChar(150)
+  text       String    @default("")
+  startedAt  DateTime?
+  finishedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  likes    ReviewLike[]
+  comments Comment[]
+
   @@unique([userId, bookId])
+  @@index([bookId, createdAt])
+}
+
+model ReviewLike {
+  id        String   @id @default(cuid())
+  reviewId  String
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([reviewId, userId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  reviewId  String
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text      String   @db.VarChar(500)
+  createdAt DateTime @default(now())
+
+  @@index([reviewId, createdAt])
+}
+
+model List {
+  id         String     @id @default(cuid())
+  userId     String
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String     @db.VarChar(80)
+  visibility Visibility @default(public)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  books ListBook[]
+}
+
+model ListBook {
+  id        String   @id @default(cuid())
+  listId    String
+  list      List     @relation(fields: [listId], references: [id], onDelete: Cascade)
+  bookId    String
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  order     Int
+  createdAt DateTime @default(now())
+
+  @@unique([listId, bookId])
+  @@index([listId, order])
+}
+
+model BookTag {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId String
+  book   Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  tag    String
+
+  @@unique([userId, bookId, tag])
+  @@index([userId, tag])
+}
+
+model Quote {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId    String
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  text      String
+  page      Int?
+  createdAt DateTime @default(now())
+
+  @@index([userId, bookId])
 }
 
 model Club {
-  id          String    @id @default(cuid())
-  name        String    @db.VarChar(100)
-  description String?   @db.VarChar(500)
-  isPrivate   Boolean   @default(false)
-  accessCode  String?   @unique @db.Char(8)
-  
-  bookId      String
-  book        Book      @relation(fields: [bookId], references: [id])
-  
-  creatorId   String
-  creator     User      @relation("creator", fields: [creatorId], references: [id], onDelete: Cascade)
-  
-  members     User[]    @relation("members")
-  messages    Message[]
-  
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id         String     @id @default(cuid())
+  name       String     @db.VarChar(80)
+  desc       String     @default("") @db.VarChar(500)
+  visibility Visibility
+  code       String?    @unique
+  bookId     String
+  book       Book       @relation(fields: [bookId], references: [id])
+  creatorId  String
+  creator    User       @relation("clubCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  members  ClubMember[]
+  messages Message[]
+}
+
+model ClubMember {
+  id       String   @id @default(cuid())
+  clubId   String
+  club     Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     String   @default("member")
+  progress Int?
+  joinedAt DateTime @default(now())
+
+  @@unique([clubId, userId])
+  @@index([userId])
 }
 
 model Message {
   id        String    @id @default(cuid())
-  content   String    @db.VarChar(500)
-  mentions  String[]
-  reactions String[]  // emoji
-  
   clubId    String
   club      Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  
   userId    String
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  text      String    @db.VarChar(500)
+  system    Boolean   @default(false)
+  replyToId String?
+  replyTo   Message?  @relation("messageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies   Message[] @relation("messageReplies")
   createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-}
 
-model VerificationCode {
-  id        String    @id @default(cuid())
-  email     String?
-  phone     String?
-  code      String    @db.Char(6)
-  type      String    // "email" | "phone" | "password"
-  expiresAt DateTime
-  usedAt    DateTime?
-  
-  createdAt DateTime  @default(now())
-  
-  @@index([email, type])
-  @@index([phone, type])
-}
-
-model Session {
-  id        String    @id @default(cuid())
-  userId    String
-  token     String    @unique
-  expiresAt DateTime
-  
-  createdAt DateTime  @default(now())
+  @@index([clubId, createdAt])
 }
 ```
 
@@ -2674,161 +1003,85 @@ model Session {
 
 # 15. ENVIRONMENT VARIABLES
 
-## 15.1 Backend (.env)
+Fonte de verdade: `.env.example` na raiz do repo. Resumo:
 
 ```env
-# Database
-DATABASE_URL=postgresql://user:password@localhost:5432/bookly
-DATABASE_SHADOW_DATABASE_URL=postgresql://user:password@localhost:5432/bookly_shadow
+# Postgres (Neon em produção)
+DATABASE_URL=""
+DIRECT_URL=""            # conexão direta, sem pooler — só pro Prisma Migrate
 
-# JWT
-JWT_SECRET=your-super-secret-key-change-in-production
-JWT_EXPIRATION=15m
-JWT_REFRESH_SECRET=your-refresh-secret-key
-JWT_REFRESH_EXPIRATION=7d
+# Auth.js
+AUTH_SECRET=""            # npx auth secret
+AUTH_URL="http://localhost:3000"
 
-# Email (SendGrid)
-SENDGRID_API_KEY=SG.your-api-key-here
-SENDGRID_FROM_EMAIL=noreply@bookly.com
+# OAuth
+GOOGLE_CLIENT_ID=""
+GOOGLE_CLIENT_SECRET=""
+AMAZON_CLIENT_ID=""
+AMAZON_CLIENT_SECRET=""
 
-# SMS (Twilio)
-TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-TWILIO_AUTH_TOKEN=your-auth-token
-TWILIO_PHONE_NUMBER=+1234567890
+# Login por e-mail/senha (desligado por padrão)
+NEXT_PUBLIC_EMAIL_LOGIN_ENABLED="false"
 
-# AWS S3
-AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=your-access-key
-AWS_SECRET_ACCESS_KEY=your-secret-key
-AWS_S3_BUCKET=bookly-uploads
+# E-mail transacional (verificação de e-mail, quando habilitado acima)
+# SENDGRID_API_KEY=""
+# MAIL_FROM=""
 
-# Server
-NODE_ENV=development
-PORT=3000
-LOG_LEVEL=debug
+# Catálogo
+GOOGLE_BOOKS_API_KEY=""
 
-# CORS
-CORS_ORIGIN=http://localhost:5173
+# Upload de avatar (Vercel Blob — injetado automaticamente em produção quando
+# o Blob store está linkado ao projeto; em dev, pegar em Storage → Blob ou
+# `vercel env pull`)
+BLOB_READ_WRITE_TOKEN=""
 
-# Frontend
-FRONTEND_URL=http://localhost:5173
+# Feedback (Resend)
+RESEND_API_KEY=""
+FEEDBACK_TO_EMAIL=""
 
-# Sentry (optional)
-SENTRY_DSN=https://...@sentry.io/...
+# Metadata/OG
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
 
-# Redis (optional, for caching)
-REDIS_URL=redis://localhost:6379
+# Rate limiting (Upstash) — sem essas duas vars, fail-open (libera tudo, só loga)
+UPSTASH_REDIS_REST_URL=""
+UPSTASH_REDIS_REST_TOKEN=""
 ```
 
-## 15.2 Frontend (.env)
-
-```env
-VITE_API_URL=http://localhost:3000
-VITE_API_TIMEOUT=10000
-VITE_ENVIRONMENT=development
-VITE_APP_NAME=Bookly
-VITE_LOG_LEVEL=debug
-```
+Não há `.env` "sem configuração" viável: banco, `AUTH_SECRET` e ao menos um provider OAuth são obrigatórios para rodar localmente.
 
 ---
 
-# 16. MÉTRICAS & KPIs
+# 16. RISCOS & MITIGAÇÃO
 
-## 16.1 Performance
-
-| Métrica | Target | Frequência |
-|---------|--------|-----------|
-| API Response Time (p95) | < 200ms | Real-time |
-| Frontend TTI | < 2s | Build time |
-| Lighthouse Score | > 85 | Per release |
-| Bundle Size | < 500KB | Per release |
-| DB Query Time (p95) | < 100ms | Real-time |
-
-## 16.2 Qualidade
-
-| Métrica | Target | Frequência |
-|---------|--------|-----------|
-| Test Coverage | > 80% | Per PR |
-| Bug Escape Rate | < 5% | Per sprint |
-| Critical Bugs (prod) | 0 | Always |
-| E2E Test Pass Rate | 100% | Per build |
-
-## 16.3 Negócio
-
-| Métrica | Target | Frequência |
-|---------|--------|-----------|
-| Signup Conversion | > 40% | Diário |
-| Email Verification Rate | > 85% | Diário |
-| Club Creation Rate | > 20% (de ativos) | Diário |
-| DAU (Daily Active Users) | Crescendo | Diário |
-| Chat Messages/Dia | > 100 por clube | Diário |
-| Review Completion Rate | > 30% (users que leem criam review) | Semanal |
-| 30-Day Retention | > 60% | Mensal |
+| Risco | Impacto | Mitigação |
+|---|---|---|
+| Seed legado remanescente em produção (pré-migração) | Alto | Migração one-time `purge_seed_data` + guarda `guard:no-seed` no CI (só enxerga banco de teste — checagem de produção é manual, `guard:no-seed:prod`) |
+| Rate limit fail-open sem Redis configurado | Médio | Aceito conscientemente (perder rate limit é melhor que derrubar o app); monitorar warnings de "sem Redis em produção" |
+| Cota do Google Books estourada | Médio | `getOrCreateBook` cacheia por 30 dias; import do Goodreads limita a 200 lookups por execução |
+| Migração falha em produção sem acesso interativo ao banco | Alto | `scripts/resolve-stuck-migration.ts` roda antes de todo `migrate deploy`; trata banco novo (primeira migração de todas) como no-op |
+| Conflito de conta entre providers OAuth (mesmo e-mail em Google e Amazon) | Médio | `allowDangerousEmailAccountLinking: true` em ambos — aceito porque ambos já verificam o e-mail no próprio fluxo OAuth |
+| Vercel Blob sem token configurado localmente | Baixo | Documentado em `.env.example`; upload falha com 502 claro, não silenciosamente |
+| CSV do Goodreads malformado/gigante no import | Baixo | Limite de 5MB, parser tolerante (`papaparse`), relatório final expõe linhas puladas |
 
 ---
 
-# 17. RISCOS & MITIGAÇÃO
+# 17. DEFINIÇÃO DE PRONTO (DoD)
 
-## Tabela de Riscos
+## Checklist por mudança
 
-| Risco | Impacto | Probabilidade | Mitigação |
-|-------|---------|---------------|-----------|
-| Atraso na integração WebSocket | Alto | Média | Spike research na semana 1, usar Socket.io maduro |
-| Problema com S3 upload | Médio | Baixa | Testes locais com moto, fallback storage |
-| Escalabilidade do chat | Alto | Média | Redis pub/sub, message queuing (BullMQ) |
-| GDPR/Privacy compliance | Alto | Média | Revisar cookies, consent, data deletion |
-| SSL certificate issues | Médio | Baixa | Let's Encrypt com automation |
-| Database connection timeout | Médio | Média | Connection pooling, retry logic |
-| Email delivery issues | Médio | Baixa | SendGrid redundancy, log all sends |
-| SMS delivery issues | Médio | Baixa | Twilio fallback, log attempts |
-| DDoS attacks | Alto | Baixa | Rate limiting, WAF (AWS Shield) |
-| Database migration issues | Alto | Baixa | Test migrations, backup strategy |
+- [ ] `npx tsc --noEmit` limpo
+- [ ] `npm run lint` limpo
+- [ ] `npm run build` limpo (inclui `prisma migrate deploy` contra um banco de teste)
+- [ ] `npm run guard:no-seed` verde
+- [ ] Suíte Playwright (`npx playwright test`) verde — sem quebrar fluxo existente
+- [ ] Sem `console.log` de debug esquecido
+- [ ] Sem secret hardcoded (usar `.env`)
+- [ ] Testado manualmente na UI (não só tipo/lint/build) quando a mudança afeta uma tela
+- [ ] Responsivo em mobile (viewport 390px é o alvo primário; desktop é secundário)
+- [ ] Acessibilidade básica (labels, `aria-*`, navegação por teclado nos componentes tocados)
 
 ---
 
-# 18. DEFINIÇÃO DE PRONTO (DoD)
-
-## Checklist por Feature/Task
-
-- [ ] Código revisado por pelo menos 1 person (code review)
-- [ ] Testes unitários com 80%+ cobertura
-- [ ] Testes E2E para fluxos críticos
-- [ ] TypeScript sem erros (`tsc --noEmit`)
-- [ ] ESLint/Prettier sem warnings
-- [ ] Sem console.logs em produção
-- [ ] Sem secrets hardcoded
-- [ ] Commits descritivos (conventional commits)
-- [ ] Documentação de API (comentários/swagger)
-- [ ] Performance acceptable (Lighthouse > 80 ou API < 200ms)
-- [ ] Responsivo (mobile, tablet, desktop)
-- [ ] Validações implementadas (frontend + backend)
-- [ ] Erro handling implementado (user-friendly messages)
-- [ ] Acessibilidade básica (alt text, labels, keyboard nav)
-- [ ] Testado manualmente por outro dev
-
----
-
-# CONCLUSÃO
-
-Este documento contém toda a especificação necessária para desenvolver o Bookly MVP. 
-
-**Para começar:**
-1. Backend Dev → Seção 10 (Stack), 11 (Estrutura), 12 (Sprint 1), 14 (Schema)
-2. Frontend Dev → Seção 4 (Mocks), 11 (Estrutura), 12 (Sprint 1), 13 (API Endpoints)
-3. PM/Product → Seção 1-3 (Visão geral), 12 (Timeline), 16 (Métricas)
-4. QA/Tester → Seção 8 (Validações), 17 (Riscos), 18 (DoD)
-
-**Boa sorte! 🚀**
-
----
-
-**Versão:** 1.0  
-**Data:** 2024-07-20  
-**Status:** 🟢 Pronto para Implementação  
-**Próxima Revisão:** Pós Sprint 1
-
----
-
-## Nota sobre o estado atual do projeto
-
-Este documento descreve a especificação-alvo completa (full-stack: NestJS + PostgreSQL/Prisma + React/Vite + WebSocket). O estado atual deste repositório é um **protótipo frontend em Next.js com dados mocados** (ver `README.md`), que já implementa em memória boa parte do fluxo de produto descrito aqui (feed, estante, clubes com chat, perfil, configurações). A migração para a arquitetura completa (auth real, banco, upload em S3, SMS/e-mail, WebSocket) é trabalho futuro, feature por feature, mantendo os nomes de campos já usados no store (`src/lib/store`) para minimizar o retrabalho.
+**Versão:** 2.0
+**Substitui:** v1.0 (2024-07-20, especificação pré-implementação com stack nunca adotada)
+**Próxima revisão:** quando o schema, os endpoints ou a stack mudarem de forma relevante — manter este documento como espelho do código, não como plano à parte dele.

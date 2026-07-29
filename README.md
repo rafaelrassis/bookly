@@ -118,6 +118,6 @@ prisma/
 scripts/
   purge-seed.ts       utilitário pontual pra remover os registros de seed legado do banco (dry-run por padrão, --apply pra deletar) — mesmo critério da migração `purge_seed_data`, útil pra medir antes/depois manualmente
   assert-no-seed.ts   guarda de regressão (`npm run guard:no-seed`, rodado no CI) — falha se o seed legado voltar: arquivo `prisma/seed.ts`/`seed-data.ts` recriado, referência a "seed" no build/CI, ou usuário de seed no banco
-e2e/                suíte Playwright (auth, books, clubs, social, users) — 44 specs; e2e/global-setup.ts semeia só a fixture mínima de catálogo (duna/1984/verity) usada pelos testes
+e2e/                suíte Playwright (auth, books, clubs, social, users) — 6 arquivos, 35 testes; e2e/global-setup.ts semeia só a fixture mínima de catálogo (duna/1984/verity) usada pelos testes
 docs/VALIDATION_REPORT.md   relatório de validação do backend (Spec V)
 ```
