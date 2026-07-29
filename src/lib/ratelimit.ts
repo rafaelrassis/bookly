@@ -23,6 +23,7 @@ export const limiters = {
   upload: make(5, "1 m", "rl:upload"), // upload de avatar — mais agressivo
   feedback: make(4, "1 m", "rl:feedback"), // feedback — alvo fácil de spam
   chat: make(20, "1 m", "rl:chat"), // mensagens de clube
+  import: make(2, "60 m", "rl:import"), // import de CSV — pesado, gasta cota do Google Books
 };
 
 export type LimiterKey = keyof typeof limiters;
