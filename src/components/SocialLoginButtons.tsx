@@ -1,10 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Spinner } from "@/components/Spinner";
 
 type Provider = "google" | "amazon";
+
+const OAUTH_ERROR_MESSAGES: Record<string, string> = {
+  OAuthAccountNotLinked:
+    "Esse e-mail já está cadastrado com outro provedor. Tente entrar com ele.",
+  OAuthSignin: "Não foi possível iniciar o login. Tente novamente.",
+  OAuthCallback: "Não foi possível concluir o login com o provedor. Tente novamente.",
+  OAuthCreateAccount: "Não foi possível criar sua conta. Tente novamente.",
+  AccessDenied: "Login cancelado.",
+  Configuration: "Login temporariamente indisponível. Tente novamente mais tarde.",
+};
+
+function OAuthErrorBanner() {
+  const searchParams = useSearchParams();
+  const error = searchParams.get("error");
+  if (!error) return null;
+
+  const message = OAUTH_ERROR_MESSAGES[error] ?? "Não foi possível entrar. Tente novamente.";
+
+  return (
+    <p role="alert" className="text-sm text-red-400">
+      {message}
+    </p>
+  );
+}
 
 /** Botões de login/criação de conta via OAuth — usados na landing e em
  * /login. Mesma ação nos dois lugares (login e cadastro são o mesmo fluxo
@@ -19,6 +44,9 @@ export function SocialLoginButtons({ callbackUrl = "/home" }: { callbackUrl?: st
 
   return (
     <div className="flex flex-col gap-2.5">
+      <Suspense fallback={null}>
+        <OAuthErrorBanner />
+      </Suspense>
       <button
         type="button"
         onClick={() => handleSignIn("google")}
