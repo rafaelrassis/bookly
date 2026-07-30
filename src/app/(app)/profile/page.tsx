@@ -16,7 +16,7 @@ import { formatCount, formatDecimal } from "@/lib/format";
 import { useBooksByIds, useFeed, useMyStats, useRecommendations } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
 import { trustTier } from "@/lib/trust-badge";
-import type { ApiList } from "@/lib/types";
+import type { ApiList, ApiUserQuote } from "@/lib/types";
 
 const HISTOGRAM_LABELS: Record<number, string> = { 0.5: "½★", 5: "★★★★★" };
 
@@ -68,12 +68,20 @@ export default function ProfilePage() {
 
   const [tab, setTab] = useState<ActivityTab>("ratings");
   const [lists, setLists] = useState<ApiList[]>([]);
+  const [quotes, setQuotes] = useState<ApiUserQuote[]>([]);
 
   useEffect(() => {
     fetch("/api/lists")
       .then((res) => (res.ok ? res.json() : []))
       .then((data: ApiList[]) => setLists(data ?? []));
   }, []);
+
+  useEffect(() => {
+    if (!user.username) return;
+    fetch(`/api/users/${user.username}/quotes`)
+      .then((res) => (res.ok ? res.json() : { items: [] }))
+      .then((data) => setQuotes(data.items ?? []));
+  }, [user.username]);
 
   const publicLists = lists.filter((l) => l.visibility === "public");
 
@@ -243,6 +251,29 @@ export default function ProfilePage() {
                   {list.books.slice(0, 3).map((book) => (
                     <BookCover key={book.id} book={book} width={28} />
                   ))}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {quotes.length > 0 && (
+        <section className="mt-6">
+          <SectionTitle>Minhas citações</SectionTitle>
+          <div className="mt-3 flex flex-col gap-3">
+            {quotes.map((quote) => (
+              <Link
+                key={quote.id}
+                href={`/citacao/${quote.id}`}
+                className="flex gap-3.5 rounded-2xl border border-line bg-card p-3.5 transition-colors hover:bg-card2"
+              >
+                <BookCover book={quote.book} width={48} />
+                <div className="min-w-0">
+                  <p className="truncate font-display text-sm font-bold">{quote.book.title}</p>
+                  <p className="mt-1 line-clamp-2 font-display text-sm italic text-paperDim">
+                    “{quote.text}”
+                  </p>
                 </div>
               </Link>
             ))}

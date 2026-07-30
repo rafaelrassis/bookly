@@ -177,6 +177,20 @@ export type ApiBookReview = Omit<ApiReview, "book">;
 /** Review de `GET /api/users/[username]/reviews` — sem o campo `user` (já conhecido). */
 export type ApiUserReview = Omit<ApiReview, "user">;
 
+/** Citação destacada de um livro (Highlights/Quotes) — usada no card visual
+ * compartilhável em /citacao/[id] e na listagem de citações do perfil. */
+export type ApiQuote = {
+  id: string;
+  user: ApiAuthor;
+  book: Book;
+  text: string;
+  page?: number;
+  createdAt: string;
+};
+
+/** Citação de `GET /api/users/[username]/quotes` — sem o campo `user` (já conhecido). */
+export type ApiUserQuote = Omit<ApiQuote, "user">;
+
 export type ApiComment = {
   id: string;
   text: string;

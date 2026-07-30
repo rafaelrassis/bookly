@@ -12,6 +12,7 @@ import { DonationList } from "@/components/donation/DonationList";
 import { ExpandableText } from "@/components/ExpandableText";
 import { RatingInput } from "@/components/RatingInput";
 import { SectionTitle } from "@/components/SectionTitle";
+import { ShareIcon } from "@/components/icons";
 import { Spinner } from "@/components/Spinner";
 import { Stars } from "@/components/Stars";
 import { TagEditor } from "@/components/TagEditor";
@@ -22,6 +23,8 @@ import type { Book, ShelfEntry, ShelfStatus } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/apiError";
 
 type BookQuote = { id: string; text: string; page?: number };
+
+const QUOTE_MAX_LENGTH = 500;
 
 type CommunityReview = {
   id: string;
@@ -605,11 +608,16 @@ export function BookPageClient({ params }: { params: { id: string } }) {
                 ✕
               </button>
               <span className="pr-5">“{quote.text}”</span>
-              {quote.page !== undefined && (
-                <footer className="mt-2 text-right font-sans text-xs not-italic text-paperDim">
-                  — pág. {quote.page}
-                </footer>
-              )}
+              <footer className="mt-2.5 flex items-center justify-between font-sans text-xs not-italic text-paperDim">
+                <span>{quote.page !== undefined ? `— pág. ${quote.page}` : ""}</span>
+                <Link
+                  href={`/citacao/${quote.id}`}
+                  className="flex items-center gap-1 font-bold transition-colors hover:text-foil"
+                >
+                  <ShareIcon size={12} />
+                  Card
+                </Link>
+              </footer>
             </blockquote>
           ))}
 
@@ -619,12 +627,20 @@ export function BookPageClient({ params }: { params: { id: string } }) {
                 value={quoteDraft}
                 onChange={(e) => setQuoteDraft(e.target.value)}
                 rows={3}
+                maxLength={QUOTE_MAX_LENGTH}
                 // eslint-disable-next-line jsx-a11y/no-autofocus -- campo recém-aberto (único alvo óbvio da ação do usuário); não muda o foco de página alguma sem essa ação
                 autoFocus
                 placeholder="Copie aqui o trecho que te marcou…"
                 aria-label="Texto da citação"
                 className="w-full rounded-xl border border-line bg-card2 px-4 py-3 text-sm text-paper placeholder:text-paperDim/60"
               />
+              <p
+                className={`mt-1 text-right text-[11px] ${
+                  quoteDraft.length >= QUOTE_MAX_LENGTH ? "text-ribbonText" : "text-paperDim"
+                }`}
+              >
+                {quoteDraft.length}/{QUOTE_MAX_LENGTH} · cabe melhor no card se for curta
+              </p>
               <div className="mt-2 flex items-center gap-2">
                 <input
                   type="number"

@@ -341,6 +341,9 @@ model BookTag {
   @@index([userId, tag])
 }
 
+/// Citação destacada de um livro, com card visual compartilhável em
+/// /citacao/[id] (ver GET /api/quotes/[quoteId]/card). Quando o "Stream
+/// unificado" (feed) for especificado, Quote é um dos tipos de post a incluir.
 model Quote {
   id        String   @id @default(cuid())
   userId    String
