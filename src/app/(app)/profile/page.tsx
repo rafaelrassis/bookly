@@ -9,6 +9,7 @@ import { ReceivedDonations } from "@/components/donation/ReceivedDonations";
 import { FeedPost } from "@/components/FeedPost";
 import { SectionTitle } from "@/components/SectionTitle";
 import { Stars } from "@/components/Stars";
+import { YearInBooksCard } from "@/components/YearInBooksCard";
 import { BadgeCheckIcon } from "@/components/icons";
 import { withAt } from "@/lib/handle";
 import { formatCount, formatDecimal } from "@/lib/format";
@@ -169,6 +170,8 @@ export default function ProfilePage() {
           );
         })}
       </div>
+
+      <YearInBooksCard />
 
       <section id="minhas-doacoes" className="mt-6">
         <SectionTitle>Minhas doações</SectionTitle>
