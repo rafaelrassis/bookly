@@ -76,7 +76,7 @@ test("avaliar marca como Lido e recalcula avg/count; nota 0 apaga a review", asy
   // "antes" só é um baseline confiável depois desse primeiro recompute
   // (aqui, disparado pela própria review desta conta).
   const rated = await page.request.put("/api/books/1984/review", {
-    data: { rating: 4.5, text: "Sufocante e atual." },
+    data: { rating: 4.5, title: "Sufocante", text: "Sufocante e atual." },
   });
   expect(rated.ok()).toBeTruthy();
   const ratedBody = await rated.json();

@@ -77,7 +77,9 @@ test("curtir e comentar review: contadores refletem em /api/feed e /api/reviews/
   const a = seedAccount("like_a");
   await register(page, a);
   await login(page, a);
-  await page.request.put("/api/books/verity/review", { data: { rating: 4, text: "Assustador." } });
+  await page.request.put("/api/books/verity/review", {
+    data: { rating: 4, title: "Assustador", text: "Assustador." },
+  });
   const feed = await (await page.request.get("/api/feed?scope=all")).json();
   const reviewId = feed.items.find(
     (r: { user: { username: string } }) => r.user.username === a.username

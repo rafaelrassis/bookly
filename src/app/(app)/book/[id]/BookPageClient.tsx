@@ -386,7 +386,8 @@ export function BookPageClient({ params }: { params: { id: string } }) {
 
   async function publishReview() {
     const text = reviewDraft.trim();
-    if (!text || publishingReview) return;
+    const title = titleDraft.trim();
+    if (!text || !title || publishingReview) return;
     if (!rating || rating <= 0) {
       showToast("Dê uma nota antes de publicar a review");
       return;
@@ -396,7 +397,7 @@ export function BookPageClient({ params }: { params: { id: string } }) {
       const res = await fetch(`/api/books/${bookId}/review`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rating, title: titleDraft.trim() || undefined, text }),
+        body: JSON.stringify({ rating, title, text }),
       });
       if (!res.ok) {
         showToast(await apiErrorMessage(res, "Não foi possível publicar a review"));
@@ -525,8 +526,10 @@ export function BookPageClient({ params }: { params: { id: string } }) {
                 type="text"
                 value={titleDraft}
                 onChange={(e) => setTitleDraft(e.target.value)}
-                placeholder="Título (opcional)"
+                placeholder="Título"
                 aria-label="Título da sua review"
+                aria-required="true"
+                required
                 className="mb-2 w-full rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm font-bold text-paper placeholder:font-normal placeholder:text-paperDim/60"
               />
               <textarea
@@ -550,7 +553,7 @@ export function BookPageClient({ params }: { params: { id: string } }) {
                 <button
                   type="button"
                   onClick={publishReview}
-                  disabled={!reviewDraft.trim() || publishingReview}
+                  disabled={!reviewDraft.trim() || !titleDraft.trim() || publishingReview}
                   className="flex items-center justify-center rounded-xl bg-foil px-4 py-2.5 text-sm font-bold text-leather transition-opacity hover:opacity-90 disabled:opacity-40"
                 >
                   {publishingReview ? <Spinner size={16} className="text-leather" /> : "Publicar"}

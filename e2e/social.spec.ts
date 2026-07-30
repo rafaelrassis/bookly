@@ -114,6 +114,7 @@ test("review propria persiste na pagina do livro", async ({ page }) => {
   await page.waitForTimeout(300);
 
   await page.click('button:has-text("Escrever review"), button:has-text("Editar minha review")');
+  await page.fill('input[aria-label="Título da sua review"]', "Review de teste");
   await page.fill('textarea[aria-label="Texto da sua review"]', "Review de teste automatizado para o e2e.");
   await page.click('button:has-text("Publicar")');
   await expect(page.getByText("Review de teste automatizado para o e2e.").first()).toBeVisible();

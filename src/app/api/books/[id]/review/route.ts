@@ -13,6 +13,8 @@ const schema = z.object({
   text: z.string().max(5000).optional(),
 });
 
+class TitleRequiredError extends Error {}
+
 /** Rating e review são a mesma entidade: upsert cria/atualiza, nota <= 0
  * apaga. Avaliar marca como Lido automaticamente (se ainda não era). Datas
  * de leitura ficam no ShelfEntry e são copiadas pra Review quando existem. */
@@ -32,75 +34,95 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   const book = await db.book.findUnique({ where: { id: bookId }, select: { id: true } });
   if (!book) return NextResponse.json({ error: "não encontrado" }, { status: 404 });
 
-  const result = await db.$transaction(async (tx) => {
-    if (rating <= 0) {
-      await tx.review.deleteMany({ where: { userId: uid, bookId } });
-      await recomputeBookRating(tx, bookId);
-      const entry = await tx.shelfEntry.findUnique({
+  try {
+    const result = await db.$transaction(async (tx) => {
+      if (rating <= 0) {
+        await tx.review.deleteMany({ where: { userId: uid, bookId } });
+        await recomputeBookRating(tx, bookId);
+        const entry = await tx.shelfEntry.findUnique({
+          where: { userId_bookId: { userId: uid, bookId } },
+        });
+        return { rating: null, myReview: null, myReviewTitle: null, entry };
+      }
+
+      const prevEntry = await tx.shelfEntry.findUnique({
         where: { userId_bookId: { userId: uid, bookId } },
       });
-      return { rating: null, myReview: null, myReviewTitle: null, entry };
-    }
+      const prevReview = await tx.review.findUnique({
+        where: { userId_bookId: { userId: uid, bookId } },
+        select: { id: true, text: true },
+      });
+      const today = new Date();
 
-    const prevEntry = await tx.shelfEntry.findUnique({
-      where: { userId_bookId: { userId: uid, bookId } },
+      const nextText = (text ?? "").trim();
+      const nextTitle = title?.trim() ?? "";
+      // Título só é exigido quando o texto da review está sendo escrito/editado
+      // nesta chamada (texto novo ou diferente do salvo) — uma review antiga
+      // sem título continua podendo ter só a nota reajustada sem travar.
+      const authoringText = nextText !== "" && nextText !== (prevReview?.text ?? "");
+      if (authoringText && nextTitle === "") {
+        throw new TitleRequiredError();
+      }
+
+      const entry =
+        prevEntry?.status === "READ"
+          ? prevEntry
+          : await tx.shelfEntry.upsert({
+              where: { userId_bookId: { userId: uid, bookId } },
+              create: { userId: uid, bookId, status: "READ", startedAt: today, finishedAt: today },
+              update: {
+                status: "READ",
+                currentPage: null,
+                lastPage: null,
+                startedAt: prevEntry?.startedAt ?? today,
+                finishedAt: today,
+              },
+            });
+      if (prevEntry?.status !== "READ") {
+        await recordReadingEvent(tx, entry);
+        await recordFeedEvent(tx, { userId: uid, type: "BOOK_FINISHED", bookId });
+      }
+
+      const review = await tx.review.upsert({
+        where: { userId_bookId: { userId: uid, bookId } },
+        create: {
+          userId: uid,
+          bookId,
+          rating,
+          title: nextTitle || null,
+          text: nextText,
+          startedAt: entry.startedAt,
+          finishedAt: entry.finishedAt,
+        },
+        update: {
+          rating,
+          title: nextTitle || null,
+          text: nextText,
+          startedAt: entry.startedAt,
+          finishedAt: entry.finishedAt,
+        },
+      });
+
+      // Entra no feed quando o texto passa a existir (criação com texto, ou uma
+      // nota sem texto que ganha texto depois) — nunca de novo a cada edição
+      // subsequente, já que a partir daí prevReview.text deixa de ser vazio.
+      const hadText = prevReview !== null && prevReview.text !== "";
+      if (!hadText && review.text !== "") {
+        await recordFeedEvent(tx, { userId: uid, type: "REVIEW", bookId, reviewId: review.id });
+      }
+
+      await recomputeBookRating(tx, bookId);
+      return { rating: review.rating, myReview: review.text, myReviewTitle: review.title, entry };
     });
-    const prevReview = await tx.review.findUnique({
-      where: { userId_bookId: { userId: uid, bookId } },
-      select: { id: true, text: true },
-    });
-    const today = new Date();
 
-    const entry =
-      prevEntry?.status === "READ"
-        ? prevEntry
-        : await tx.shelfEntry.upsert({
-            where: { userId_bookId: { userId: uid, bookId } },
-            create: { userId: uid, bookId, status: "READ", startedAt: today, finishedAt: today },
-            update: {
-              status: "READ",
-              currentPage: null,
-              lastPage: null,
-              startedAt: prevEntry?.startedAt ?? today,
-              finishedAt: today,
-            },
-          });
-    if (prevEntry?.status !== "READ") {
-      await recordReadingEvent(tx, entry);
-      await recordFeedEvent(tx, { userId: uid, type: "BOOK_FINISHED", bookId });
+    return NextResponse.json(result);
+  } catch (err) {
+    if (err instanceof TitleRequiredError) {
+      return NextResponse.json(
+        { error: { fieldErrors: { title: ["título obrigatório pra publicar review com texto"] } } },
+        { status: 400 }
+      );
     }
-
-    const review = await tx.review.upsert({
-      where: { userId_bookId: { userId: uid, bookId } },
-      create: {
-        userId: uid,
-        bookId,
-        rating,
-        title: title?.trim() || null,
-        text: text ?? "",
-        startedAt: entry.startedAt,
-        finishedAt: entry.finishedAt,
-      },
-      update: {
-        rating,
-        title: title?.trim() || null,
-        text: text ?? "",
-        startedAt: entry.startedAt,
-        finishedAt: entry.finishedAt,
-      },
-    });
-
-    // Entra no feed quando o texto passa a existir (criação com texto, ou uma
-    // nota sem texto que ganha texto depois) — nunca de novo a cada edição
-    // subsequente, já que a partir daí prevReview.text deixa de ser vazio.
-    const hadText = prevReview !== null && prevReview.text !== "";
-    if (!hadText && review.text !== "") {
-      await recordFeedEvent(tx, { userId: uid, type: "REVIEW", bookId, reviewId: review.id });
-    }
-
-    await recomputeBookRating(tx, bookId);
-    return { rating: review.rating, myReview: review.text, myReviewTitle: review.title, entry };
-  });
-
-  return NextResponse.json(result);
+    throw err;
+  }
 }
