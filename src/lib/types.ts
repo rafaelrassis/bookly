@@ -139,6 +139,32 @@ export type ClubDetail = {
   progress: number;
 };
 
+/** Livro do mês de um clube — GET/PUT /api/clubs/[id]/book-of-month. */
+export type ApiClubBookOfMonth = {
+  id: string;
+  month: string;
+  book: Book;
+  setBy: string;
+  createdAt: string;
+};
+
+export type ApiClubBookOfMonthDetail = {
+  bookOfMonth: ApiClubBookOfMonth | null;
+  totalMembers: number;
+  started: number;
+  finished: number;
+  /** Estante do viewer pro livro do mês; null se ainda não adicionou. */
+  mine: { status: ShelfStatus; currentPage: number | null } | null;
+};
+
+/** Item de `?history=1` — sem agregação, só o registro histórico. */
+export type ApiClubBookOfMonthHistoryItem = {
+  month: string;
+  book: Book;
+  setBy: string;
+  createdAt: string;
+};
+
 export type ShelfStatus = "WANT_TO_READ" | "READING" | "READ" | "DNF";
 
 export type ShelfEntry = {

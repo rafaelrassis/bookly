@@ -2,6 +2,15 @@ import { db } from "@/lib/db";
 
 const CODE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
+/** Formato "YYYY-MM" usado pelo livro do mês (@@unique([clubId, month])). */
+export const MONTH_REGEX = /^\d{4}-(0[1-9]|1[0-2])$/;
+
+/** Mês corrente no formato "YYYY-MM" (UTC — evita drift de fuso entre
+ * servidor e usuário perto da virada do mês). */
+export function currentMonth(): string {
+  return new Date().toISOString().slice(0, 7);
+}
+
 /** Código de convite de clube privado: 6 caracteres A–Z0–9 (mesmo formato
  * do randomCode do store antigo e do skill de verificação). */
 export function generateClubCode(): string {
