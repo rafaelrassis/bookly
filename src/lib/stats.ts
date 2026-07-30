@@ -9,12 +9,15 @@ export type UserStats = {
   avgRating: number;
   histogram: Record<string, number>;
   donatedCount: number;
+  /** Subconjunto de `donatedCount` confirmado pelo recebedor — selo de confiança
+   * (ver src/lib/trust-badge.ts). Sempre ≤ donatedCount. */
+  confirmedCount: number;
 };
 
 /** Estatísticas do perfil derivadas de ShelfEntry/Review/Donation reais
  * (Spec 3a/3b + doação de livros). */
 export async function userStats(userId: string): Promise<UserStats> {
-  const [readEntries, readingEntries, reviews, donatedCount] = await Promise.all([
+  const [readEntries, readingEntries, reviews, donatedCount, confirmedCount] = await Promise.all([
     db.shelfEntry.findMany({
       where: { userId, status: "READ" },
       select: { book: { select: { pages: true } } },
@@ -25,6 +28,9 @@ export async function userStats(userId: string): Promise<UserStats> {
     }),
     db.review.findMany({ where: { userId }, select: { rating: true, text: true } }),
     db.donation.count({ where: { donorId: userId, status: "DOADO" } }),
+    db.donation.count({
+      where: { donorId: userId, status: "DOADO", receiverConfirmedAt: { not: null } },
+    }),
   ]);
 
   const readCount = readEntries.length;
@@ -44,5 +50,5 @@ export async function userStats(userId: string): Promise<UserStats> {
     if (key in histogram) histogram[key] += 1;
   }
 
-  return { readCount, pagesRead, reviewCount, avgRating, histogram, donatedCount };
+  return { readCount, pagesRead, reviewCount, avgRating, histogram, donatedCount, confirmedCount };
 }

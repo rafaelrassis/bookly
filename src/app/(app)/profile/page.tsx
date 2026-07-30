@@ -9,10 +9,12 @@ import { ReceivedDonations } from "@/components/donation/ReceivedDonations";
 import { FeedPost } from "@/components/FeedPost";
 import { SectionTitle } from "@/components/SectionTitle";
 import { Stars } from "@/components/Stars";
+import { BadgeCheckIcon } from "@/components/icons";
 import { withAt } from "@/lib/handle";
 import { formatCount, formatDecimal } from "@/lib/format";
 import { useBooksByIds, useFeed, useMyStats, useRecommendations } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
+import { trustTier } from "@/lib/trust-badge";
 import type { ApiList } from "@/lib/types";
 
 const HISTOGRAM_LABELS: Record<number, string> = { 0.5: "½★", 5: "★★★★★" };
@@ -51,12 +53,14 @@ export default function ProfilePage() {
     pagesRead,
     reviewCount,
     donatedCount,
+    confirmedCount,
     avgRating,
     histogram,
     maxCount,
     ratedBooks,
     reviewEntries,
   } = useMyStats();
+  const tier = trustTier(confirmedCount);
   const recommended = useRecommendations(6);
   const { items: likedFeedReviews } = useFeed("liked");
   const favoriteBooks = useBooksByIds(user.top4);
@@ -77,6 +81,7 @@ export default function ProfilePage() {
     { label: "páginas", value: formatCount(pagesRead) },
     { label: "reviews", value: String(reviewCount) },
     { label: "livros doados", value: String(donatedCount) },
+    { label: "doações confirmadas", value: String(confirmedCount) },
   ];
 
   return (
@@ -104,6 +109,15 @@ export default function ProfilePage() {
             </Link>
           </div>
           <p className="text-sm text-paperDim">@{user.username}</p>
+          {tier && (
+            <span
+              className="mt-1 inline-flex items-center gap-1 text-foil"
+              title="Baseado em doações confirmadas pelos dois lados."
+            >
+              <BadgeCheckIcon size={16} />
+              <span className="text-xs font-extrabold uppercase tracking-wide">{tier.label}</span>
+            </span>
+          )}
           <p className="mt-1 text-xs text-paperDim">
             <span className="font-bold text-paper">{user.followers}</span> seguidores ·{" "}
             <span className="font-bold text-paper">{user.following}</span> seguindo

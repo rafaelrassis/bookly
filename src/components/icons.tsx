@@ -60,6 +60,26 @@ export function GiftIcon({ size = 14 }: { size?: number }) {
   );
 }
 
+/** Selo de confiança no perfil — doações confirmadas pelos dois lados. */
+export function BadgeCheckIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 2.5 14.4 4.8 17.7 4.3 18.6 7.5 21.5 9.2 20.3 12.3 21.5 15.4 18.6 17.1 17.7 20.3 14.4 19.8 12 22.1 9.6 19.8 6.3 20.3 5.4 17.1 2.5 15.4 3.7 12.3 2.5 9.2 5.4 7.5 6.3 4.3 9.6 4.8Z" />
+      <path d="m8.5 12.3 2.3 2.3 4.7-4.7" />
+    </svg>
+  );
+}
+
 export function CopyIcon({ size = 14 }: { size?: number }) {
   return (
     <svg

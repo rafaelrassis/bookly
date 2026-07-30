@@ -7,13 +7,14 @@ import { Avatar } from "@/components/Avatar";
 import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
 import { EmptyState } from "@/components/EmptyState";
-import { BookOpenIcon } from "@/components/icons";
+import { BadgeCheckIcon, BookOpenIcon } from "@/components/icons";
 import { Stars } from "@/components/Stars";
 import { SectionTitle } from "@/components/SectionTitle";
 import { withAt, withoutAt } from "@/lib/handle";
 import { formatCount } from "@/lib/format";
 import { useBooksByIds } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
+import { trustTier } from "@/lib/trust-badge";
 import type { ApiList, ApiUserReview } from "@/lib/types";
 import type { UserStats } from "@/lib/stats";
 import PublicProfileLoading from "./loading";
@@ -116,6 +117,7 @@ export function ProfilePageClient({ params }: { params: { username: string } }) 
   }
 
   const handle = withAt(profile.username);
+  const tier = trustTier(profile.stats.confirmedCount);
 
   async function onFollow() {
     if (followBusy || !profile) return;
@@ -149,6 +151,15 @@ export function ProfilePageClient({ params }: { params: { username: string } }) 
         <div className="min-w-0 flex-1">
           <h2 className="font-display text-xl font-bold">{profile.name}</h2>
           <p className="text-sm text-paperDim">{handle}</p>
+          {tier && (
+            <span
+              className="mt-1 inline-flex items-center gap-1 text-foil"
+              title="Baseado em doações confirmadas pelos dois lados."
+            >
+              <BadgeCheckIcon size={16} />
+              <span className="text-xs font-extrabold uppercase tracking-wide">{tier.label}</span>
+            </span>
+          )}
           <div className="mt-1 flex gap-4 text-xs text-paperDim">
             <span>
               <b className="text-paper">{profile.followers}</b> seguidores
@@ -195,6 +206,7 @@ export function ProfilePageClient({ params }: { params: { username: string } }) 
           { label: "páginas", value: formatCount(profile.stats.pagesRead) },
           { label: "reviews", value: String(profile.stats.reviewCount) },
           { label: "livros doados", value: String(profile.stats.donatedCount) },
+          { label: "doações confirmadas", value: String(profile.stats.confirmedCount) },
         ].map((stat, i) => (
           <div
             key={stat.label}

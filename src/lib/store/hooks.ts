@@ -72,6 +72,7 @@ export function useMyStats() {
   const [pagesRead, setPagesRead] = useState(0);
   const [reviewCount, setReviewCount] = useState(0);
   const [donatedCount, setDonatedCount] = useState(0);
+  const [confirmedCount, setConfirmedCount] = useState(0);
   const [avgRating, setAvgRating] = useState<number | null>(null);
   const [histogram, setHistogram] = useState<HistogramBar[]>([]);
   const [ratedBooks, setRatedBooks] = useState<RatedBook[]>([]);
@@ -90,11 +91,13 @@ export function useMyStats() {
           avgRating: number;
           histogram: Record<string, number>;
           donatedCount: number;
+          confirmedCount: number;
         };
         setReadCount(s.readCount);
         setPagesRead(s.pagesRead);
         setReviewCount(s.reviewCount);
         setDonatedCount(s.donatedCount);
+        setConfirmedCount(s.confirmedCount);
         setAvgRating(s.reviewCount > 0 || Object.values(s.histogram).some((c) => c > 0) ? s.avgRating : null);
         setHistogram(
           Object.entries(s.histogram)
@@ -122,6 +125,7 @@ export function useMyStats() {
     pagesRead,
     reviewCount,
     donatedCount,
+    confirmedCount,
     avgRating,
     histogram,
     maxCount,
