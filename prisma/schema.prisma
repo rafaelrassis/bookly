@@ -60,6 +60,8 @@ model User {
   clubMembers  ClubMember[]
   messages     Message[]
 
+  clubBooksOfMonthSet ClubBookOfMonth[]
+
   reviewLikes ReviewLike[]
   comments    Comment[]
   lists       List[]
@@ -187,15 +189,16 @@ model Book {
   /// do Google Books; usada pela política de staleness em getOrCreateBook().
   updatedAt    DateTime @updatedAt
 
-  shelfEntries  ShelfEntry[]
-  reviews       Review[]
-  tags          BookTag[]
-  quotes        Quote[]
-  clubs         Club[]
-  listBooks     ListBook[]
-  donations     Donation[]
-  readingEvents ReadingEvent[]
-  feedEvents    FeedEvent[]
+  shelfEntries     ShelfEntry[]
+  reviews          Review[]
+  tags             BookTag[]
+  quotes           Quote[]
+  clubs            Club[]
+  listBooks        ListBook[]
+  donations        Donation[]
+  readingEvents    ReadingEvent[]
+  feedEvents       FeedEvent[]
+  clubBooksOfMonth ClubBookOfMonth[]
 
   @@index([genre])
 }
@@ -375,9 +378,10 @@ model Club {
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 
-  members    ClubMember[]
-  messages   Message[]
-  feedEvents FeedEvent[]
+  members      ClubMember[]
+  messages     Message[]
+  feedEvents   FeedEvent[]
+  booksOfMonth ClubBookOfMonth[]
 }
 
 /// Vínculo de membro; `progress` guarda o último percentual publicado no
@@ -413,6 +417,25 @@ model Message {
   createdAt DateTime  @default(now())
 
   @@index([clubId, createdAt])
+}
+
+/// Livro do mês do clube (Spec livro do mês) — histórico mensal, um por
+/// clube+mês; progresso agregado dos membros é lido de ShelfEntry, não
+/// recalculado/persistido aqui.
+model ClubBookOfMonth {
+  id        String   @id @default(cuid())
+  clubId    String
+  club      Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  bookId    String
+  book      Book     @relation(fields: [bookId], references: [id])
+  /// Formato "2026-08" — mais simples de comparar/indexar que Date truncado.
+  month     String
+  setById   String
+  setBy     User     @relation(fields: [setById], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([clubId, month])
+  @@index([clubId, month])
 }
 
 enum DonationStatus {

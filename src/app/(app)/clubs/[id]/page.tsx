@@ -6,6 +6,7 @@ import { Avatar } from "@/components/Avatar";
 import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
 import { BookPicker } from "@/components/BookPicker";
+import { ClubBookOfMonthCard } from "@/components/ClubBookOfMonthCard";
 import { CopyIcon, LockIcon } from "@/components/icons";
 import { PageLoader } from "@/components/PageLoader";
 import { SectionTitle } from "@/components/SectionTitle";
@@ -578,6 +579,8 @@ export default function ClubPage({ params }: { params: { id: string } }) {
           </div>
         </section>
       )}
+
+      <ClubBookOfMonthCard clubId={club.id} isCreator={club.isCreator} />
 
       <section className="mt-6">
         <SectionTitle>Lendo agora</SectionTitle>
