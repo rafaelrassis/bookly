@@ -75,6 +75,8 @@ model User {
   actedNotifications Notification[] @relation("ActorNotifications")
 
   feedEvents FeedEvent[]
+
+  progressLogs ProgressLog[]
 }
 
 /// Conta OAuth vinculada a um User (Google/Amazon) — Auth.js PrismaAdapter.
@@ -419,6 +421,21 @@ model Message {
   createdAt DateTime  @default(now())
 
   @@index([clubId, createdAt])
+}
+
+/// Log append-only de progresso de leitura (Spec streaks) — 1 linha por
+/// PUT /api/books/[id]/progress, mesmo que o usuário atualize várias vezes
+/// no mesmo dia; a atividade é de leitura em geral do usuário, não presa a
+/// clube ou livro do mês. Alimenta computeWeeklyStreak (src/lib/streak.ts).
+model ProgressLog {
+  id       String   @id @default(cuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId   String
+  page     Int
+  loggedAt DateTime @default(now())
+
+  @@index([userId, loggedAt])
 }
 
 /// Livro do mês do clube (Spec livro do mês) — histórico mensal, um por

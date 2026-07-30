@@ -14,9 +14,10 @@ import { SectionTitle } from "@/components/SectionTitle";
 import { Spinner } from "@/components/Spinner";
 import { formatClockTime } from "@/lib/format";
 import { withAt, withoutAt } from "@/lib/handle";
+import { formatStreak } from "@/lib/streak";
 import { useStore } from "@/lib/store";
 import { useModalA11y } from "@/lib/useModalA11y";
-import type { Book, ClubDetail, ClubMessage } from "@/lib/types";
+import type { ApiClubStreaks, Book, ClubDetail, ClubMessage } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/apiError";
 
 const POLL_INTERVAL_MS = 4000;
@@ -103,11 +104,13 @@ function Bubble({
 function MembersModal({
   club,
   me,
+  streaks,
   onClose,
   onRemove,
 }: {
   club: ClubDetail;
   me: string;
+  streaks: Record<string, number>;
   onClose: () => void;
   onRemove: (userId: string, user: string) => void;
 }) {
@@ -154,6 +157,9 @@ function MembersModal({
                     style={{ width: `${m.percent}%` }}
                   />
                 </div>
+                <p className="mt-1 text-[10px] text-paperDim">
+                  {formatStreak(streaks[m.userId] ?? 0)}
+                </p>
               </div>
               {club.isCreator && m.user !== me && (
                 <button
@@ -179,6 +185,7 @@ export default function ClubPage({ params }: { params: { id: string } }) {
 
   const [club, setClub] = useState<ClubDetail | null>(null);
   const [status, setStatus] = useState<"loading" | "ok" | "notfound" | "error">("loading");
+  const [streaks, setStreaks] = useState<Record<string, number>>({});
   const [messages, setMessages] = useState<ClubMessage[]>([]);
   const [retryCount, setRetryCount] = useState(0);
 
@@ -224,6 +231,17 @@ export default function ClubPage({ params }: { params: { id: string } }) {
   useEffect(() => {
     loadClub();
   }, [loadClub, retryCount]);
+
+  // streak semanal por membro: incentivo social leve, não bloqueia o carregamento do clube.
+  useEffect(() => {
+    fetch(`/api/clubs/${params.id}/streaks`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: ApiClubStreaks | null) => {
+        if (!data) return;
+        setStreaks(Object.fromEntries(data.streaks.map((s) => [s.userId, s.streak])));
+      })
+      .catch(() => {});
+  }, [params.id, retryCount]);
 
   // polling do mural: ~4s enquanto a aba está visível, pausa quando some.
   useEffect(() => {
@@ -627,6 +645,9 @@ export default function ClubPage({ params }: { params: { id: string } }) {
                       style={{ width: `${m.percent}%` }}
                     />
                   </div>
+                  <p className="mt-1 text-[10px] text-paperDim">
+                    {formatStreak(streaks[m.userId] ?? 0)}
+                  </p>
                 </div>
               </Link>
             );
@@ -741,6 +762,7 @@ export default function ClubPage({ params }: { params: { id: string } }) {
         <MembersModal
           club={club}
           me={me}
+          streaks={streaks}
           onClose={() => setMembersOpen(false)}
           onRemove={removeMember}
         />

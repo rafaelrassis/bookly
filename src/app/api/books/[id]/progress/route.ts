@@ -69,6 +69,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       await recordReadingEvent(tx, entry);
       await recordFeedEvent(tx, { userId: uid, type: "BOOK_FINISHED", bookId });
     }
+    await tx.progressLog.create({ data: { userId: uid, bookId, page } });
     return entry;
   });
 

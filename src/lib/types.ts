@@ -139,6 +139,10 @@ export type ClubDetail = {
   progress: number;
 };
 
+/** Streak semanal de leitura de cada membro — GET /api/clubs/[id]/streaks.
+ * Atividade de leitura em geral do usuário, não só do livro do clube. */
+export type ApiClubStreaks = { streaks: { userId: string; streak: number }[] };
+
 /** Livro do mês de um clube — GET/PUT /api/clubs/[id]/book-of-month. */
 export type ApiClubBookOfMonth = {
   id: string;
