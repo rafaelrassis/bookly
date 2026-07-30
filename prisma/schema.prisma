@@ -406,6 +406,11 @@ model Donation {
   photoUrl  String
   city      String
   state     String         @db.Char(2) // UF
+  /// Geocodificadas a partir de city/state na criação (Nominatim); nulas se
+  /// o geocoding falhar — a doação continua normal, só some da busca por
+  /// raio (ver src/lib/geocode.ts e GET /api/books/[id]/donations).
+  latitude  Float?
+  longitude Float?
   status    DonationStatus @default(DISPONIVEL)
   whatsapp  String?
   instagram String?
