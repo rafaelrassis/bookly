@@ -2,7 +2,9 @@ import * as Sentry from "@sentry/nextjs";
 import { db } from "@/lib/db";
 import type { NotificationType } from "@/generated/prisma/client";
 
-/** Cria uma notificação in-app. Best-effort: nunca deve derrubar a ação
+/** Cria uma notificação in-app — usada tanto pelas rotas de doação (com
+ * sessão de usuário) quanto pelo cron de expiração de reserva (sem sessão,
+ * por isso `actorId` é opcional). Best-effort: nunca deve derrubar a ação
  * principal — chamar sempre depois da mutação, fora de qualquer transação.
  * Falha vai pro Sentry e é engolida. */
 export async function notify(params: {

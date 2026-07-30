@@ -191,7 +191,12 @@ export type ApiList = {
   isOwner?: boolean;
 };
 
-export type NotificationType = "DONATION_REQUEST_RECEIVED" | "DONATION_CHOSEN" | "DONATION_COMPLETED";
+export type NotificationType =
+  | "DONATION_REQUEST_RECEIVED"
+  | "DONATION_CHOSEN"
+  | "DONATION_COMPLETED"
+  | "DONATION_RESERVE_EXPIRING"
+  | "DONATION_RESERVE_EXPIRED";
 
 /** Notificação in-app real (GET /api/notifications) — fluxo de doação hoje,
  * genérica o bastante pra follows/reviews/clubes depois. */

@@ -25,7 +25,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
   await db.donation.update({
     where: { id: params.id },
-    data: { status: "DOADO", donatedAt: new Date() },
+    data: { status: "DOADO", donatedAt: new Date(), reservedAt: null, reserveWarnedAt: null },
   });
 
   const chosen = await db.donationRequest.findFirst({

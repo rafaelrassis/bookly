@@ -412,6 +412,12 @@ model Donation {
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
   donatedAt DateTime?
+  /// Quando a doação entrou em RESERVADO — usado pra expirar a reserva
+  /// automaticamente (ver src/lib/donation-expiry.ts).
+  reservedAt DateTime?
+  /// Quando o aviso de "reserva expira em breve" foi enviado — evita
+  /// reenviar o aviso todo dia até a expiração de fato.
+  reserveWarnedAt DateTime?
 
   requests      DonationRequest[]
   notifications Notification[]
@@ -441,11 +447,14 @@ enum NotificationType {
   DONATION_REQUEST_RECEIVED // doador: alguém pediu seu livro
   DONATION_CHOSEN // recebedor: você foi escolhido
   DONATION_COMPLETED // recebedor: doador confirmou a doação
+  DONATION_RESERVE_EXPIRING // doador/recebedor: reserva expira em breve (cron)
+  DONATION_RESERVE_EXPIRED // doador/recebedor: reserva expirou, livro liberado (cron)
 }
 
-/// Notificação in-app genérica (sino + contador) — hoje só doações, mas o
-/// shape (type + actor opcional + donation opcional) cobre follows/reviews/
-/// clubes depois sem precisar de nova tabela.
+/// Notificação in-app genérica (sino + contador) — cobre o fluxo de doação
+/// (pedido/escolha/conclusão, com actor; e expiração de reserva, disparada
+/// pelo cron sem actor) e serve pra follows/reviews/clubes depois sem
+/// precisar de nova tabela.
 model Notification {
   id         String           @id @default(cuid())
   userId     String

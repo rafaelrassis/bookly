@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { BackHeader } from "@/components/BackHeader";
+import { GiftIcon } from "@/components/icons";
 import { SectionError } from "@/components/SectionError";
 import { Skeleton } from "@/components/Skeleton";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -21,13 +22,25 @@ function notificationText(n: ApiNotification): string {
       return `${who} escolheu você para receber "${book}"! Veja o contato.`;
     case "DONATION_COMPLETED":
       return `${who} confirmou a doação de "${book}". Combine a entrega.`;
+    case "DONATION_RESERVE_EXPIRING":
+      return `A reserva de "${book}" expira em breve — combine a entrega antes do prazo.`;
+    case "DONATION_RESERVE_EXPIRED":
+      return `A reserva de "${book}" expirou e o livro voltou a ficar disponível.`;
     default:
       return "Você tem uma nova notificação.";
   }
 }
 
 function notificationHref(n: ApiNotification): string {
-  return n.type === "DONATION_REQUEST_RECEIVED" ? "/profile#minhas-doacoes" : "/profile#recebidos";
+  switch (n.type) {
+    case "DONATION_REQUEST_RECEIVED":
+      return "/profile#minhas-doacoes";
+    case "DONATION_CHOSEN":
+    case "DONATION_COMPLETED":
+      return "/profile#recebidos";
+    default:
+      return "/profile";
+  }
 }
 
 export default function NotificationsPage() {
@@ -76,12 +89,18 @@ export default function NotificationsPage() {
                 n.read ? "" : "bg-card2"
               }`}
             >
-              <Avatar
-                user={withAt(n.actor?.username ?? n.actor?.name ?? "?")}
-                avatarIndex={n.actor?.avatar}
-                avatarUrl={n.actor?.avatarUrl}
-                size={40}
-              />
+              {n.actor ? (
+                <Avatar
+                  user={withAt(n.actor.username ?? n.actor.name)}
+                  avatarIndex={n.actor.avatar}
+                  avatarUrl={n.actor.avatarUrl}
+                  size={40}
+                />
+              ) : (
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-card2 text-foil">
+                  <GiftIcon size={18} />
+                </span>
+              )}
               <div className="min-w-0 flex-1">
                 <p className="text-sm leading-snug text-paperDim">{notificationText(n)}</p>
                 <p className="mt-0.5 text-xs text-paperDim">{formatNotificationTime(n.createdAt)}</p>
