@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { SectionTitle } from "@/components/SectionTitle";
+import { ShareIcon } from "@/components/icons";
 import { formatCount, formatDecimal } from "@/lib/format";
+import { useStore } from "@/lib/store";
 
 type YearStats = {
   year: number;
@@ -16,9 +18,30 @@ const CURRENT_YEAR = new Date().getFullYear();
 const YEAR_OPTIONS = [CURRENT_YEAR, CURRENT_YEAR - 1, CURRENT_YEAR - 2];
 
 export function YearInBooksCard() {
+  const username = useStore((s) => s.user.username);
+  const showToast = useStore((s) => s.showToast);
   const [year, setYear] = useState(CURRENT_YEAR);
   const [stats, setStats] = useState<YearStats | null>(null);
   const [loaded, setLoaded] = useState(false);
+
+  async function onShare() {
+    const url = `${window.location.origin}/u/${username}/ano/${year}`;
+    const shareData = { title: `Meu ${year} em livros`, url };
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch {
+        // usuário cancelou o share sheet — não é erro
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast("Link copiado!");
+    } catch {
+      showToast(url);
+    }
+  }
 
   useEffect(() => {
     setLoaded(false);
@@ -34,7 +57,18 @@ export function YearInBooksCard() {
     <section className="mt-6">
       <div className="flex items-center justify-between gap-3">
         <SectionTitle>Seu {year} em livros</SectionTitle>
-        <div className="flex gap-1.5">
+        <div className="flex items-center gap-1.5">
+          {stats && stats.booksRead > 0 && (
+            <button
+              type="button"
+              onClick={onShare}
+              aria-label="Compartilhar"
+              className="flex items-center gap-1 rounded-full border border-line bg-card px-2.5 py-1 text-xs font-bold text-paperDim transition-colors hover:text-paper"
+            >
+              <ShareIcon size={12} />
+              Compartilhar
+            </button>
+          )}
           {YEAR_OPTIONS.map((y) => (
             <button
               key={y}
