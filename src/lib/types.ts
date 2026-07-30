@@ -218,4 +218,8 @@ export type UserState = {
   /** Foto de perfil enviada pelo usuário (Vercel Blob); sobrepõe o gradiente quando presente. */
   avatarUrl?: string | null;
   progressUnit: ProgressUnit;
+  /** Localização do usuário (opcional) — default do filtro de doações e
+   * pré-preenchimento do formulário de criar doação. */
+  city?: string | null;
+  state?: string | null;
 };

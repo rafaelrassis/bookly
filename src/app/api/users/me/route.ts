@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { serializeProfile } from "@/lib/users";
 import { usernameSchema } from "@/lib/validators/username";
+import { locationSchema } from "@/lib/validators/user";
 import { checkRateLimit } from "@/lib/ratelimit";
 
 export async function GET() {
@@ -23,6 +24,7 @@ const schema = z.object({
   genres: z.array(z.string()).optional(),
   progressUnit: z.enum(["pages", "percent"]).optional(),
   onboarded: z.literal(true).optional(),
+  ...locationSchema.shape,
 });
 
 export async function PATCH(req: Request) {

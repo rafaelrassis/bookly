@@ -189,6 +189,8 @@ function ProgressSection({
 
 export function BookPageClient({ params }: { params: { id: string } }) {
   const username = useStore((s) => s.user.username);
+  const myState = useStore((s) => s.user.state);
+  const myCity = useStore((s) => s.user.city);
   const showToast = useStore((s) => s.showToast);
 
   const [loading, setLoading] = useState(true);
@@ -634,6 +636,8 @@ export function BookPageClient({ params }: { params: { id: string } }) {
         </div>
         <DonationList
           bookId={bookId}
+          myUf={myState}
+          myCity={myCity}
           reloadSignal={donationsReload}
           onToast={showToast}
         />
@@ -705,6 +709,8 @@ export function BookPageClient({ params }: { params: { id: string } }) {
         <BottomSheet onClose={() => setDonating(false)} title="Doar este livro">
           <CreateDonationForm
             bookId={bookId}
+            defaultState={myState}
+            defaultCity={myCity}
             onCancel={() => setDonating(false)}
             onToast={showToast}
             onCreated={() => {

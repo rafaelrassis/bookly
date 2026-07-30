@@ -3,17 +3,16 @@
 import { useRef, useState } from "react";
 import { Spinner } from "@/components/Spinner";
 import { apiErrorMessage } from "@/lib/apiError";
+import { UF_LIST } from "@/lib/uf";
 
 const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_BYTES = 8 * 1024 * 1024;
 
-const UF_LIST = [
-  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG",
-  "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO",
-];
-
 type Props = {
   bookId: string;
+  /** UF/cidade do perfil do usuário logado, usados pra pré-preencher (ainda editável). */
+  defaultState?: string | null;
+  defaultCity?: string | null;
   onCreated: () => void;
   onCancel: () => void;
   onToast: (message: string) => void;
@@ -21,14 +20,21 @@ type Props = {
 
 /** Formulário de "Doar este livro": foto real + localização + contato
  * (ao menos WhatsApp ou Instagram — só libera pro interessado escolhido). */
-export function CreateDonationForm({ bookId, onCreated, onCancel, onToast }: Props) {
+export function CreateDonationForm({
+  bookId,
+  defaultState,
+  defaultCity,
+  onCreated,
+  onCancel,
+  onToast,
+}: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [state, setState] = useState("");
-  const [city, setCity] = useState("");
+  const [state, setState] = useState(defaultState ?? "");
+  const [city, setCity] = useState(defaultCity ?? "");
   const [whatsapp, setWhatsapp] = useState("");
   const [instagram, setInstagram] = useState("");
   const [saving, setSaving] = useState(false);

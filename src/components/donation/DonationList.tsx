@@ -2,17 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { BottomSheet } from "@/components/BottomSheet";
 import { Spinner } from "@/components/Spinner";
 import { GiftIcon } from "@/components/icons";
 import { apiErrorMessage } from "@/lib/apiError";
 import type { ApiDonation, DonationStatus } from "@/lib/types";
+import { UF_LIST } from "@/lib/uf";
 import { DonorPanel } from "./DonorPanel";
-
-const UF_LIST = [
-  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG",
-  "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO",
-];
 
 const STATUS_LABEL: Record<DonationStatus, string> = {
   DISPONIVEL: "Disponível",
@@ -22,12 +19,13 @@ const STATUS_LABEL: Record<DonationStatus, string> = {
 
 type Props = {
   bookId: string;
-  myUf?: string;
+  myUf?: string | null;
+  myCity?: string | null;
   reloadSignal: number;
   onToast: (message: string) => void;
 };
 
-export function DonationList({ bookId, myUf, reloadSignal, onToast }: Props) {
+export function DonationList({ bookId, myUf, myCity, reloadSignal, onToast }: Props) {
   const [donations, setDonations] = useState<ApiDonation[]>([]);
   const [loading, setLoading] = useState(true);
   const [wholeCountry, setWholeCountry] = useState(!myUf);
@@ -98,7 +96,19 @@ export function DonationList({ bookId, myUf, reloadSignal, onToast }: Props) {
             ))}
           </select>
         )}
+        {!wholeCountry && myCity && uf === myUf && (
+          <span className="text-xs text-paperDim">perto de {myCity}</span>
+        )}
       </div>
+
+      {!myUf && wholeCountry && (
+        <p className="mt-2 text-xs text-paperDim">
+          Defina sua cidade no perfil para ver doações perto de você.{" "}
+          <Link href="/profile/edit" className="font-bold text-foil hover:opacity-80">
+            Editar perfil
+          </Link>
+        </p>
+      )}
 
       {loading ? (
         <div className="flex justify-center py-6">

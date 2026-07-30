@@ -8,6 +8,7 @@ import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
 import { SectionTitle } from "@/components/SectionTitle";
 import { withoutAt } from "@/lib/handle";
+import { UF_LIST } from "@/lib/uf";
 import { useUsernameCheck } from "@/hooks/useUsernameCheck";
 import { useBooksByIds } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
@@ -23,6 +24,8 @@ export default function EditProfilePage() {
   const [username, setUsername] = useState(user.username);
   const [avatar, setAvatar] = useState(user.avatar);
   const [bio, setBio] = useState(user.bio);
+  const [city, setCity] = useState(user.city ?? "");
+  const [state, setState] = useState(user.state ?? "");
   const [top4, setTop4] = useState<string[]>(user.top4);
   const [saving, setSaving] = useState(false);
   const [readShelfBooks, setReadShelfBooks] = useState<Book[]>([]);
@@ -62,7 +65,14 @@ export default function EditProfilePage() {
     const res = await fetch("/api/users/me", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: name, avatar, bio: bio.trim(), top4 }),
+      body: JSON.stringify({
+        username: name,
+        avatar,
+        bio: bio.trim(),
+        top4,
+        city: city.trim() || null,
+        state: state || null,
+      }),
     });
     setSaving(false);
     if (!res.ok) {
@@ -80,6 +90,8 @@ export default function EditProfilePage() {
       avatar: profile.avatar,
       bio: profile.bio,
       top4: profile.top4,
+      city: profile.city,
+      state: profile.state,
     });
     showToast("Perfil atualizado ✦");
     router.push("/profile");
@@ -150,6 +162,34 @@ export default function EditProfilePage() {
             className="resize-none rounded-xl border border-line bg-card px-4 py-3 text-base text-paper"
           />
         </label>
+        <div className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
+          Localização
+          <div className="flex gap-2">
+            <select
+              value={state}
+              onChange={(e) => setState(e.target.value)}
+              aria-label="Estado (UF)"
+              className="w-24 rounded-xl border border-line bg-card px-3 py-3 text-base text-paper"
+            >
+              <option value="">UF</option>
+              {UF_LIST.map((uf) => (
+                <option key={uf} value={uf}>
+                  {uf}
+                </option>
+              ))}
+            </select>
+            <input
+              type="text"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              placeholder="Cidade"
+              aria-label="Cidade"
+              maxLength={80}
+              className="min-w-0 flex-1 rounded-xl border border-line bg-card px-4 py-3 text-base text-paper placeholder:text-paperDim/60"
+            />
+          </div>
+          <p className="text-xs text-paperDim/80">Usado para mostrar doações perto de você.</p>
+        </div>
       </section>
 
       <section className="mt-6">

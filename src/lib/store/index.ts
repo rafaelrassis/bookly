@@ -25,6 +25,8 @@ const EMPTY_USER: UserState = {
   top4Books: [],
   avatar: 0,
   progressUnit: "pages",
+  city: null,
+  state: null,
 };
 
 type Toast = { id: number; message: string };

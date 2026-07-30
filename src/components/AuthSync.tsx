@@ -6,7 +6,7 @@ import { useStore } from "@/lib/store";
 
 /** Mantém o store em sincronia com a sessão NextAuth e, uma vez logado, com
  * o perfil real vindo de /api/users/me (identidade, bio, gêneros, avatar,
- * top4 + livros resolvidos, seguidores, progressUnit). Estante/notas/reviews,
+ * top4 + livros resolvidos, seguidores, progressUnit, localização). Estante/notas/reviews,
  * feed social e listas já vêm da API — ver /book, /shelf, /home, /clubs. */
 export function AuthSync() {
   const { data: session, status } = useSession();
@@ -43,6 +43,8 @@ export function AuthSync() {
             top4Books: profile.top4Books,
             followers: profile.followers,
             progressUnit: profile.progressUnit,
+            city: profile.city,
+            state: profile.state,
           });
         })
         .catch(() => {});

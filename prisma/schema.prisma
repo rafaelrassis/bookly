@@ -33,6 +33,10 @@ model User {
   /// Até 4 bookIds em destaque no perfil (catálogo mocado até a Spec 3).
   top4          String[]     @default([])
   progressUnit  ProgressUnit @default(pages)
+  /// Localização do usuário (opcional); usada como default no filtro de
+  /// doações e para pré-preencher o formulário de criar doação.
+  city          String?
+  state         String?      @db.Char(2)
   /// Falso até o usuário concluir o onboarding (username + gêneros) no
   /// primeiro login OAuth — controla o gate de acesso ao grupo (app).
   onboarded     Boolean      @default(false)

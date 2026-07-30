@@ -29,6 +29,8 @@ export async function serializeProfile(targetId: string, viewerId?: string) {
     genres: target.genres,
     avatar: target.avatar,
     avatarUrl: target.avatarUrl,
+    city: target.city,
+    state: target.state,
     top4: target.top4,
     top4Books: target.top4.map((id) => byId.get(id)).filter((b): b is NonNullable<typeof b> => Boolean(b)),
     progressUnit: target.progressUnit,

@@ -9,6 +9,7 @@ import { withoutAt } from "@/lib/handle";
 import { useUsernameCheck } from "@/hooks/useUsernameCheck";
 import { useStore } from "@/lib/store";
 import { apiErrorMessage } from "@/lib/apiError";
+import { UF_LIST } from "@/lib/uf";
 
 export function OnboardingForm() {
   const user = useStore((s) => s.user);
@@ -17,6 +18,8 @@ export function OnboardingForm() {
 
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState(user.bio);
+  const [city, setCity] = useState(user.city ?? "");
+  const [state, setState] = useState(user.state ?? "");
   const [genres, setGenres] = useState<string[]>(user.genres);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -43,7 +46,14 @@ export function OnboardingForm() {
     const res = await fetch("/api/users/me", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: cleanUsername, bio: bio.trim(), genres, onboarded: true }),
+      body: JSON.stringify({
+        username: cleanUsername,
+        bio: bio.trim(),
+        genres,
+        city: city.trim() || null,
+        state: state || null,
+        onboarded: true,
+      }),
     });
     setSaving(false);
     if (!res.ok) {
@@ -56,7 +66,13 @@ export function OnboardingForm() {
       return;
     }
     const profile = await res.json();
-    applyProfile({ username: profile.username, bio: profile.bio, genres: profile.genres });
+    applyProfile({
+      username: profile.username,
+      bio: profile.bio,
+      genres: profile.genres,
+      city: profile.city,
+      state: profile.state,
+    });
     router.push("/home");
   }
 
@@ -112,6 +128,37 @@ export function OnboardingForm() {
               className="resize-none rounded-xl border border-line bg-card px-4 py-3 text-base text-paper placeholder:text-paperDim/60"
             />
           </label>
+
+          <div className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
+            Localização (opcional)
+            <div className="flex gap-2">
+              <select
+                value={state}
+                onChange={(e) => setState(e.target.value)}
+                aria-label="Estado (UF)"
+                className="w-24 rounded-xl border border-line bg-card px-3 py-3 text-base text-paper"
+              >
+                <option value="">UF</option>
+                {UF_LIST.map((uf) => (
+                  <option key={uf} value={uf}>
+                    {uf}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="text"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="Cidade"
+                aria-label="Cidade"
+                maxLength={80}
+                className="min-w-0 flex-1 rounded-xl border border-line bg-card px-4 py-3 text-base text-paper placeholder:text-paperDim/60"
+              />
+            </div>
+            <p className="text-xs text-paperDim/80">
+              Usado para mostrar doações perto de você. Pode pular e preencher depois no perfil.
+            </p>
+          </div>
         </div>
 
         <fieldset className="mt-8">
