@@ -242,6 +242,13 @@ export function ClubBookOfMonthCard({ clubId, isCreator }: { clubId: string; isC
           </button>
         )}
 
+        <Link
+          href={`/clubs/${clubId}/book-of-month/members`}
+          className="mt-3 block text-xs font-bold text-foil hover:opacity-80"
+        >
+          Ver progresso dos membros
+        </Link>
+
         <button
           type="button"
           onClick={toggleHistory}

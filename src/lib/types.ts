@@ -165,6 +165,27 @@ export type ApiClubBookOfMonthHistoryItem = {
   createdAt: string;
 };
 
+/** Membro nomeado em GET .../book-of-month/members — só quem já começou
+ * a ler (terminou ou lendo); quem não começou entra só em `notStartedCount`. */
+export type ApiBookOfMonthMember = {
+  userId: string;
+  user: string;
+  name: string;
+  avatar: number;
+  avatarUrl?: string | null;
+  currentPage: number | null;
+  percent: number;
+};
+
+/** Progresso comparado dos membros no livro do mês — GET
+ * /api/clubs/[id]/book-of-month/members. */
+export type ApiBookOfMonthMembers = {
+  finished: ApiBookOfMonthMember[];
+  reading: ApiBookOfMonthMember[];
+  notStartedCount: number;
+  totalMembers: number;
+};
+
 export type ShelfStatus = "WANT_TO_READ" | "READING" | "READ" | "DNF";
 
 export type ShelfEntry = {
