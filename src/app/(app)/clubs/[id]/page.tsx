@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { BackHeader } from "@/components/BackHeader";
-import { BookCover } from "@/components/BookCover";
 import { BookPicker } from "@/components/BookPicker";
 import { ClubBookOfMonthCard } from "@/components/ClubBookOfMonthCard";
 import { ClubDiscussionCard } from "@/components/ClubDiscussionCard";
@@ -602,22 +601,6 @@ export default function ClubPage({ params }: { params: { id: string } }) {
       <ClubBookOfMonthCard clubId={club.id} isCreator={club.isCreator} />
 
       {club.joined && <ClubDiscussionCard clubId={club.id} />}
-
-      <section className="mt-6">
-        <SectionTitle>Lendo agora</SectionTitle>
-        <Link
-          href={`/book/${club.book.id}`}
-          className="mt-3 flex items-center gap-4 rounded-2xl border border-line bg-card p-4 transition-colors hover:bg-card2"
-        >
-          <BookCover book={club.book} width={56} />
-          <div className="min-w-0">
-            <p className="truncate font-display text-base font-bold">{club.book.title}</p>
-            <p className="truncate text-sm text-paperDim">
-              {club.book.authors} · {club.book.pages} pág.
-            </p>
-          </div>
-        </Link>
-      </section>
 
       <section className="mt-6">
         <SectionTitle>Progresso dos membros</SectionTitle>
