@@ -20,8 +20,8 @@ function yearProgress(year: number) {
   return { start, end, dayOfYear: Math.max(1, Math.min(dayOfYear, daysInYear)), daysInYear };
 }
 
-/** Meta anual + progresso derivado da estante (ShelfEntry READ com finishedAt
- * no ano). Livros marcados READ sem finishedAt (dados antigos) não contam. */
+/** Meta anual + progresso derivado de ReadingEvent (conclusões de leitura no
+ * ano, inclusive releituras — cada uma conta). */
 export async function GET(_req: Request, { params }: { params: { year: string } }) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "unauth" }, { status: 401 });
@@ -35,10 +35,9 @@ export async function GET(_req: Request, { params }: { params: { year: string } 
     db.readingGoal.findUnique({
       where: { userId_year: { userId: session.user.id, year } },
     }),
-    db.shelfEntry.count({
+    db.readingEvent.count({
       where: {
         userId: session.user.id,
-        status: "READ",
         finishedAt: { gte: start, lt: end },
       },
     }),

@@ -10,8 +10,9 @@ function parseYear(yearStr: string): number | null {
 }
 
 /** "Seu {ano} em livros": livros lidos, páginas, gêneros mais lidos e nota
- * média do ano, derivados de ShelfEntry READ com finishedAt no ano (mesma
- * janela usada pela meta de leitura, ver /api/goals/[year]).
+ * média do ano, derivados de ReadingEvent no ano (mesma janela usada pela
+ * meta de leitura, ver /api/goals/[year]). `booksRead` conta eventos, não
+ * livros distintos — reler o mesmo livro no ano conta as duas conclusões.
  *
  * `topGenres` usa Book.genre (hoje um único gênero por livro, não um array —
  * ver nota em docs/ESPECIFICACAO.md) como se fosse uma lista de 1 item. */
@@ -25,16 +26,16 @@ export async function GET(_req: Request, { params }: { params: { year: string } 
   const { start, end } = yearRange(year);
   const userId = session.user.id;
 
-  const entries = await db.shelfEntry.findMany({
-    where: { userId, status: "READ", finishedAt: { gte: start, lt: end } },
+  const events = await db.readingEvent.findMany({
+    where: { userId, finishedAt: { gte: start, lt: end } },
     select: { book: { select: { id: true, pages: true, genre: true } } },
   });
 
-  const booksRead = entries.length;
-  const pagesRead = entries.reduce((sum, e) => sum + e.book.pages, 0);
+  const booksRead = events.length;
+  const pagesRead = events.reduce((sum, e) => sum + e.book.pages, 0);
 
   const genreCount = new Map<string, number>();
-  for (const e of entries) {
+  for (const e of events) {
     genreCount.set(e.book.genre, (genreCount.get(e.book.genre) ?? 0) + 1);
   }
   const topGenres = Array.from(genreCount.entries())
@@ -42,7 +43,7 @@ export async function GET(_req: Request, { params }: { params: { year: string } 
     .slice(0, 5)
     .map(([genre, count]) => ({ genre, count }));
 
-  const bookIds = entries.map((e) => e.book.id);
+  const bookIds = Array.from(new Set(events.map((e) => e.book.id)));
   const reviews = bookIds.length
     ? await db.review.findMany({
         where: { userId, bookId: { in: bookIds } },
