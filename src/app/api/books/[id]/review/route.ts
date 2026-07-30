@@ -47,7 +47,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     });
     const prevReview = await tx.review.findUnique({
       where: { userId_bookId: { userId: uid, bookId } },
-      select: { id: true },
+      select: { id: true, text: true },
     });
     const today = new Date();
 
@@ -90,9 +90,11 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       },
     });
 
-    // Só entra no feed na criação (não em cada edição de nota/texto) e só se
-    // tiver texto — espelha o filtro `text: { not: "" }` que o feed já aplicava.
-    if (!prevReview && review.text !== "") {
+    // Entra no feed quando o texto passa a existir (criação com texto, ou uma
+    // nota sem texto que ganha texto depois) — nunca de novo a cada edição
+    // subsequente, já que a partir daí prevReview.text deixa de ser vazio.
+    const hadText = prevReview !== null && prevReview.text !== "";
+    if (!hadText && review.text !== "") {
       await recordFeedEvent(tx, { userId: uid, type: "REVIEW", bookId, reviewId: review.id });
     }
 
