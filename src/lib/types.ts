@@ -116,8 +116,10 @@ export type ClubSummary = {
   id: string;
   name: string;
   desc: string;
-  bookId: string;
-  book: Book;
+  /** Derivado do livro do mês corrente (ClubBookOfMonth) — null se o clube
+   * ainda não tem um definido. */
+  bookId: string | null;
+  book: Book | null;
   members: number;
   joined: boolean;
   visibility: Visibility;
@@ -128,8 +130,10 @@ export type ClubDetail = {
   id: string;
   name: string;
   desc: string;
-  bookId: string;
-  book: Book;
+  /** Derivado do livro do mês corrente (ClubBookOfMonth) — null se o clube
+   * ainda não tem um definido. */
+  bookId: string | null;
+  book: Book | null;
   visibility: Visibility;
   joined: boolean;
   isCreator: boolean;

@@ -375,8 +375,8 @@ model Club {
   desc       String     @default("") @db.VarChar(500)
   visibility Visibility
   code       String?    @unique
-  bookId     String
-  book       Book       @relation(fields: [bookId], references: [id])
+  bookId     String?
+  book       Book?      @relation(fields: [bookId], references: [id])
   creatorId  String
   creator    User       @relation("clubCreator", fields: [creatorId], references: [id], onDelete: Cascade)
   createdAt  DateTime   @default(now())

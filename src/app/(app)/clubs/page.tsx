@@ -19,7 +19,17 @@ function ClubCard({ club }: { club: ClubSummary }) {
       href={`/clubs/${club.id}`}
       className="flex gap-4 rounded-2xl border border-line bg-card p-4 transition-colors hover:bg-card2"
     >
-      <BookCover book={club.book} width={56} />
+      {club.book ? (
+        <BookCover book={club.book} width={56} />
+      ) : (
+        <div
+          className="flex w-14 shrink-0 items-center justify-center rounded-md border border-dashed border-line/70 bg-card2 text-center text-[9px] leading-tight text-paperDim/70"
+          style={{ height: 56 * 1.5 }}
+          aria-label="Nenhum livro definido ainda"
+        >
+          Nenhum livro ainda
+        </div>
+      )}
       <div className="min-w-0 flex-1">
         <h3 className="flex items-center gap-1.5 font-display text-base font-bold">
           {club.visibility === "private" && (

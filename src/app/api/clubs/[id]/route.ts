@@ -14,7 +14,6 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   const club = await db.club.findUnique({
     where: { id: params.id },
     include: {
-      book: true,
       members: {
         include: { user: { select: { username: true, name: true, avatar: true, avatarUrl: true } } },
       },
@@ -28,12 +27,13 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: "não encontrado" }, { status: 404 });
   }
 
-  // Progresso dos membros segue o livro do mês corrente, não o `club.bookId`
-  // legado — a mesma fonte de dado usada em "Seu progresso" (ClubBookOfMonthCard)
-  // e em GET .../book-of-month/members, pra nunca divergir entre as telas.
+  // Progresso dos membros e a capa exibida seguem o livro do mês corrente,
+  // não o `club.bookId` legado — a mesma fonte de dado usada em "Seu progresso"
+  // (ClubBookOfMonthCard) e em GET .../book-of-month/members, pra nunca
+  // divergir entre as telas. Clube pode ainda não ter livro do mês definido.
   const bookOfMonth = await db.clubBookOfMonth.findUnique({
     where: { clubId_month: { clubId: club.id, month: currentMonth() } },
-    select: { bookId: true, book: { select: { pages: true } } },
+    include: { book: true },
   });
 
   const entries = bookOfMonth
@@ -63,8 +63,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     name: club.name,
     desc: club.desc,
     visibility: club.visibility,
-    bookId: club.bookId,
-    book: serializeBook(club.book),
+    bookId: bookOfMonth?.bookId ?? null,
+    book: bookOfMonth ? serializeBook(bookOfMonth.book) : null,
     joined: !!membership,
     isCreator,
     code: isCreator ? club.code : undefined,
@@ -76,7 +76,6 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 const patchSchema = z.object({
   name: z.string().min(1).max(80).optional(),
   desc: z.string().max(500).optional(),
-  bookId: z.string().optional(),
   visibility: z.enum(["public", "private"]).optional(),
 });
 
@@ -97,27 +96,15 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const data = parsed.data;
 
-  if (data.bookId) {
-    const book = await db.book.findUnique({ where: { id: data.bookId }, select: { id: true } });
-    if (!book) return NextResponse.json({ error: "livro inexistente" }, { status: 400 });
-  }
-
   const nextVisibility = data.visibility ?? club.visibility;
   let code = club.code;
   if (nextVisibility === "private" && !code) code = generateClubCode();
   if (nextVisibility === "public") code = null;
 
-  const updated = await db.$transaction(async (tx) => {
-    const result = await tx.club.update({
-      where: { id: club.id },
-      data: { ...data, code },
-      select: { id: true, name: true, desc: true, visibility: true, bookId: true, code: true },
-    });
-    // livro trocado: derivado de progresso muda de sentido, zera pra não perder a próxima mensagem de sistema.
-    if (data.bookId && data.bookId !== club.bookId) {
-      await tx.clubMember.updateMany({ where: { clubId: club.id }, data: { progress: null } });
-    }
-    return result;
+  const updated = await db.club.update({
+    where: { id: club.id },
+    data: { ...data, code },
+    select: { id: true, name: true, desc: true, visibility: true, code: true },
   });
 
   return NextResponse.json(updated);

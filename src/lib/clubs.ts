@@ -46,12 +46,12 @@ export async function averageClubProgress(bookId: string, pages: number, memberI
 }
 
 /** Chamado pelo endpoint de progresso (Spec 3a) sempre que a página atual
- * muda. Publica uma mensagem de sistema nos clubes do usuário cujo tema é
- * este livro — só quando o percentual publicado antes muda, pra não duplicar
- * "avançou para X%" se o usuário reenviar a mesma página. */
+ * muda. Publica uma mensagem de sistema nos clubes do usuário cujo livro do
+ * mês corrente é este livro — só quando o percentual publicado antes muda,
+ * pra não duplicar "avançou para X%" se o usuário reenviar a mesma página. */
 export async function publishProgressToClubs(userId: string, bookId: string, percent: number) {
   const memberships = await db.clubMember.findMany({
-    where: { userId, club: { bookId } },
+    where: { userId, club: { booksOfMonth: { some: { month: currentMonth(), bookId } } } },
     select: { clubId: true, progress: true },
   });
   if (memberships.length === 0) return;

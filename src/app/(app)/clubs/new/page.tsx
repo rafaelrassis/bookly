@@ -3,12 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { BackHeader } from "@/components/BackHeader";
-import { BookPicker } from "@/components/BookPicker";
 import { LockIcon } from "@/components/icons";
 import { SectionTitle } from "@/components/SectionTitle";
 import { Spinner } from "@/components/Spinner";
 import { useStore } from "@/lib/store";
-import type { Book, Visibility } from "@/lib/types";
+import type { Visibility } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/apiError";
 
 export default function NewClubPage() {
@@ -18,19 +17,18 @@ export default function NewClubPage() {
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [visibility, setVisibility] = useState<Visibility>("public");
-  const [book, setBook] = useState<Book | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const valid = name.trim().length > 0 && book !== null;
+  const valid = name.trim().length > 0;
 
   async function create() {
-    if (!valid || !book || saving) return;
+    if (!valid || saving) return;
     setSaving(true);
     try {
       const res = await fetch("/api/clubs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), bookId: book.id, desc: desc.trim(), visibility }),
+        body: JSON.stringify({ name: name.trim(), desc: desc.trim(), visibility }),
       });
       if (!res.ok) {
         showToast(await apiErrorMessage(res, "Não foi possível criar o clube"));
@@ -72,13 +70,6 @@ export default function NewClubPage() {
           />
         </label>
       </div>
-
-      <section className="mt-6">
-        <SectionTitle>Leitura do clube</SectionTitle>
-        <div className="mt-3">
-          <BookPicker selected={book} onSelect={setBook} onClear={() => setBook(null)} />
-        </div>
-      </section>
 
       <section className="mt-6">
         <SectionTitle>Visibilidade</SectionTitle>

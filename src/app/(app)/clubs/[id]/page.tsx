@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { BackHeader } from "@/components/BackHeader";
-import { BookPicker } from "@/components/BookPicker";
 import { ClubBookOfMonthCard } from "@/components/ClubBookOfMonthCard";
 import { ClubDiscussionCard } from "@/components/ClubDiscussionCard";
 import { CopyIcon, LockIcon } from "@/components/icons";
@@ -16,7 +15,7 @@ import { withAt, withoutAt } from "@/lib/handle";
 import { formatStreak } from "@/lib/streak";
 import { useStore } from "@/lib/store";
 import { useModalA11y } from "@/lib/useModalA11y";
-import type { ApiClubStreaks, Book, ClubDetail, ClubMessage } from "@/lib/types";
+import type { ApiClubStreaks, ClubDetail, ClubMessage } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/apiError";
 
 const POLL_INTERVAL_MS = 4000;
@@ -194,7 +193,6 @@ export default function ClubPage({ params }: { params: { id: string } }) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState("");
   const [editDesc, setEditDesc] = useState("");
-  const [editBook, setEditBook] = useState<Book | null>(null);
   const [membershipBusy, setMembershipBusy] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
@@ -414,14 +412,13 @@ export default function ClubPage({ params }: { params: { id: string } }) {
   function openEdit() {
     setEditName(club!.name);
     setEditDesc(club!.desc);
-    setEditBook(club!.book);
     setEditing(true);
   }
 
   async function saveEdit() {
     const name = editName.trim();
-    if (!name || !editBook || savingEdit) {
-      if (!name || !editBook) showToast("Preencha nome e livro do clube");
+    if (!name || savingEdit) {
+      if (!name) showToast("Preencha o nome do clube");
       return;
     }
     setSavingEdit(true);
@@ -429,7 +426,7 @@ export default function ClubPage({ params }: { params: { id: string } }) {
       const res = await fetch(`/api/clubs/${club!.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, bookId: editBook.id, desc: editDesc.trim() }),
+        body: JSON.stringify({ name, desc: editDesc.trim() }),
       });
       if (!res.ok) {
         showToast(await apiErrorMessage(res, "Não foi possível atualizar o clube"));
@@ -569,13 +566,6 @@ export default function ClubPage({ params }: { params: { id: string } }) {
               placeholder="Bio do clube"
               aria-label="Bio do clube"
               className="resize-none rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper placeholder:text-paperDim/60"
-            />
-            <BookPicker
-              selected={editBook}
-              onSelect={setEditBook}
-              onClear={() => setEditBook(null)}
-              placeholder="Buscar livro lido pelo clube…"
-              dense
             />
           </div>
           <div className="mt-3 flex justify-end gap-2">
