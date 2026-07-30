@@ -27,9 +27,10 @@ test("review com título aparece no feed geral e some do feed ao zerar a nota", 
   const feed = await (await page.request.get("/api/feed?scope=all")).json();
   const mine = feed.items.find((r: { user: { username: string } }) => r.user.username === a.username);
   expect(mine).toBeTruthy();
-  expect(mine.title).toBe("Denso mas incrível");
-  expect(mine.likes).toBe(0);
-  expect(mine.comments).toBe(0);
+  expect(mine.type).toBe("REVIEW");
+  expect(mine.review.title).toBe("Denso mas incrível");
+  expect(mine.review.likes).toBe(0);
+  expect(mine.review.comments).toBe(0);
 
   // nota 0 apaga a review — some do feed
   await page.request.put("/api/books/duna/review", { data: { rating: 0 } });
@@ -80,7 +81,7 @@ test("curtir e comentar review: contadores refletem em /api/feed e /api/reviews/
   const feed = await (await page.request.get("/api/feed?scope=all")).json();
   const reviewId = feed.items.find(
     (r: { user: { username: string } }) => r.user.username === a.username
-  ).id;
+  ).review.id;
 
   const ctxB = await browser.newContext();
   const pageB = await ctxB.newPage();

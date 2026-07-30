@@ -1,16 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { ApiReview, ApiUserReview, Book } from "@/lib/types";
+import type { ApiFeedEvent, ApiReview, ApiUserReview, Book } from "@/lib/types";
 import { useStore } from "./index";
 
-export type FeedScope = "all" | "following" | "liked";
+export type FeedScope = "all" | "following";
 
-/** Feed real (Spec 3b), paginado por cursor. "following" retorna lista vazia
- * (com emptyReason: "no_follows") quando o usuário não segue ninguém — sem
- * cair pro "all". */
-export function useFeed(scope: FeedScope) {
-  const [items, setItems] = useState<ApiReview[]>([]);
+/** Pagina uma URL do feed (/api/feed) por cursor — usado por useFeed
+ * (eventos) e useLikedReviews (reviews curtidas), que só diferem no scope e
+ * no tipo do item. */
+function usePaginatedFeed<T>(url: string) {
+  const [items, setItems] = useState<T[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [emptyReason, setEmptyReason] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -22,7 +22,7 @@ export function useFeed(scope: FeedScope) {
     let cancelled = false;
     setLoading(true);
     setError(false);
-    fetch(`/api/feed?scope=${scope}`)
+    fetch(url)
       .then((res) => (res.ok ? res.json() : Promise.reject(res)))
       .then((data) => {
         if (cancelled) return;
@@ -35,13 +35,14 @@ export function useFeed(scope: FeedScope) {
     return () => {
       cancelled = true;
     };
-  }, [scope, retryCount]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url, retryCount]);
 
   async function loadMore() {
     if (!nextCursor || loadingMore) return;
     setLoadingMore(true);
     try {
-      const res = await fetch(`/api/feed?scope=${scope}&cursor=${nextCursor}`);
+      const res = await fetch(`${url}&cursor=${nextCursor}`);
       if (res.ok) {
         const data = await res.json();
         setItems((current) => [...current, ...(data.items ?? [])]);
@@ -57,6 +58,19 @@ export function useFeed(scope: FeedScope) {
   }
 
   return { items, loading, loadingMore, hasMore: nextCursor !== null, loadMore, emptyReason, error, retry };
+}
+
+/** Feed unificado (stream), paginado por cursor. "following" retorna lista
+ * vazia (com emptyReason: "no_follows") quando o usuário não segue ninguém —
+ * sem cair pro "all". */
+export function useFeed(scope: FeedScope) {
+  return usePaginatedFeed<ApiFeedEvent>(`/api/feed?scope=${scope}`);
+}
+
+/** Reviews curtidas pelo usuário (aba "Curtidas" do perfil) — continua lendo
+ * direto de Review, fora do feed unificado (curtida é por review). */
+export function useLikedReviews() {
+  return usePaginatedFeed<ApiReview>("/api/feed?scope=liked");
 }
 
 type HistogramBar = { value: number; count: number };

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { BookCover } from "@/components/BookCover";
 import { DiscoverReaders } from "@/components/DiscoverReaders";
 import { EmptyState } from "@/components/EmptyState";
-import { FeedPost } from "@/components/FeedPost";
+import { FeedEventCard } from "@/components/FeedEventCard";
 import { BookOpenIcon } from "@/components/icons";
 import { Logo } from "@/components/Logo";
 import { NotificationBell } from "@/components/NotificationBell";
@@ -149,7 +149,7 @@ export default function HomePage() {
 
       <section className="mt-7">
         <div className="flex items-center justify-between">
-          <SectionTitle>Reviews</SectionTitle>
+          <SectionTitle>Atividade</SectionTitle>
           <div
             className="flex rounded-full border border-line bg-card p-0.5 text-xs font-bold"
             role="tablist"
@@ -208,10 +208,10 @@ export default function HomePage() {
             ) : (
               <EmptyState
                 icon={<BookOpenIcon />}
-                title="Nenhuma review por aqui ainda"
+                title="Nenhuma atividade por aqui ainda"
                 description={
                   feedFilter === "following"
-                    ? "Ninguém que você segue publicou uma review ainda."
+                    ? "Ninguém que você segue teve atividade ainda."
                     : "Seja a primeira pessoa a avaliar um livro."
                 }
                 action={{ label: "Avaliar um livro", href: "/search" }}
@@ -225,8 +225,8 @@ export default function HomePage() {
               </EmptyState>
             ))
           )}
-          {feed.map((review) => (
-            <FeedPost key={review.id} review={review} />
+          {feed.map((event) => (
+            <FeedEventCard key={event.id} event={event} />
           ))}
           {hasMore && (
             <button

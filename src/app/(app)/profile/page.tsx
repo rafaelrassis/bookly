@@ -13,7 +13,7 @@ import { YearInBooksCard } from "@/components/YearInBooksCard";
 import { BadgeCheckIcon } from "@/components/icons";
 import { withAt } from "@/lib/handle";
 import { formatCount, formatDecimal } from "@/lib/format";
-import { useBooksByIds, useFeed, useMyStats, useRecommendations } from "@/lib/store/hooks";
+import { useBooksByIds, useLikedReviews, useMyStats, useRecommendations } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
 import { trustTier } from "@/lib/trust-badge";
 import type { ApiList } from "@/lib/types";
@@ -63,7 +63,7 @@ export default function ProfilePage() {
   } = useMyStats();
   const tier = trustTier(confirmedCount);
   const recommended = useRecommendations(6);
-  const { items: likedFeedReviews } = useFeed("liked");
+  const { items: likedFeedReviews } = useLikedReviews();
   const favoriteBooks = useBooksByIds(user.top4);
 
   const [tab, setTab] = useState<ActivityTab>("ratings");

@@ -99,6 +99,44 @@ export function CopyIcon({ size = 14 }: { size?: number }) {
   );
 }
 
+/** Ícone de review no feed unificado (stream). */
+export function StarIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      stroke="none"
+      aria-hidden="true"
+    >
+      <path d="M12 2.5 15 9l7 .9-5.1 4.8 1.3 6.9-6.2-3.4-6.2 3.4 1.3-6.9L2 9.9 9 9Z" />
+    </svg>
+  );
+}
+
+/** Ícone de entrada em clube no feed unificado (stream). */
+export function GroupIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="9" cy="8" r="3.2" />
+      <path d="M2.8 19c0-3.3 2.8-5.5 6.2-5.5s6.2 2.2 6.2 5.5" />
+      <circle cx="17" cy="8.5" r="2.6" />
+      <path d="M15.5 13.7c2.7.3 4.7 2.3 4.7 5.3" />
+    </svg>
+  );
+}
+
 export function ShareIcon({ size = 14 }: { size?: number }) {
   return (
     <svg

@@ -104,6 +104,15 @@ export default async function globalSetup() {
     await client.query(
       `UPDATE "Book" SET avg = 4.5, count = 1 WHERE id = 'duna' AND count = 0`
     );
+    // Feed lê de FeedEvent (não mais de Review direto) — o insert acima do
+    // Review não passa por recordFeedEvent(), então precisa do FeedEvent
+    // correspondente aqui pra a fixture aparecer no feed unificado.
+    await client.query(
+      `INSERT INTO "FeedEvent" (id, "userId", type, "bookId", "reviewId")
+       VALUES ('e2e-fixture-feed-event', $1, 'REVIEW', 'duna', 'e2e-fixture-review')
+       ON CONFLICT (id) DO NOTHING`,
+      [FIXTURE_READER.id]
+    );
   } finally {
     await client.end();
   }
