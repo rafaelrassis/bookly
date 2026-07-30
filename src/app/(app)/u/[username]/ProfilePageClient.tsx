@@ -15,7 +15,7 @@ import { formatCount } from "@/lib/format";
 import { useBooksByIds } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
 import { trustTier } from "@/lib/trust-badge";
-import type { ApiList, ApiUserReview } from "@/lib/types";
+import type { ApiList, ApiUserQuote, ApiUserReview } from "@/lib/types";
 import type { UserStats } from "@/lib/stats";
 import PublicProfileLoading from "./loading";
 
@@ -42,6 +42,7 @@ export function ProfilePageClient({ params }: { params: { username: string } }) 
 
   const [profile, setProfile] = useState<Profile | null | undefined>(undefined);
   const [reviews, setReviews] = useState<ApiUserReview[]>([]);
+  const [quotes, setQuotes] = useState<ApiUserQuote[]>([]);
   const [lists, setLists] = useState<ApiList[]>([]);
   const [followBusy, setFollowBusy] = useState(false);
   const [error, setError] = useState(false);
@@ -70,6 +71,9 @@ export function ProfilePageClient({ params }: { params: { username: string } }) 
           fetch(`/api/users/${username}/reviews`)
             .then((r) => (r.ok ? r.json() : { items: [] }))
             .then((d) => !cancelled && setReviews((d.items ?? []).filter((r: ApiUserReview) => r.text !== "")));
+          fetch(`/api/users/${username}/quotes`)
+            .then((r) => (r.ok ? r.json() : { items: [] }))
+            .then((d) => !cancelled && setQuotes(d.items ?? []));
           fetch(`/api/lists?userId=${data.id}`)
             .then((r) => (r.ok ? r.json() : []))
             .then((d) => !cancelled && setLists(d ?? []));
@@ -247,7 +251,7 @@ export function ProfilePageClient({ params }: { params: { username: string } }) 
         </section>
       )}
 
-      <section className="mt-7 pb-8">
+      <section className="mt-7">
         <SectionTitle>Reviews</SectionTitle>
         {reviews.length === 0 ? (
           <EmptyState
@@ -275,6 +279,29 @@ export function ProfilePageClient({ params }: { params: { username: string } }) 
           </div>
         )}
       </section>
+
+      {quotes.length > 0 && (
+        <section className="mt-7 pb-8">
+          <SectionTitle>Citações</SectionTitle>
+          <div className="mt-3 flex flex-col gap-3">
+            {quotes.map((quote) => (
+              <Link
+                key={quote.id}
+                href={`/citacao/${quote.id}`}
+                className="flex gap-3.5 rounded-2xl border border-line bg-card p-3.5 transition-colors hover:bg-card2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foil focus-visible:ring-offset-2 focus-visible:ring-offset-leather"
+              >
+                <BookCover book={quote.book} width={48} />
+                <div className="min-w-0">
+                  <p className="truncate font-display text-sm font-bold">{quote.book.title}</p>
+                  <p className="mt-1 line-clamp-2 font-display text-sm italic text-paperDim">
+                    “{quote.text}”
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

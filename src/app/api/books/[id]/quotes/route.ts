@@ -17,8 +17,10 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   });
 }
 
+/** 500 chars é o teto pra caber legível no card visual em formato Stories
+ * (ver /api/quotes/[id]/card) — texto maior fica ilegível no 1080x1920. */
 const schema = z.object({
-  text: z.string().trim().min(1).max(2000),
+  text: z.string().trim().min(1).max(500),
   page: z.number().int().min(1).optional(),
 });
 
