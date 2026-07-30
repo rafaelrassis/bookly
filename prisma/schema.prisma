@@ -65,6 +65,7 @@ model User {
 
   donations        Donation[]        @relation("DonorDonations")
   donationRequests DonationRequest[] @relation("SentRequests")
+  notifications    Notification[]
 }
 
 /// Conta OAuth vinculada a um User (Google/Amazon) — Auth.js PrismaAdapter.
@@ -409,8 +410,15 @@ model Donation {
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
   donatedAt DateTime?
+  /// Quando a doação entrou em RESERVADO — usado pra expirar a reserva
+  /// automaticamente (ver src/lib/donation-expiry.ts).
+  reservedAt DateTime?
+  /// Quando o aviso de "reserva expira em breve" foi enviado — evita
+  /// reenviar o aviso todo dia até a expiração de fato.
+  reserveWarnedAt DateTime?
 
-  requests DonationRequest[]
+  requests      DonationRequest[]
+  notifications Notification[]
 
   @@index([bookId, status])
   @@index([state, city, status])
@@ -431,4 +439,26 @@ model DonationRequest {
   @@unique([donationId, requesterId])
   @@index([donationId, status])
   @@index([requesterId])
+}
+
+enum NotificationType {
+  DONATION_RESERVE_EXPIRING
+  DONATION_RESERVE_EXPIRED
+}
+
+/// Notificação server-side (hoje só o fluxo de expiração de reserva de
+/// doação — ver src/lib/donation-expiry.ts). O feed de like/comment/follow
+/// continua só no client store (src/lib/store); esta tabela existe pro
+/// cron conseguir notificar sem uma sessão de usuário.
+model Notification {
+  id         String           @id @default(cuid())
+  userId     String
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type       NotificationType
+  donationId String?
+  donation   Donation?        @relation(fields: [donationId], references: [id], onDelete: Cascade)
+  readAt     DateTime?
+  createdAt  DateTime         @default(now())
+
+  @@index([userId, createdAt])
 }

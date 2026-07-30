@@ -28,10 +28,25 @@ export async function PATCH(
 
   try {
     if (parsed.data.action === "recusar") {
-      await db.donationRequest.update({
-        where: { id: params.requestId },
-        data: { status: "RECUSADO" },
-      });
+      const request = await db.donationRequest.findUnique({ where: { id: params.requestId } });
+      const isChosen = request?.status === "ESCOLHIDO";
+
+      await db.$transaction([
+        db.donationRequest.update({
+          where: { id: params.requestId },
+          data: { status: "RECUSADO" },
+        }),
+        // recusar o interessado ESCOLHIDO libera o livro de novo — sem isso
+        // a doação ficava presa em RESERVADO pra sempre (ver donation-expiry.ts).
+        ...(isChosen
+          ? [
+              db.donation.update({
+                where: { id: params.id },
+                data: { status: "DISPONIVEL", reservedAt: null, reserveWarnedAt: null },
+              }),
+            ]
+          : []),
+      ]);
       return NextResponse.json({ ok: true });
     }
 
@@ -45,7 +60,7 @@ export async function PATCH(
       }),
       db.donation.update({
         where: { id: params.id },
-        data: { status: "RESERVADO" },
+        data: { status: "RESERVADO", reservedAt: new Date() },
       }),
     ]);
     return NextResponse.json({ ok: true });
