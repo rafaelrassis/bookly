@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { checkRateLimit } from "@/lib/ratelimit";
+import { notify } from "@/lib/notifications";
 
 const patchSchema = z.object({ action: z.literal("doado") });
 
@@ -26,6 +27,20 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     where: { id: params.id },
     data: { status: "DOADO", donatedAt: new Date() },
   });
+
+  const chosen = await db.donationRequest.findFirst({
+    where: { donationId: params.id, status: "ESCOLHIDO" },
+    select: { requesterId: true },
+  });
+  if (chosen) {
+    await notify({
+      userId: chosen.requesterId,
+      type: "DONATION_COMPLETED",
+      actorId: session.user.id,
+      donationId: params.id,
+    });
+  }
+
   return NextResponse.json({ ok: true });
 }
 

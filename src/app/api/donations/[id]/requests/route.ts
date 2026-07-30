@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { checkRateLimit } from "@/lib/ratelimit";
+import { notify } from "@/lib/notifications";
 
 /** Registra interesse ("Quero este") na doação. */
 export async function POST(_req: Request, { params }: { params: { id: string } }) {
@@ -25,6 +26,14 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
   } catch {
     return NextResponse.json({ error: "Você já pediu este livro" }, { status: 409 });
   }
+
+  await notify({
+    userId: donation.donorId,
+    type: "DONATION_REQUEST_RECEIVED",
+    actorId: session.user.id,
+    donationId: donation.id,
+  });
+
   return NextResponse.json({ ok: true }, { status: 201 });
 }
 

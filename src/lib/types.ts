@@ -191,14 +191,17 @@ export type ApiList = {
   isOwner?: boolean;
 };
 
-export type Notification = {
+export type NotificationType = "DONATION_REQUEST_RECEIVED" | "DONATION_CHOSEN" | "DONATION_COMPLETED";
+
+/** Notificação in-app real (GET /api/notifications) — fluxo de doação hoje,
+ * genérica o bastante pra follows/reviews/clubes depois. */
+export type ApiNotification = {
   id: string;
-  kind: "like" | "comment" | "follow";
-  actor: string;
-  reviewId?: string;
-  bookId?: string;
-  text?: string;
-  time: string;
+  type: NotificationType;
+  read: boolean;
+  createdAt: string;
+  actor: { id: string; username: string | null; name: string; avatar: number; avatarUrl: string | null } | null;
+  donation: { id: string; bookId: string; book: { title: string } } | null;
 };
 
 export type UserState = {

@@ -65,6 +65,9 @@ model User {
 
   donations        Donation[]        @relation("DonorDonations")
   donationRequests DonationRequest[] @relation("SentRequests")
+
+  notifications      Notification[] @relation("UserNotifications")
+  actedNotifications Notification[] @relation("ActorNotifications")
 }
 
 /// Conta OAuth vinculada a um User (Google/Amazon) — Auth.js PrismaAdapter.
@@ -410,7 +413,8 @@ model Donation {
   updatedAt DateTime       @updatedAt
   donatedAt DateTime?
 
-  requests DonationRequest[]
+  requests      DonationRequest[]
+  notifications Notification[]
 
   @@index([bookId, status])
   @@index([state, city, status])
@@ -431,4 +435,28 @@ model DonationRequest {
   @@unique([donationId, requesterId])
   @@index([donationId, status])
   @@index([requesterId])
+}
+
+enum NotificationType {
+  DONATION_REQUEST_RECEIVED // doador: alguém pediu seu livro
+  DONATION_CHOSEN // recebedor: você foi escolhido
+  DONATION_COMPLETED // recebedor: doador confirmou a doação
+}
+
+/// Notificação in-app genérica (sino + contador) — hoje só doações, mas o
+/// shape (type + actor opcional + donation opcional) cobre follows/reviews/
+/// clubes depois sem precisar de nova tabela.
+model Notification {
+  id         String           @id @default(cuid())
+  userId     String
+  user       User             @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  type       NotificationType
+  actorId    String?
+  actor      User?            @relation("ActorNotifications", fields: [actorId], references: [id], onDelete: SetNull)
+  donationId String?
+  donation   Donation?        @relation(fields: [donationId], references: [id], onDelete: Cascade)
+  read       Boolean          @default(false)
+  createdAt  DateTime         @default(now())
+
+  @@index([userId, read, createdAt])
 }

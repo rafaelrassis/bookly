@@ -4,6 +4,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { checkRateLimit } from "@/lib/ratelimit";
+import { notify } from "@/lib/notifications";
 
 const patchSchema = z.object({ action: z.enum(["escolher", "recusar"]) });
 
@@ -38,7 +39,7 @@ export async function PATCH(
     if (donation.status !== "DISPONIVEL")
       return NextResponse.json({ error: "Doação já reservada" }, { status: 409 });
 
-    await db.$transaction([
+    const [chosen] = await db.$transaction([
       db.donationRequest.update({
         where: { id: params.requestId },
         data: { status: "ESCOLHIDO" },
@@ -48,6 +49,14 @@ export async function PATCH(
         data: { status: "RESERVADO" },
       }),
     ]);
+
+    await notify({
+      userId: chosen.requesterId,
+      type: "DONATION_CHOSEN",
+      actorId: session.user.id,
+      donationId: params.id,
+    });
+
     return NextResponse.json({ ok: true });
   } catch (err) {
     Sentry.captureException(err);

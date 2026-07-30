@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useNotifications } from "@/lib/store";
+import { useEffect, useState } from "react";
+
+const POLL_MS = 60_000;
 
 function BellIcon() {
   return (
@@ -23,7 +25,31 @@ function BellIcon() {
 }
 
 export function NotificationBell({ className = "" }: { className?: string }) {
-  const unread = useNotifications().filter((n) => !n.read).length;
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    function fetchUnread() {
+      fetch("/api/notifications")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => !cancelled && data && setUnread(data.unread ?? 0))
+        .catch(() => {});
+    }
+
+    fetchUnread();
+    const interval = setInterval(fetchUnread, POLL_MS);
+    function onVisible() {
+      if (document.visibilityState === "visible") fetchUnread();
+    }
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, []);
 
   return (
     <Link

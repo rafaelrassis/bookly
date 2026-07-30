@@ -1,33 +1,58 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { BackHeader } from "@/components/BackHeader";
-import { withoutAt } from "@/lib/handle";
+import { SectionError } from "@/components/SectionError";
+import { Skeleton } from "@/components/Skeleton";
+import { apiErrorMessage } from "@/lib/apiError";
+import { withAt } from "@/lib/handle";
 import { formatNotificationTime } from "@/lib/format";
-import { useStore, useNotifications } from "@/lib/store";
-import type { Notification } from "@/lib/types";
+import type { ApiNotification } from "@/lib/types";
 
-function notificationText(n: Notification): string {
-  if (n.kind === "like") return "curtiu sua review";
-  if (n.kind === "comment") return `comentou: "${n.text}"`;
-  return "começou a seguir você";
+function notificationText(n: ApiNotification): string {
+  const who = n.actor?.name ?? "Alguém";
+  const book = n.donation?.book?.title ?? "um livro";
+  switch (n.type) {
+    case "DONATION_REQUEST_RECEIVED":
+      return `${who} quer o livro "${book}" que você está doando.`;
+    case "DONATION_CHOSEN":
+      return `${who} escolheu você para receber "${book}"! Veja o contato.`;
+    case "DONATION_COMPLETED":
+      return `${who} confirmou a doação de "${book}". Combine a entrega.`;
+    default:
+      return "Você tem uma nova notificação.";
+  }
 }
 
-function notificationHref(n: Notification): string {
-  if (n.kind === "follow") return `/u/${withoutAt(n.actor)}`;
-  return `/review/${n.reviewId}`;
+function notificationHref(n: ApiNotification): string {
+  return n.type === "DONATION_REQUEST_RECEIVED" ? "/profile#minhas-doacoes" : "/profile#recebidos";
 }
 
 export default function NotificationsPage() {
-  const notifications = useNotifications();
-  const markNotificationsRead = useStore((s) => s.markNotificationsRead);
-  const clearNotifications = useStore((s) => s.clearNotifications);
+  const [notifications, setNotifications] = useState<ApiNotification[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [reloadSignal, setReloadSignal] = useState(0);
 
   useEffect(() => {
-    markNotificationsRead();
-  }, [markNotificationsRead]);
+    let cancelled = false;
+    setError(null);
+    fetch("/api/notifications")
+      .then(async (res) => {
+        if (!res.ok) throw new Error(await apiErrorMessage(res, "Não foi possível carregar suas notificações"));
+        return res.json();
+      })
+      .then((data) => {
+        if (cancelled) return;
+        setNotifications(data.notifications ?? []);
+        fetch("/api/notifications/read", { method: "POST", headers: { "Content-Type": "application/json" } });
+      })
+      .catch((e: Error) => !cancelled && setError(e.message));
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadSignal]);
 
   return (
     <div className="px-5 pt-4">
@@ -35,17 +60,11 @@ export default function NotificationsPage() {
         <h1 className="text-lg font-extrabold">Notificações</h1>
       </BackHeader>
 
-      {notifications.length > 0 && (
-        <button
-          type="button"
-          onClick={clearNotifications}
-          className="mb-3 text-xs font-bold text-paperDim hover:text-ribbon"
-        >
-          Limpar tudo
-        </button>
-      )}
-
-      {notifications.length === 0 ? (
+      {error ? (
+        <SectionError message={error} onRetry={() => setReloadSignal((n) => n + 1)} />
+      ) : !notifications ? (
+        <NotificationsSkeleton />
+      ) : notifications.length === 0 ? (
         <p className="mt-6 text-sm text-paperDim">Nenhuma notificação por aqui ainda.</p>
       ) : (
         <div className="mt-4 flex flex-col gap-1 pb-8">
@@ -57,24 +76,37 @@ export default function NotificationsPage() {
                 n.read ? "" : "bg-card2"
               }`}
             >
-              <Avatar user={n.actor} size={40} />
+              <Avatar
+                user={withAt(n.actor?.username ?? n.actor?.name ?? "?")}
+                avatarIndex={n.actor?.avatar}
+                avatarUrl={n.actor?.avatarUrl}
+                size={40}
+              />
               <div className="min-w-0 flex-1">
-                <p className="text-sm leading-snug">
-                  <span className="font-bold">{n.actor}</span>{" "}
-                  <span className="text-paperDim">{notificationText(n)}</span>
-                </p>
-                <p className="mt-0.5 text-xs text-paperDim">{formatNotificationTime(n.time)}</p>
+                <p className="text-sm leading-snug text-paperDim">{notificationText(n)}</p>
+                <p className="mt-0.5 text-xs text-paperDim">{formatNotificationTime(n.createdAt)}</p>
               </div>
-              {!n.read && (
-                <span
-                  aria-hidden="true"
-                  className="h-2 w-2 shrink-0 rounded-full bg-ribbon"
-                />
-              )}
+              {!n.read && <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full bg-ribbon" />}
             </Link>
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function NotificationsSkeleton() {
+  return (
+    <div className="mt-4 flex flex-col gap-3">
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="flex items-center gap-3 px-3 py-2.5">
+          <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-3 w-1/3" />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

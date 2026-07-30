@@ -1,16 +1,15 @@
 "use client";
 
-import { useMemo } from "react";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import type { Notification, UserState } from "@/lib/types";
+import type { UserState } from "@/lib/types";
 
 /**
  * Estado local (Zustand + localStorage) pro que ainda não é servidor:
- * notificações (sem model no Prisma, ficam só no store) e efêmero de UI
- * (toast/tema). Identidade/perfil (Spec 2), estante/notas/reviews (Spec 3a),
- * feed social/likes/comentários/listas (Spec 3b) e clubes/chat (Spec 4) já
- * vêm da API — ver AuthSync e src/app/(app)/book, /shelf, /home, /clubs.
+ * efêmero de UI (toast/tema). Identidade/perfil (Spec 2), estante/notas/
+ * reviews (Spec 3a), feed social/likes/comentários/listas (Spec 3b),
+ * clubes/chat (Spec 4) e notificações (fluxo de doação) já vêm da API — ver
+ * AuthSync e src/app/(app)/book, /shelf, /home, /clubs, /notifications.
  */
 const EMPTY_USER: UserState = {
   loggedIn: false,
@@ -50,12 +49,6 @@ type Store = {
    * top4, contagem de seguidores. */
   applyProfile: (patch: Partial<UserState>) => void;
   logout: () => void;
-
-  notifications: Notification[];
-  clearedAt: string | null;
-  readAt: string | null;
-  markNotificationsRead: () => void;
-  clearNotifications: () => void;
 };
 
 export const useStore = create<Store>()(
@@ -64,9 +57,6 @@ export const useStore = create<Store>()(
       user: EMPTY_USER,
       toast: null,
       theme: "dark",
-      notifications: [],
-      clearedAt: null,
-      readAt: null,
       hasHydrated: false,
 
       showToast: (message) => set({ toast: { id: Date.now(), message } }),
@@ -86,17 +76,7 @@ export const useStore = create<Store>()(
 
       applyProfile: (patch) => set((s) => ({ user: { ...s.user, ...patch } })),
 
-      logout: () =>
-        set({
-          user: { ...EMPTY_USER, loggedIn: false },
-          notifications: [],
-          clearedAt: null,
-          readAt: null,
-        }),
-
-      markNotificationsRead: () => set({ readAt: new Date().toISOString() }),
-
-      clearNotifications: () => set({ clearedAt: new Date().toISOString() }),
+      logout: () => set({ user: { ...EMPTY_USER, loggedIn: false } }),
     }),
     {
       name: "bookly-v5",
@@ -105,31 +85,9 @@ export const useStore = create<Store>()(
       // não persistir estado efêmero
       partialize: (s) => ({
         user: s.user,
-        notifications: s.notifications,
         theme: s.theme,
-        clearedAt: s.clearedAt,
-        readAt: s.readAt,
       }),
       skipHydration: true,
     }
   )
 );
-
-/** Deriva a lista visível e o `read` de cada notificação a partir dos marcos
- * `clearedAt`/`readAt`, em vez de mutar o array bruto. Fonte única da verdade
- * pra badge do sino e pra página de notificações. */
-export function useNotifications() {
-  const notifications = useStore((s) => s.notifications);
-  const clearedAt = useStore((s) => s.clearedAt);
-  const readAt = useStore((s) => s.readAt);
-
-  return useMemo(() => {
-    const base = clearedAt
-      ? notifications.filter((n) => n.time > clearedAt)
-      : notifications;
-    return base.map((n) => ({
-      ...n,
-      read: readAt ? n.time <= readAt : false,
-    }));
-  }, [notifications, clearedAt, readAt]);
-}
