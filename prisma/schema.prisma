@@ -418,6 +418,10 @@ model Donation {
   /// Quando o aviso de "reserva expira em breve" foi enviado — evita
   /// reenviar o aviso todo dia até a expiração de fato.
   reserveWarnedAt DateTime?
+  /// Quando o interessado ESCOLHIDO confirmou ter recebido o livro —
+  /// independente de o doador já ter marcado como DOADO (ver
+  /// POST /api/donations/[id]/confirm-receipt).
+  receiverConfirmedAt DateTime?
 
   requests      DonationRequest[]
   notifications Notification[]
@@ -449,6 +453,8 @@ enum NotificationType {
   DONATION_COMPLETED // recebedor: doador confirmou a doação
   DONATION_RESERVE_EXPIRING // doador/recebedor: reserva expira em breve (cron)
   DONATION_RESERVE_EXPIRED // doador/recebedor: reserva expirou, livro liberado (cron)
+  DONATION_RECEIPT_CONFIRMED // doador: recebedor confirmou o recebimento
+  DONATION_RESERVE_EXTENDED // recebedor: doador estendeu o prazo
 }
 
 /// Notificação in-app genérica (sino + contador) — cobre o fluxo de doação

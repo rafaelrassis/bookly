@@ -303,3 +303,193 @@ test("criar/gerenciar doação exige sessão autenticada", async ({ page }) => {
   });
   expect(post.status()).toBe(401);
 });
+
+async function escolher(page: Page, donationId: string, requesterId: string) {
+  const queue = await (await page.request.get(`/api/donations/${donationId}/requests`)).json();
+  const requestId = queue.requests.find((r: { requesterId: string }) => r.requesterId === requesterId).id;
+  const res = await page.request.patch(`/api/donations/${donationId}/requests/${requestId}`, {
+    data: { action: "escolher" },
+  });
+  expect(res.ok()).toBeTruthy();
+}
+
+test("recebedor confirma recebimento de doação ainda RESERVADO: finaliza a doação e notifica o doador", async ({
+  page,
+  browser,
+}) => {
+  const donor = seedAccount("don_confirm_a");
+  await register(page, donor);
+  await login(page, donor);
+  const donationId = await criarDoacao(page);
+
+  const ctx = await browser.newContext();
+  const receiver = await ctx.newPage();
+  const r = seedAccount("don_confirm_a_r");
+  await register(receiver, r);
+  await login(receiver, r);
+  await receiver.request.post(`/api/donations/${donationId}/requests`);
+  await escolher(page, donationId, r.id);
+
+  const confirm = await receiver.request.patch(`/api/donations/${donationId}/confirm-receipt`);
+  expect(confirm.ok()).toBeTruthy();
+  expect(await confirm.json()).toEqual({ ok: true, finalized: true });
+
+  const row = await withDb((client) =>
+    client.query(
+      'SELECT status, "donatedAt", "receiverConfirmedAt" FROM "Donation" WHERE id = $1',
+      [donationId],
+    ),
+  );
+  expect(row.rows[0].status).toBe("DOADO");
+  expect(row.rows[0].donatedAt).toBeTruthy();
+  expect(row.rows[0].receiverConfirmedAt).toBeTruthy();
+
+  const notifs = await (await page.request.get("/api/notifications")).json();
+  expect(
+    notifs.notifications.some(
+      (n: { type: string; actor: { id: string } | null }) =>
+        n.type === "DONATION_RECEIPT_CONFIRMED" && n.actor?.id === r.id,
+    ),
+  ).toBe(true);
+
+  await ctx.close();
+});
+
+test("doador marca doado primeiro; recebedor confirma depois só grava receiverConfirmedAt", async ({
+  page,
+  browser,
+}) => {
+  const donor = seedAccount("don_confirm_b");
+  await register(page, donor);
+  await login(page, donor);
+  const donationId = await criarDoacao(page);
+
+  const ctx = await browser.newContext();
+  const receiver = await ctx.newPage();
+  const r = seedAccount("don_confirm_b_r");
+  await register(receiver, r);
+  await login(receiver, r);
+  await receiver.request.post(`/api/donations/${donationId}/requests`);
+  await escolher(page, donationId, r.id);
+
+  const marcar = await page.request.patch(`/api/donations/${donationId}`, { data: { action: "doado" } });
+  expect(marcar.ok()).toBeTruthy();
+
+  const confirm = await receiver.request.patch(`/api/donations/${donationId}/confirm-receipt`);
+  expect(confirm.ok()).toBeTruthy();
+  expect(await confirm.json()).toEqual({ ok: true, finalized: false });
+
+  const row = await withDb((client) =>
+    client.query('SELECT status, "receiverConfirmedAt" FROM "Donation" WHERE id = $1', [donationId]),
+  );
+  expect(row.rows[0].status).toBe("DOADO");
+  expect(row.rows[0].receiverConfirmedAt).toBeTruthy();
+
+  await ctx.close();
+});
+
+test("confirmar recebimento: só o escolhido pode, e não dá pra confirmar duas vezes", async ({
+  page,
+  browser,
+}) => {
+  const donor = seedAccount("don_confirm_c");
+  await register(page, donor);
+  await login(page, donor);
+  const donationId = await criarDoacao(page);
+
+  const ctx = await browser.newContext();
+  const receiver = await ctx.newPage();
+  const r = seedAccount("don_confirm_c_r");
+  await register(receiver, r);
+  await login(receiver, r);
+  await receiver.request.post(`/api/donations/${donationId}/requests`);
+
+  const ctxOther = await browser.newContext();
+  const other = await ctxOther.newPage();
+  const o = seedAccount("don_confirm_c_o");
+  await register(other, o);
+  await login(other, o);
+
+  // ainda não escolhido: qualquer interessado é rejeitado (não é o ESCOLHIDO)
+  expect((await receiver.request.patch(`/api/donations/${donationId}/confirm-receipt`)).status()).toBe(
+    403,
+  );
+
+  await escolher(page, donationId, r.id);
+
+  expect((await other.request.patch(`/api/donations/${donationId}/confirm-receipt`)).status()).toBe(403);
+
+  const first = await receiver.request.patch(`/api/donations/${donationId}/confirm-receipt`);
+  expect(first.ok()).toBeTruthy();
+
+  const second = await receiver.request.patch(`/api/donations/${donationId}/confirm-receipt`);
+  expect(second.status()).toBe(409);
+
+  await ctx.close();
+  await ctxOther.close();
+});
+
+test("estender reserva renova reservedAt, limpa reserveWarnedAt e notifica o recebedor", async ({
+  page,
+  browser,
+}) => {
+  const donor = seedAccount("don_extend_a");
+  await register(page, donor);
+  await login(page, donor);
+  const donationId = await criarDoacao(page);
+
+  const ctx = await browser.newContext();
+  const receiver = await ctx.newPage();
+  const r = seedAccount("don_extend_a_r");
+  await register(receiver, r);
+  await login(receiver, r);
+  await receiver.request.post(`/api/donations/${donationId}/requests`);
+  await escolher(page, donationId, r.id);
+
+  // simula reserva parada há dias, com aviso já disparado
+  await withDb((client) =>
+    client.query(
+      `UPDATE "Donation" SET "reservedAt" = now() - interval '6 days', "reserveWarnedAt" = now() - interval '1 day' WHERE id = $1`,
+      [donationId],
+    ),
+  );
+
+  const extend = await page.request.patch(`/api/donations/${donationId}/extend-reserve`);
+  expect(extend.ok()).toBeTruthy();
+
+  const row = await withDb((client) =>
+    client.query('SELECT "reservedAt", "reserveWarnedAt" FROM "Donation" WHERE id = $1', [donationId]),
+  );
+  expect(row.rows[0].reserveWarnedAt).toBeNull();
+  const ageMs = Date.now() - new Date(row.rows[0].reservedAt).getTime();
+  expect(ageMs).toBeLessThan(60_000);
+
+  const notifs = await (await receiver.request.get("/api/notifications")).json();
+  expect(
+    notifs.notifications.some((n: { type: string }) => n.type === "DONATION_RESERVE_EXTENDED"),
+  ).toBe(true);
+
+  await ctx.close();
+});
+
+test("estender reserva: só o doador, e só doação RESERVADO", async ({ page, browser }) => {
+  const donor = seedAccount("don_extend_b");
+  await register(page, donor);
+  await login(page, donor);
+  const donationId = await criarDoacao(page);
+
+  const ctx = await browser.newContext();
+  const stranger = await ctx.newPage();
+  const s = seedAccount("don_extend_b_s");
+  await register(stranger, s);
+  await login(stranger, s);
+
+  // ainda DISPONIVEL: doador não pode estender
+  expect((await page.request.patch(`/api/donations/${donationId}/extend-reserve`)).status()).toBe(409);
+  // estranho nunca pode, mesmo que a doação vire RESERVADO depois
+  expect((await stranger.request.patch(`/api/donations/${donationId}/extend-reserve`)).status()).toBe(
+    403,
+  );
+
+  await ctx.close();
+});

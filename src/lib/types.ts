@@ -56,6 +56,7 @@ export type ApiMyDonation = {
   pendingRequests: number;
   createdAt: string;
   donatedAt: string | null;
+  receiverConfirmedAt: string | null;
 };
 
 /** Doação em que o usuário logado é o interessado ESCOLHIDO (GET /api/donations/received) —
@@ -71,6 +72,7 @@ export type ApiReceivedDonation = {
   state: string;
   status: DonationStatus;
   donatedAt: string | null;
+  receiverConfirmedAt: string | null;
   contact: { whatsapp: string | null; instagram: string | null } | null;
   donor: { id: string; username: string | null; name: string; avatar: number; avatarUrl: string | null };
 };
@@ -196,7 +198,9 @@ export type NotificationType =
   | "DONATION_CHOSEN"
   | "DONATION_COMPLETED"
   | "DONATION_RESERVE_EXPIRING"
-  | "DONATION_RESERVE_EXPIRED";
+  | "DONATION_RESERVE_EXPIRED"
+  | "DONATION_RECEIPT_CONFIRMED"
+  | "DONATION_RESERVE_EXTENDED";
 
 /** Notificação in-app real (GET /api/notifications) — fluxo de doação hoje,
  * genérica o bastante pra follows/reviews/clubes depois. */

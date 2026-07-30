@@ -93,6 +93,20 @@ export function DonorPanel({ donationId, status, onStatusChange, onDeleted, onTo
     }
   }
 
+  async function estenderPrazo() {
+    setBusyId("estender");
+    try {
+      const res = await fetch(`/api/donations/${donationId}/extend-reserve`, { method: "PATCH" });
+      if (!res.ok) {
+        onToast(await apiErrorMessage(res, "Não foi possível estender o prazo"));
+        return;
+      }
+      onToast("Prazo renovado por mais 7 dias.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function remover() {
     setBusyId("remover");
     try {
@@ -141,6 +155,14 @@ export function DonorPanel({ donationId, status, onStatusChange, onDeleted, onTo
             className="mt-3 flex w-full items-center justify-center rounded-xl bg-foil px-4 py-2.5 text-sm font-bold text-leather disabled:opacity-40"
           >
             {busyId === "doado" ? <Spinner size={16} className="text-leather" /> : "Marcar como doado"}
+          </button>
+          <button
+            type="button"
+            onClick={estenderPrazo}
+            disabled={busyId !== null}
+            className="mt-2 flex w-full items-center justify-center rounded-xl border border-line px-4 py-2.5 text-sm font-bold text-paper disabled:opacity-40"
+          >
+            {busyId === "estender" ? <Spinner size={16} className="text-paper" /> : "Estender prazo"}
           </button>
         </div>
       )}

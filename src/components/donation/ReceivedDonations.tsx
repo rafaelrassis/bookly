@@ -6,9 +6,11 @@ import { useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { SectionError } from "@/components/SectionError";
 import { Skeleton } from "@/components/Skeleton";
+import { Spinner } from "@/components/Spinner";
 import { apiErrorMessage } from "@/lib/apiError";
 import { formatShortDate } from "@/lib/format";
 import { withAt } from "@/lib/handle";
+import { useStore } from "@/lib/store";
 import type { ApiReceivedDonation } from "@/lib/types";
 
 type Data = { emAndamento: ApiReceivedDonation[]; recebidos: ApiReceivedDonation[] };
@@ -16,6 +18,7 @@ type Data = { emAndamento: ApiReceivedDonation[]; recebidos: ApiReceivedDonation
 /** "Recebidos" no perfil: espelho de MyDonations do lado de quem recebe — livros em
  * que o usuário foi o interessado escolhido, separados em andamento/já entregues. */
 export function ReceivedDonations() {
+  const showToast = useStore((s) => s.showToast);
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reloadSignal, setReloadSignal] = useState(0);
@@ -52,7 +55,12 @@ export function ReceivedDonations() {
         ) : (
           <ul className="mt-3 flex flex-col gap-3">
             {data.emAndamento.map((d) => (
-              <ReceivedCard key={d.requestId} donation={d} />
+              <ReceivedCard
+                key={d.requestId}
+                donation={d}
+                onConfirmed={() => setReloadSignal((n) => n + 1)}
+                onToast={showToast}
+              />
             ))}
           </ul>
         )}
@@ -63,7 +71,12 @@ export function ReceivedDonations() {
           <h3 className="text-xs font-extrabold uppercase tracking-[0.18em] text-paperDim">Recebidos</h3>
           <ul className="mt-3 flex flex-col gap-3">
             {data.recebidos.map((d) => (
-              <ReceivedCard key={d.requestId} donation={d} />
+              <ReceivedCard
+                key={d.requestId}
+                donation={d}
+                onConfirmed={() => setReloadSignal((n) => n + 1)}
+                onToast={showToast}
+              />
             ))}
           </ul>
         </div>
@@ -72,9 +85,36 @@ export function ReceivedDonations() {
   );
 }
 
-function ReceivedCard({ donation }: { donation: ApiReceivedDonation }) {
+function ReceivedCard({
+  donation,
+  onConfirmed,
+  onToast,
+}: {
+  donation: ApiReceivedDonation;
+  onConfirmed: () => void;
+  onToast: (message: string) => void;
+}) {
   const donor = donation.donor;
   const donorHandle = withAt(donor.username ?? donor.name);
+  const [confirming, setConfirming] = useState(false);
+
+  async function confirmarRecebimento() {
+    if (!confirm("Confirmar que você recebeu este livro?")) return;
+    setConfirming(true);
+    try {
+      const res = await fetch(`/api/donations/${donation.donationId}/confirm-receipt`, {
+        method: "PATCH",
+      });
+      if (!res.ok) {
+        onToast(await apiErrorMessage(res, "Não foi possível confirmar o recebimento"));
+        return;
+      }
+      onToast("Recebimento confirmado ✦");
+      onConfirmed();
+    } finally {
+      setConfirming(false);
+    }
+  }
 
   return (
     <li className="rounded-2xl border border-line bg-card p-3.5">
@@ -130,6 +170,21 @@ function ReceivedCard({ donation }: { donation: ApiReceivedDonation }) {
                 )}
               </div>
             )
+          )}
+
+          {donation.receiverConfirmedAt ? (
+            <span className="mt-2 inline-flex w-fit rounded-full bg-foil/15 px-2.5 py-1 text-[11px] font-bold text-foil">
+              Você confirmou
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={confirmarRecebimento}
+              disabled={confirming}
+              className="mt-2 flex items-center justify-center gap-1.5 rounded-full bg-foil px-3 py-1.5 text-xs font-bold text-leather disabled:opacity-40"
+            >
+              {confirming ? <Spinner size={12} className="text-leather" /> : "Confirmei o recebimento"}
+            </button>
           )}
         </div>
       </div>

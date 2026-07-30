@@ -35,6 +35,7 @@ export async function GET() {
     state: r.donation.state,
     status: r.donation.status,
     donatedAt: r.donation.donatedAt,
+    receiverConfirmedAt: r.donation.receiverConfirmedAt,
     contact:
       r.donation.status === "RESERVADO"
         ? { whatsapp: r.donation.whatsapp, instagram: r.donation.instagram }

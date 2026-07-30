@@ -118,6 +118,12 @@ function Section({
 function DonationCard({ donation, onManage }: { donation: ApiMyDonation; onManage: () => void }) {
   const badge = STATUS_BADGE[donation.status];
   const showPending = donation.status !== "DOADO" && donation.pendingRequests > 0;
+  const receiptBadge =
+    donation.status === "DOADO"
+      ? donation.receiverConfirmedAt
+        ? { label: "Recebimento confirmado", className: "bg-foil/15 text-foil" }
+        : { label: "Aguardando confirmação", className: "bg-card2 text-paperDim" }
+      : null;
 
   return (
     <li>
@@ -141,6 +147,11 @@ function DonationCard({ donation, onManage }: { donation: ApiMyDonation; onManag
             {showPending && (
               <span className="rounded-full bg-ribbon/15 px-2.5 py-1 text-[11px] font-bold text-ribbon">
                 {donation.pendingRequests} {donation.pendingRequests === 1 ? "pedido" : "pedidos"}
+              </span>
+            )}
+            {receiptBadge && (
+              <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${receiptBadge.className}`}>
+                {receiptBadge.label}
               </span>
             )}
           </div>

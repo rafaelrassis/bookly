@@ -26,6 +26,10 @@ function notificationText(n: ApiNotification): string {
       return `A reserva de "${book}" expira em breve — combine a entrega antes do prazo.`;
     case "DONATION_RESERVE_EXPIRED":
       return `A reserva de "${book}" expirou e o livro voltou a ficar disponível.`;
+    case "DONATION_RECEIPT_CONFIRMED":
+      return `${who} confirmou que recebeu "${book}". Doação concluída!`;
+    case "DONATION_RESERVE_EXTENDED":
+      return `${who} estendeu o prazo da reserva de "${book}".`;
     default:
       return "Você tem uma nova notificação.";
   }
@@ -34,9 +38,11 @@ function notificationText(n: ApiNotification): string {
 function notificationHref(n: ApiNotification): string {
   switch (n.type) {
     case "DONATION_REQUEST_RECEIVED":
+    case "DONATION_RECEIPT_CONFIRMED":
       return "/profile#minhas-doacoes";
     case "DONATION_CHOSEN":
     case "DONATION_COMPLETED":
+    case "DONATION_RESERVE_EXTENDED":
       return "/profile#recebidos";
     default:
       return "/profile";

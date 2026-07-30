@@ -30,6 +30,7 @@ export async function GET() {
       pendingRequests: d.requests.filter((r) => r.status === "PENDENTE").length,
       createdAt: d.createdAt,
       donatedAt: d.donatedAt,
+      receiverConfirmedAt: d.receiverConfirmedAt,
     })),
   });
 }
