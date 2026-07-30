@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { recordFeedEvent } from "@/lib/feed-event";
 import { checkRateLimit } from "@/lib/ratelimit";
 
 /** Entra em clube público sem código. Privado exige POST /api/clubs/join. */
@@ -31,5 +32,6 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
     create: { clubId: club.id, userId: uid },
     update: {},
   });
+  await recordFeedEvent(db, { userId: uid, type: "CLUB_JOINED", clubId: club.id });
   return NextResponse.json({ id: club.id, status: "joined" });
 }

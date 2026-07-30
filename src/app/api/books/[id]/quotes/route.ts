@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { recordFeedEvent } from "@/lib/feed-event";
 import { checkRateLimit } from "@/lib/ratelimit";
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
@@ -40,5 +41,6 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const quote = await db.quote.create({
     data: { userId: uid, bookId, text: parsed.data.text, page: parsed.data.page },
   });
+  await recordFeedEvent(db, { userId: uid, type: "HIGHLIGHT", bookId, highlightId: quote.id });
   return NextResponse.json({ id: quote.id, text: quote.text, page: quote.page ?? undefined });
 }

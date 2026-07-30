@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { publishProgressToClubs } from "@/lib/clubs";
 import type { ShelfStatus } from "@/lib/types";
 import { checkRateLimit } from "@/lib/ratelimit";
+import { recordFeedEvent } from "@/lib/feed-event";
 import { recordReadingEvent } from "@/lib/reading-event";
 
 const schema = z.object({ page: z.number().int().min(0) });
@@ -64,7 +65,10 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
         finishedAt: finishing ? (prev?.finishedAt ?? today) : (prev?.finishedAt ?? null),
       },
     });
-    if (justFinished) await recordReadingEvent(tx, entry);
+    if (justFinished) {
+      await recordReadingEvent(tx, entry);
+      await recordFeedEvent(tx, { userId: uid, type: "BOOK_FINISHED", bookId });
+    }
     return entry;
   });
 

@@ -3,6 +3,7 @@ import * as Sentry from "@sentry/nextjs";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getOrCreateBook } from "@/lib/books";
+import { recordFeedEvent } from "@/lib/feed-event";
 import { geocodeCityState } from "@/lib/geocode";
 import { checkRateLimit } from "@/lib/ratelimit";
 import { createDonationSchema } from "@/lib/validators/donation";
@@ -78,6 +79,12 @@ export async function POST(req: Request) {
         latitude: coords?.lat ?? null,
         longitude: coords?.lng ?? null,
       },
+    });
+    await recordFeedEvent(db, {
+      userId: session.user.id,
+      type: "DONATION_CREATED",
+      bookId,
+      donationId: donation.id,
     });
     return NextResponse.json({ id: donation.id }, { status: 201 });
   } catch (err) {

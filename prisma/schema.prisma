@@ -69,6 +69,8 @@ model User {
 
   notifications      Notification[] @relation("UserNotifications")
   actedNotifications Notification[] @relation("ActorNotifications")
+
+  feedEvents FeedEvent[]
 }
 
 /// Conta OAuth vinculada a um User (Google/Amazon) — Auth.js PrismaAdapter.
@@ -193,6 +195,7 @@ model Book {
   listBooks     ListBook[]
   donations     Donation[]
   readingEvents ReadingEvent[]
+  feedEvents    FeedEvent[]
 
   @@index([genre])
 }
@@ -271,8 +274,9 @@ model Review {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  likes    ReviewLike[]
-  comments Comment[]
+  likes      ReviewLike[]
+  comments   Comment[]
+  feedEvents FeedEvent[]
 
   @@unique([userId, bookId])
   @@index([bookId, createdAt])
@@ -351,6 +355,8 @@ model Quote {
   page      Int?
   createdAt DateTime @default(now())
 
+  feedEvents FeedEvent[]
+
   @@index([userId, bookId])
 }
 
@@ -369,8 +375,9 @@ model Club {
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 
-  members  ClubMember[]
-  messages Message[]
+  members    ClubMember[]
+  messages   Message[]
+  feedEvents FeedEvent[]
 }
 
 /// Vínculo de membro; `progress` guarda o último percentual publicado no
@@ -424,31 +431,31 @@ enum RequestStatus {
 /// só é exposto (ver serializeDonation) pro próprio doador ou pro interessado
 /// ESCOLHIDO — nunca pra fila inteira.
 model Donation {
-  id        String         @id @default(cuid())
-  bookId    String
-  book      Book           @relation(fields: [bookId], references: [id], onDelete: Cascade)
-  donorId   String
-  donor     User           @relation("DonorDonations", fields: [donorId], references: [id], onDelete: Cascade)
-  photoUrl  String
-  city      String
-  state     String         @db.Char(2) // UF
+  id                  String         @id @default(cuid())
+  bookId              String
+  book                Book           @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  donorId             String
+  donor               User           @relation("DonorDonations", fields: [donorId], references: [id], onDelete: Cascade)
+  photoUrl            String
+  city                String
+  state               String         @db.Char(2) // UF
   /// Geocodificadas a partir de city/state na criação (Nominatim); nulas se
   /// o geocoding falhar — a doação continua normal, só some da busca por
   /// raio (ver src/lib/geocode.ts e GET /api/books/[id]/donations).
-  latitude  Float?
-  longitude Float?
-  status    DonationStatus @default(DISPONIVEL)
-  whatsapp  String?
-  instagram String?
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-  donatedAt DateTime?
+  latitude            Float?
+  longitude           Float?
+  status              DonationStatus @default(DISPONIVEL)
+  whatsapp            String?
+  instagram           String?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  donatedAt           DateTime?
   /// Quando a doação entrou em RESERVADO — usado pra expirar a reserva
   /// automaticamente (ver src/lib/donation-expiry.ts).
-  reservedAt DateTime?
+  reservedAt          DateTime?
   /// Quando o aviso de "reserva expira em breve" foi enviado — evita
   /// reenviar o aviso todo dia até a expiração de fato.
-  reserveWarnedAt DateTime?
+  reserveWarnedAt     DateTime?
   /// Quando o interessado ESCOLHIDO confirmou ter recebido o livro —
   /// independente de o doador já ter marcado como DOADO (ver
   /// POST /api/donations/[id]/confirm-receipt).
@@ -456,6 +463,7 @@ model Donation {
 
   requests      DonationRequest[]
   notifications Notification[]
+  feedEvents    FeedEvent[]
 
   @@index([bookId, status])
   @@index([state, city, status])
@@ -505,4 +513,38 @@ model Notification {
   createdAt  DateTime         @default(now())
 
   @@index([userId, read, createdAt])
+}
+
+enum FeedEventType {
+  REVIEW
+  BOOK_FINISHED
+  DONATION_CREATED
+  CLUB_JOINED
+  HIGHLIGHT
+}
+
+/// Feed social unificado (Spec stream unificado) — 1 linha por evento
+/// (review, livro terminado, doação criada, entrada em clube, citação).
+/// FKs nullable por tipo (só a coluna do tipo correspondente é populada) em
+/// vez de refId genérico, pra manter relations tipadas no Prisma. Populada
+/// via recordFeedEvent() (src/lib/feed-event.ts) — não é derivada em tempo
+/// de leitura das 5 tabelas de origem.
+model FeedEvent {
+  id          String        @id @default(cuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        FeedEventType
+  bookId      String?
+  book        Book?         @relation(fields: [bookId], references: [id])
+  reviewId    String?
+  review      Review?       @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  donationId  String?
+  donation    Donation?     @relation(fields: [donationId], references: [id], onDelete: Cascade)
+  clubId      String?
+  club        Club?         @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  highlightId String?
+  highlight   Quote?        @relation(fields: [highlightId], references: [id], onDelete: Cascade)
+  createdAt   DateTime      @default(now())
+
+  @@index([userId, createdAt])
 }

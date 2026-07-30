@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { serializeBook } from "@/lib/books";
 import { averageClubProgress, generateClubCode } from "@/lib/clubs";
+import { recordFeedEvent } from "@/lib/feed-event";
 import { checkRateLimit } from "@/lib/ratelimit";
 
 /** Clubes do usuário (joined) + clubes públicos pra descobrir. O front
@@ -81,6 +82,7 @@ export async function POST(req: Request) {
         },
         select: { id: true, code: true },
       });
+      await recordFeedEvent(db, { userId: session.user.id, type: "CLUB_JOINED", clubId: club.id });
       return NextResponse.json(club, { status: 201 });
     } catch (err) {
       // colisão rara de código único: tenta de novo com um novo código.

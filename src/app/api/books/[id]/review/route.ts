@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { recomputeBookRating } from "@/lib/books";
+import { recordFeedEvent } from "@/lib/feed-event";
 import { checkRateLimit } from "@/lib/ratelimit";
 import { recordReadingEvent } from "@/lib/reading-event";
 
@@ -44,6 +45,10 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     const prevEntry = await tx.shelfEntry.findUnique({
       where: { userId_bookId: { userId: uid, bookId } },
     });
+    const prevReview = await tx.review.findUnique({
+      where: { userId_bookId: { userId: uid, bookId } },
+      select: { id: true },
+    });
     const today = new Date();
 
     const entry =
@@ -60,7 +65,10 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
               finishedAt: today,
             },
           });
-    if (prevEntry?.status !== "READ") await recordReadingEvent(tx, entry);
+    if (prevEntry?.status !== "READ") {
+      await recordReadingEvent(tx, entry);
+      await recordFeedEvent(tx, { userId: uid, type: "BOOK_FINISHED", bookId });
+    }
 
     const review = await tx.review.upsert({
       where: { userId_bookId: { userId: uid, bookId } },
@@ -81,6 +89,12 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
         finishedAt: entry.finishedAt,
       },
     });
+
+    // Só entra no feed na criação (não em cada edição de nota/texto) e só se
+    // tiver texto — espelha o filtro `text: { not: "" }` que o feed já aplicava.
+    if (!prevReview && review.text !== "") {
+      await recordFeedEvent(tx, { userId: uid, type: "REVIEW", bookId, reviewId: review.id });
+    }
 
     await recomputeBookRating(tx, bookId);
     return { rating: review.rating, myReview: review.text, myReviewTitle: review.title, entry };

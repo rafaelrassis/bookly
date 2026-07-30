@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import type { Prisma } from "@/generated/prisma/client";
 import { checkRateLimit } from "@/lib/ratelimit";
+import { recordFeedEvent } from "@/lib/feed-event";
 import { recordReadingEvent } from "@/lib/reading-event";
 
 const schema = z.object({
@@ -95,7 +96,10 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       create: data,
       update: data,
     });
-    if (justFinished) await recordReadingEvent(tx, entry);
+    if (justFinished) {
+      await recordReadingEvent(tx, entry);
+      await recordFeedEvent(tx, { userId: uid, type: "BOOK_FINISHED", bookId });
+    }
     return entry;
   });
 

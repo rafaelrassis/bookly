@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { recordFeedEvent } from "@/lib/feed-event";
 import { checkRateLimit } from "@/lib/ratelimit";
 
 const schema = z.object({ code: z.string().length(6) });
@@ -34,5 +35,6 @@ export async function POST(req: Request) {
     create: { clubId: club.id, userId: uid },
     update: {},
   });
+  await recordFeedEvent(db, { userId: uid, type: "CLUB_JOINED", clubId: club.id });
   return NextResponse.json({ id: club.id, status: "joined" });
 }
