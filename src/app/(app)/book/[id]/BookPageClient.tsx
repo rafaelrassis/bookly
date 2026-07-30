@@ -16,7 +16,7 @@ import { Spinner } from "@/components/Spinner";
 import { Stars } from "@/components/Stars";
 import { TagEditor } from "@/components/TagEditor";
 import BookLoading from "./loading";
-import { formatCount, formatDecimal, readingDates, readingPercent } from "@/lib/format";
+import { formatCount, formatDecimal, formatShortDate, readingDates, readingPercent } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import type { Book, ShelfEntry, ShelfStatus } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -41,6 +41,7 @@ type BookPayload = {
   myReview: string | null;
   tags: string[];
   quotes: BookQuote[];
+  readingHistory: string[];
 };
 
 const STATUS_OPTIONS: { status: ShelfStatus; label: string }[] = [
@@ -206,6 +207,8 @@ export function BookPageClient({ params }: { params: { id: string } }) {
   const [myReview, setMyReview] = useState<string | null>(null);
   const [tags, setTags] = useState<string[]>([]);
   const [quotes, setQuotes] = useState<BookQuote[]>([]);
+  const [readingHistory, setReadingHistory] = useState<string[]>([]);
+  const [rereading, setRereading] = useState(false);
 
   const [communityReviews, setCommunityReviews] = useState<CommunityReview[]>([]);
   const [reviewsCursor, setReviewsCursor] = useState<string | null>(null);
@@ -262,6 +265,7 @@ export function BookPageClient({ params }: { params: { id: string } }) {
         setMyReview(data.myReview);
         setTags(data.tags);
         setQuotes(data.quotes);
+        setReadingHistory(data.readingHistory);
         setLoading(false);
       })
       .catch(() => {
@@ -299,6 +303,7 @@ export function BookPageClient({ params }: { params: { id: string } }) {
 
   async function handleStatusTap(status: ShelfStatus) {
     const next = entry?.status === status ? null : status;
+    const wasRead = entry?.status === "READ";
     const res = await fetch(`/api/books/${bookId}/shelf`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -310,10 +315,14 @@ export function BookPageClient({ params }: { params: { id: string } }) {
     }
     const data = await res.json();
     setEntry(data.entry);
+    if (next === "READ" && !wasRead && data.entry?.finishedAt) {
+      setReadingHistory((prev) => [...prev, data.entry.finishedAt]);
+    }
     showToast(next === null ? "Removido da estante" : STATUS_TOAST[next]);
   }
 
   async function handleProgress(page: number) {
+    const wasRead = entry?.status === "READ";
     const res = await fetch(`/api/books/${bookId}/progress`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -328,7 +337,27 @@ export function BookPageClient({ params }: { params: { id: string } }) {
       startedAt: prev?.startedAt ?? new Date().toISOString(),
       finishedAt: data.finishedAt,
     }));
+    if (data.status === "READ" && !wasRead && data.finishedAt) {
+      setReadingHistory((prev) => [...prev, data.finishedAt]);
+    }
     return { delta: data.delta as number, finished: data.status === "READ" };
+  }
+
+  async function handleReread() {
+    if (rereading) return;
+    setRereading(true);
+    try {
+      const res = await fetch(`/api/books/${bookId}/reread`, { method: "POST" });
+      if (!res.ok) {
+        showToast(await apiErrorMessage(res, "Não foi possível iniciar a releitura"));
+        return;
+      }
+      const data = await res.json();
+      setEntry(data.entry);
+      showToast("Releitura iniciada 📖");
+    } finally {
+      setRereading(false);
+    }
   }
 
   async function handleRating(value: number) {
@@ -347,6 +376,9 @@ export function BookPageClient({ params }: { params: { id: string } }) {
     setMyReviewTitle(data.myReviewTitle);
     setMyReview(data.myReview);
     setEntry(data.entry);
+    if (markedAsRead && data.entry?.finishedAt) {
+      setReadingHistory((prev) => [...prev, data.entry.finishedAt]);
+    }
     if (value === 0) showToast("Avaliação removida");
     else if (markedAsRead) showToast("Marcado como Lido 🎉");
     else showToast(`Avaliação salva: ${formatDecimal(value)} ★`);
@@ -459,6 +491,21 @@ export function BookPageClient({ params }: { params: { id: string } }) {
             );
           })}
         </div>
+        {entry?.status === "READ" && (
+          <button
+            type="button"
+            onClick={handleReread}
+            disabled={rereading}
+            className="mt-3 w-full rounded-xl border border-line bg-card px-4 py-2.5 text-sm font-bold text-paper transition-colors hover:border-foil/50 disabled:opacity-40"
+          >
+            {rereading ? <Spinner size={16} className="mx-auto" /> : "Reler"}
+          </button>
+        )}
+        {readingHistory.length > 1 && (
+          <p className="mt-2 text-xs text-paperDim">
+            Você leu este livro {readingHistory.length}x — {readingHistory.map(formatShortDate).join(", ")}
+          </p>
+        )}
       </section>
 
       {entry?.status === "READING" && book.pages > 0 && (

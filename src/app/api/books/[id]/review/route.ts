@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { recomputeBookRating } from "@/lib/books";
 import { checkRateLimit } from "@/lib/ratelimit";
+import { recordReadingEvent } from "@/lib/reading-event";
 
 const schema = z.object({
   rating: z.number().min(0).max(5).multipleOf(0.5),
@@ -59,6 +60,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
               finishedAt: today,
             },
           });
+    if (prevEntry?.status !== "READ") await recordReadingEvent(tx, entry);
 
     const review = await tx.review.upsert({
       where: { userId_bookId: { userId: uid, bookId } },

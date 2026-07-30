@@ -26,7 +26,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   }
   if (!book) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
-  const [entry, review, tags, quotes] = await Promise.all([
+  const [entry, review, tags, quotes, readingEvents] = await Promise.all([
     db.shelfEntry.findUnique({ where: { userId_bookId: { userId: uid, bookId: book.id } } }),
     db.review.findUnique({ where: { userId_bookId: { userId: uid, bookId: book.id } } }),
     db.bookTag.findMany({
@@ -35,6 +35,11 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       orderBy: { tag: "asc" },
     }),
     db.quote.findMany({ where: { userId: uid, bookId: book.id }, orderBy: { createdAt: "asc" } }),
+    db.readingEvent.findMany({
+      where: { userId: uid, bookId: book.id },
+      select: { finishedAt: true },
+      orderBy: { finishedAt: "asc" },
+    }),
   ]);
 
   return NextResponse.json({
@@ -45,5 +50,6 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     myReview: review?.text ?? null,
     tags: tags.map((t) => t.tag),
     quotes: quotes.map((q) => ({ id: q.id, text: q.text, page: q.page ?? undefined })),
+    readingHistory: readingEvents.map((e) => e.finishedAt),
   });
 }

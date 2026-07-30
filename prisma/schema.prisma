@@ -49,11 +49,12 @@ model User {
   followedBy Follow[] @relation("following")
   following  Follow[] @relation("follower")
 
-  shelfEntries ShelfEntry[]
-  reviews      Review[]
-  bookTags     BookTag[]
-  quotes       Quote[]
-  readingGoals ReadingGoal[]
+  shelfEntries  ShelfEntry[]
+  reviews       Review[]
+  bookTags      BookTag[]
+  quotes        Quote[]
+  readingGoals  ReadingGoal[]
+  readingEvents ReadingEvent[]
 
   createdClubs Club[]       @relation("clubCreator")
   clubMembers  ClubMember[]
@@ -184,13 +185,14 @@ model Book {
   /// do Google Books; usada pela política de staleness em getOrCreateBook().
   updatedAt    DateTime @updatedAt
 
-  shelfEntries ShelfEntry[]
-  reviews      Review[]
-  tags         BookTag[]
-  quotes       Quote[]
-  clubs        Club[]
-  listBooks    ListBook[]
-  donations    Donation[]
+  shelfEntries  ShelfEntry[]
+  reviews       Review[]
+  tags          BookTag[]
+  quotes        Quote[]
+  clubs         Club[]
+  listBooks     ListBook[]
+  donations     Donation[]
+  readingEvents ReadingEvent[]
 
   @@index([genre])
 }
@@ -213,8 +215,29 @@ model ShelfEntry {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
+  readingEvents ReadingEvent[]
+
   @@unique([userId, bookId])
   @@index([bookId])
+}
+
+/// Registro histórico de cada conclusão de leitura (inclusive releituras) —
+/// não é sobrescrito quando o usuário relê o livro (ver POST
+/// /api/books/[id]/reread). userId/bookId denormalizados do ShelfEntry pra
+/// evitar join nas queries de metas/estatísticas (Spec releituras).
+model ReadingEvent {
+  id           String     @id @default(cuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId       String
+  book         Book       @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  shelfEntryId String
+  shelfEntry   ShelfEntry @relation(fields: [shelfEntryId], references: [id], onDelete: Cascade)
+  startedAt    DateTime
+  finishedAt   DateTime
+  createdAt    DateTime   @default(now())
+
+  @@index([userId, finishedAt])
 }
 
 /// Meta anual de livros (Reading Challenge). Progresso é derivado de

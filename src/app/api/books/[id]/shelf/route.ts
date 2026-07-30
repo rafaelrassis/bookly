@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import type { Prisma } from "@/generated/prisma/client";
 import { checkRateLimit } from "@/lib/ratelimit";
+import { recordReadingEvent } from "@/lib/reading-event";
 
 const schema = z.object({
   status: z.enum(["WANT_TO_READ", "READING", "READ", "DNF"]).nullable(),
@@ -86,10 +87,16 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     };
   }
 
-  const entry = await db.shelfEntry.upsert({
-    where: { userId_bookId: { userId: uid, bookId } },
-    create: data,
-    update: data,
+  const justFinished = status === "READ" && prev?.status !== "READ";
+
+  const entry = await db.$transaction(async (tx) => {
+    const entry = await tx.shelfEntry.upsert({
+      where: { userId_bookId: { userId: uid, bookId } },
+      create: data,
+      update: data,
+    });
+    if (justFinished) await recordReadingEvent(tx, entry);
+    return entry;
   });
 
   return NextResponse.json({ entry });

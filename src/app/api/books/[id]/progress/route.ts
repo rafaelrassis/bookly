@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { publishProgressToClubs } from "@/lib/clubs";
 import type { ShelfStatus } from "@/lib/types";
 import { checkRateLimit } from "@/lib/ratelimit";
+import { recordReadingEvent } from "@/lib/reading-event";
 
 const schema = z.object({ page: z.number().int().min(0) });
 
@@ -41,24 +42,30 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   const finishing = book.pages > 0 && page >= book.pages;
   const status: ShelfStatus = finishing ? "READ" : page > 0 ? "READING" : (prev?.status as ShelfStatus) ?? "WANT_TO_READ";
 
-  const entry = await db.shelfEntry.upsert({
-    where: { userId_bookId: { userId: uid, bookId } },
-    create: {
-      userId: uid,
-      bookId,
-      status,
-      currentPage: page,
-      lastPage: previous,
-      startedAt: page > 0 ? today : null,
-      finishedAt: finishing ? today : null,
-    },
-    update: {
-      status,
-      currentPage: page,
-      lastPage: previous,
-      startedAt: prev?.startedAt ?? (page > 0 ? today : null),
-      finishedAt: finishing ? (prev?.finishedAt ?? today) : (prev?.finishedAt ?? null),
-    },
+  const justFinished = finishing && prev?.status !== "READ";
+
+  const entry = await db.$transaction(async (tx) => {
+    const entry = await tx.shelfEntry.upsert({
+      where: { userId_bookId: { userId: uid, bookId } },
+      create: {
+        userId: uid,
+        bookId,
+        status,
+        currentPage: page,
+        lastPage: previous,
+        startedAt: page > 0 ? today : null,
+        finishedAt: finishing ? today : null,
+      },
+      update: {
+        status,
+        currentPage: page,
+        lastPage: previous,
+        startedAt: prev?.startedAt ?? (page > 0 ? today : null),
+        finishedAt: finishing ? (prev?.finishedAt ?? today) : (prev?.finishedAt ?? null),
+      },
+    });
+    if (justFinished) await recordReadingEvent(tx, entry);
+    return entry;
   });
 
   const percent = book.pages > 0 ? Math.min(100, Math.round((page / book.pages) * 100)) : 0;
