@@ -3,6 +3,7 @@ import * as Sentry from "@sentry/nextjs";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getOrCreateBook } from "@/lib/books";
+import { geocodeCityState } from "@/lib/geocode";
 import { checkRateLimit } from "@/lib/ratelimit";
 import { createDonationSchema } from "@/lib/validators/donation";
 
@@ -63,9 +64,20 @@ export async function POST(req: Request) {
   }
   if (!book) return NextResponse.json({ error: "Livro não encontrado" }, { status: 404 });
 
+  // Geocoding é best-effort: falha (typo, cidade não encontrada, Nominatim
+  // fora do ar) não bloqueia a criação, só deixa a doação de fora da busca
+  // por raio (continua aparecendo nos filtros por cidade/UF exata).
+  const coords = await geocodeCityState(data.city, data.state);
+
   try {
     const donation = await db.donation.create({
-      data: { ...data, bookId, donorId: session.user.id },
+      data: {
+        ...data,
+        bookId,
+        donorId: session.user.id,
+        latitude: coords?.lat ?? null,
+        longitude: coords?.lng ?? null,
+      },
     });
     return NextResponse.json({ id: donation.id }, { status: 201 });
   } catch (err) {

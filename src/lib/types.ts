@@ -33,6 +33,8 @@ export type ApiDonation = {
   myRequest: { id: string; status: DonationRequestStatus } | null;
   /** Só presente pro doador ou pro interessado ESCOLHIDO. */
   contact: { whatsapp: string | null; instagram: string | null } | null;
+  /** Só presente quando a busca foi por raio (lat/lng/radiusKm). */
+  distanceKm?: number;
 };
 
 /** Item da fila de interessados — só o doador enxerga (GET .../requests). */

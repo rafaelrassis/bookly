@@ -25,19 +25,56 @@ type Props = {
   onToast: (message: string) => void;
 };
 
+type FilterMode = "uf" | "radius" | "brazil";
+
+const DEFAULT_RADIUS_KM = 50;
+
 export function DonationList({ bookId, myUf, myCity, reloadSignal, onToast }: Props) {
   const [donations, setDonations] = useState<ApiDonation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [wholeCountry, setWholeCountry] = useState(!myUf);
+  const [mode, setMode] = useState<FilterMode>(myUf ? "uf" : "brazil");
   const [uf, setUf] = useState(myUf ?? "");
+  const [radiusKm, setRadiusKm] = useState(DEFAULT_RADIUS_KM);
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [geoError, setGeoError] = useState<string | null>(null);
   const [managingId, setManagingId] = useState<string | null>(null);
   const [requestingId, setRequestingId] = useState<string | null>(null);
 
+  function requestRadius() {
+    setGeoError(null);
+    if (!navigator.geolocation) {
+      setGeoError("Geolocalização não disponível neste navegador.");
+      return;
+    }
+    setGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        // Nunca persistida (sessão, banco): só usada nesta busca e descartada.
+        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setMode("radius");
+        setGeoLoading(false);
+      },
+      () => {
+        setGeoError("Não foi possível acessar sua localização. Mostrando filtro por cidade/UF.");
+        setGeoLoading(false);
+      },
+      { timeout: 8000 },
+    );
+  }
+
   useEffect(() => {
+    if (mode === "radius" && !coords) return; // aguardando permissão/posição
     let cancelled = false;
     setLoading(true);
     const params = new URLSearchParams();
-    if (!wholeCountry && uf) params.set("uf", uf);
+    if (mode === "radius" && coords) {
+      params.set("lat", String(coords.lat));
+      params.set("lng", String(coords.lng));
+      params.set("radiusKm", String(radiusKm));
+    } else if (mode === "uf" && uf) {
+      params.set("uf", uf);
+    }
     fetch(`/api/books/${bookId}/donations?${params.toString()}`)
       .then((res) => (res.ok ? res.json() : { donations: [] }))
       .then((data) => !cancelled && setDonations(data.donations ?? []))
@@ -45,7 +82,7 @@ export function DonationList({ bookId, myUf, myCity, reloadSignal, onToast }: Pr
     return () => {
       cancelled = true;
     };
-  }, [bookId, wholeCountry, uf, reloadSignal]);
+  }, [bookId, mode, uf, coords, radiusKm, reloadSignal]);
 
   async function quero(donationId: string) {
     setRequestingId(donationId);
@@ -70,18 +107,40 @@ export function DonationList({ bookId, myUf, myCity, reloadSignal, onToast }: Pr
 
   return (
     <div>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
-          onClick={() => setWholeCountry((v) => !v)}
-          aria-pressed={wholeCountry}
+          onClick={() => setMode("uf")}
+          aria-pressed={mode === "uf"}
           className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${
-            wholeCountry ? "bg-foil text-leather" : "border border-line bg-card text-paperDim hover:text-paper"
+            mode === "uf" ? "bg-foil text-leather" : "border border-line bg-card text-paperDim hover:text-paper"
+          }`}
+        >
+          Minha cidade
+        </button>
+        <button
+          type="button"
+          onClick={requestRadius}
+          disabled={geoLoading}
+          aria-pressed={mode === "radius"}
+          className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-colors disabled:opacity-60 ${
+            mode === "radius" ? "bg-foil text-leather" : "border border-line bg-card text-paperDim hover:text-paper"
+          }`}
+        >
+          {geoLoading && <Spinner size={11} className={mode === "radius" ? "text-leather" : "text-paperDim"} />}
+          Até {radiusKm} km
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("brazil")}
+          aria-pressed={mode === "brazil"}
+          className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${
+            mode === "brazil" ? "bg-foil text-leather" : "border border-line bg-card text-paperDim hover:text-paper"
           }`}
         >
           Todo o Brasil
         </button>
-        {!wholeCountry && (
+        {mode === "uf" && (
           <select
             value={uf}
             onChange={(e) => setUf(e.target.value)}
@@ -96,12 +155,30 @@ export function DonationList({ bookId, myUf, myCity, reloadSignal, onToast }: Pr
             ))}
           </select>
         )}
-        {!wholeCountry && myCity && uf === myUf && (
+        {mode === "uf" && myCity && uf === myUf && (
           <span className="text-xs text-paperDim">perto de {myCity}</span>
         )}
       </div>
 
-      {!myUf && wholeCountry && (
+      {mode === "radius" && coords && (
+        <div className="mt-2 flex items-center gap-2.5">
+          <input
+            type="range"
+            min={10}
+            max={500}
+            step={10}
+            value={radiusKm}
+            onChange={(e) => setRadiusKm(Number(e.target.value))}
+            aria-label="Raio de busca em quilômetros"
+            className="h-1.5 w-40 accent-foil"
+          />
+          <span className="text-xs font-bold text-paperDim">{radiusKm} km</span>
+        </div>
+      )}
+
+      {geoError && <p className="mt-2 text-xs text-paperDim">{geoError}</p>}
+
+      {!myUf && mode === "brazil" && (
         <p className="mt-2 text-xs text-paperDim">
           Defina sua cidade no perfil para ver doações perto de você.{" "}
           <Link href="/profile/edit" className="font-bold text-foil hover:opacity-80">
@@ -130,7 +207,10 @@ export function DonationList({ bookId, myUf, myCity, reloadSignal, onToast }: Pr
                   <p className="text-sm font-bold">
                     {d.city} · {d.state}
                   </p>
-                  <p className="mt-0.5 text-xs text-paperDim">{STATUS_LABEL[d.status]}</p>
+                  <p className="mt-0.5 text-xs text-paperDim">
+                    {STATUS_LABEL[d.status]}
+                    {typeof d.distanceKm === "number" && ` · a ${Math.round(d.distanceKm)} km`}
+                  </p>
 
                   {d.isDonor ? (
                     <button
