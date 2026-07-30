@@ -139,6 +139,7 @@ enum ShelfStatus {
   WANT_TO_READ
   READING
   READ
+  DNF
 }
 
 enum Visibility {
@@ -207,6 +208,8 @@ model ShelfEntry {
   lastPage    Int?
   startedAt   DateTime?
   finishedAt  DateTime?
+  /// Quando o status virou DNF; null enquanto ativo ou se nunca foi abandonado.
+  abandonedAt DateTime?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 

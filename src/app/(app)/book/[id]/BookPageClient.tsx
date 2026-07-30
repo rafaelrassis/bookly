@@ -47,12 +47,14 @@ const STATUS_OPTIONS: { status: ShelfStatus; label: string }[] = [
   { status: "WANT_TO_READ", label: "Quero ler" },
   { status: "READING", label: "Lendo" },
   { status: "READ", label: "Lido" },
+  { status: "DNF", label: "Abandonei" },
 ];
 
 const STATUS_TOAST: Record<ShelfStatus, string> = {
   WANT_TO_READ: "Adicionado a Quero ler",
   READING: "Marcado como Lendo 📖",
   READ: "Marcado como Lido 🎉",
+  DNF: "Marcado como Abandonei",
 };
 
 /** Atualização de progresso com unidade Páginas | % (preferência no perfil). */
@@ -437,7 +439,7 @@ export function BookPageClient({ params }: { params: { id: string } }) {
       </section>
 
       <section className="mt-6" aria-label="Status de leitura">
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {STATUS_OPTIONS.map(({ status, label }) => {
             const active = entry?.status === status;
             return (
@@ -446,7 +448,7 @@ export function BookPageClient({ params }: { params: { id: string } }) {
                 type="button"
                 onClick={() => handleStatusTap(status)}
                 aria-pressed={active}
-                className={`flex-1 rounded-full px-3 py-2.5 text-sm font-bold transition-colors ${
+                className={`min-w-[calc(50%-0.25rem)] flex-1 rounded-full px-3 py-2.5 text-sm font-bold transition-colors ${
                   active
                     ? "bg-foil text-leather"
                     : "border border-line bg-card text-paperDim hover:text-paper"

@@ -6,11 +6,13 @@ import type { Prisma } from "@/generated/prisma/client";
 import { checkRateLimit } from "@/lib/ratelimit";
 
 const schema = z.object({
-  status: z.enum(["WANT_TO_READ", "READING", "READ"]).nullable(),
+  status: z.enum(["WANT_TO_READ", "READING", "READ", "DNF"]).nullable(),
 });
 
 /** status null remove o livro da estante. Datas: startedAt na primeira vez
- * em Lendo (ou Lido direto); finishedAt ao marcar Lido — espelha o store. */
+ * em Lendo (ou Lido direto); finishedAt ao marcar Lido — espelha o store.
+ * DNF grava abandonedAt e preserva currentPage/lastPage (não mexe no
+ * progresso); sair de DNF pra qualquer outro status limpa abandonedAt. */
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "unauth" }, { status: 401 });
@@ -47,6 +49,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       lastPage: prev?.lastPage ?? 0,
       startedAt: prev?.startedAt ?? today,
       finishedAt: null,
+      abandonedAt: null,
     };
   } else if (status === "READ") {
     data = {
@@ -57,6 +60,18 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       lastPage: null,
       startedAt: prev?.startedAt ?? today,
       finishedAt: today,
+      abandonedAt: null,
+    };
+  } else if (status === "DNF") {
+    data = {
+      userId: uid,
+      bookId,
+      status,
+      currentPage: prev?.currentPage ?? null,
+      lastPage: prev?.lastPage ?? null,
+      startedAt: prev?.startedAt ?? null,
+      finishedAt: null,
+      abandonedAt: today,
     };
   } else {
     data = {
@@ -67,6 +82,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       lastPage: null,
       startedAt: null,
       finishedAt: null,
+      abandonedAt: null,
     };
   }
 

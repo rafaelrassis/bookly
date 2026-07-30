@@ -25,10 +25,15 @@ const STATUS_FILTERS: { key: ShelfStatus | "ALL"; label: string }[] = [
   { key: "READ", label: "Lido" },
 ];
 
+/** Só aparece como chip quando o usuário tem pelo menos 1 livro em DNF —
+ * ver `hasDnf` em ShelfPage. */
+const DNF_FILTER: { key: ShelfStatus | "ALL"; label: string } = { key: "DNF", label: "Abandonei" };
+
 const STATUS_BADGE: Record<ShelfStatus, { label: string; className: string }> = {
   READING: { label: "Lendo", className: "bg-ribbon/20 text-ribbonText" },
   WANT_TO_READ: { label: "Quero ler", className: "bg-card2 text-paperDim" },
   READ: { label: "Lido", className: "bg-foil/15 text-foil" },
+  DNF: { label: "Abandonei", className: "bg-card2 text-paperDim/70" },
 };
 
 /** Seção "Minhas listas": cards das listas + criação inline. */
@@ -202,6 +207,7 @@ export default function ShelfPage() {
   const [tag, setTag] = useState<string>("ALL");
   const [retryCount, setRetryCount] = useState(0);
   const [tagSheetItem, setTagSheetItem] = useState<ShelfItem | null>(null);
+  const [hasDnf, setHasDnf] = useState(false);
 
   const reload = useCallback(() => {
     const params = new URLSearchParams();
@@ -218,6 +224,11 @@ export default function ShelfPage() {
         setGenres(data.genres);
         setAllTags(data.tags);
         setLoaded(true);
+        // Só a busca sem filtro de status reflete a estante inteira —
+        // usada pra decidir se o chip "Abandonei" aparece.
+        if (status === "ALL") {
+          setHasDnf((data.items as ShelfItem[]).some((item) => item.entry.status === "DNF"));
+        }
       })
       .catch(() => setError(true));
   }, [query, status, genre, tag]);
@@ -253,7 +264,7 @@ export default function ShelfPage() {
       />
 
       <div className="no-scrollbar -mx-5 mt-3 flex gap-2 overflow-x-auto px-5" aria-label="Filtrar por status">
-        {STATUS_FILTERS.map(({ key, label }) => (
+        {(hasDnf ? [...STATUS_FILTERS, DNF_FILTER] : STATUS_FILTERS).map(({ key, label }) => (
           <Chip key={key} active={status === key} onClick={() => setStatus(key)}>
             {label}
           </Chip>
@@ -334,7 +345,11 @@ export default function ShelfPage() {
                   href={`/book/${book.id}`}
                   className="flex min-w-0 flex-1 items-center gap-3.5 px-2 py-3"
                 >
-                  <BookCover book={book} width={48} />
+                  <BookCover
+                    book={book}
+                    width={48}
+                    className={entry.status === "DNF" ? "grayscale-[0.6] opacity-80" : ""}
+                  />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-display font-bold">{book.title}</p>
                     <p className="truncate text-xs text-paperDim">

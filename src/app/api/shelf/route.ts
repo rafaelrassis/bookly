@@ -51,6 +51,7 @@ export async function GET(req: Request) {
         lastPage: e.lastPage,
         startedAt: e.startedAt,
         finishedAt: e.finishedAt,
+        abandonedAt: e.abandonedAt,
       },
       tags: (tagsByBook.get(e.bookId) ?? []).sort(),
       rating: ratingByBook.get(e.bookId) ?? null,

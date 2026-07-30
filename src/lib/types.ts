@@ -139,7 +139,7 @@ export type ClubDetail = {
   progress: number;
 };
 
-export type ShelfStatus = "WANT_TO_READ" | "READING" | "READ";
+export type ShelfStatus = "WANT_TO_READ" | "READING" | "READ" | "DNF";
 
 export type ShelfEntry = {
   status: ShelfStatus;
@@ -147,6 +147,7 @@ export type ShelfEntry = {
   lastPage?: number | null;
   startedAt?: string | null;
   finishedAt?: string | null;
+  abandonedAt?: string | null;
 };
 
 export type ProgressUnit = "pages" | "percent";
