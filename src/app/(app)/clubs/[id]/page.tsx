@@ -7,6 +7,7 @@ import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
 import { BookPicker } from "@/components/BookPicker";
 import { ClubBookOfMonthCard } from "@/components/ClubBookOfMonthCard";
+import { ClubDiscussionCard } from "@/components/ClubDiscussionCard";
 import { CopyIcon, LockIcon } from "@/components/icons";
 import { PageLoader } from "@/components/PageLoader";
 import { SectionTitle } from "@/components/SectionTitle";
@@ -581,6 +582,8 @@ export default function ClubPage({ params }: { params: { id: string } }) {
       )}
 
       <ClubBookOfMonthCard clubId={club.id} isCreator={club.isCreator} />
+
+      {club.joined && <ClubDiscussionCard clubId={club.id} />}
 
       <section className="mt-6">
         <SectionTitle>Lendo agora</SectionTitle>

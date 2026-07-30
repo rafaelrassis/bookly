@@ -186,6 +186,26 @@ export type ApiBookOfMonthMembers = {
   totalMembers: number;
 };
 
+/** Comentário na discussão do livro do mês — só chega no payload se o
+ * viewer já leu até `page` (filtro no servidor). */
+export type ApiClubDiscussionComment = {
+  id: string;
+  content: string;
+  page: number;
+  createdAt: string;
+  author: { user: string; name: string; avatar: number; avatarUrl?: string | null };
+};
+
+/** GET /api/clubs/[id]/discussion. `lockedCount` é `undefined` quando o
+ * viewer não tem estante pro livro (área vira CTA, sem número). */
+export type ApiClubDiscussion = {
+  bookOfMonthId: string;
+  bookId: string;
+  mine: { status: ShelfStatus; currentPage: number | null } | null;
+  comments: ApiClubDiscussionComment[];
+  lockedCount?: number;
+};
+
 export type ShelfStatus = "WANT_TO_READ" | "READING" | "READ" | "DNF";
 
 export type ShelfEntry = {

@@ -66,6 +66,8 @@ model User {
   comments    Comment[]
   lists       List[]
 
+  clubDiscussionComments ClubDiscussionComment[]
+
   donations        Donation[]        @relation("DonorDonations")
   donationRequests DonationRequest[] @relation("SentRequests")
 
@@ -434,8 +436,27 @@ model ClubBookOfMonth {
   setBy     User     @relation(fields: [setById], references: [id])
   createdAt DateTime @default(now())
 
+  discussionComments ClubDiscussionComment[]
+
   @@unique([clubId, month])
   @@index([clubId, month])
+}
+
+/// Comentário na discussão do livro do mês, travado por página (Spec —
+/// discussão travada por progresso): só visível pra quem já leu até lá.
+model ClubDiscussionComment {
+  id                String          @id @default(cuid())
+  clubBookOfMonthId String
+  clubBookOfMonth   ClubBookOfMonth @relation(fields: [clubBookOfMonthId], references: [id], onDelete: Cascade)
+  authorId          String
+  author            User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content           String          @db.Text
+  /// Até que página do livro o comentário é seguro (comparação absoluta,
+  /// nunca percentual — funciona mesmo com Book.pages desconhecido).
+  page              Int
+  createdAt         DateTime        @default(now())
+
+  @@index([clubBookOfMonthId, page])
 }
 
 enum DonationStatus {
