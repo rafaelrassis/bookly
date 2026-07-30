@@ -3,7 +3,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { serializeBook } from "@/lib/books";
-import { generateClubCode, shelfPercent } from "@/lib/clubs";
+import { currentMonth, generateClubCode, shelfPercent } from "@/lib/clubs";
 import { checkRateLimit } from "@/lib/ratelimit";
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
@@ -28,10 +28,20 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: "não encontrado" }, { status: 404 });
   }
 
-  const entries = await db.shelfEntry.findMany({
-    where: { bookId: club.bookId, userId: { in: club.members.map((m) => m.userId) } },
-    select: { userId: true, status: true, currentPage: true },
+  // Progresso dos membros segue o livro do mês corrente, não o `club.bookId`
+  // legado — a mesma fonte de dado usada em "Seu progresso" (ClubBookOfMonthCard)
+  // e em GET .../book-of-month/members, pra nunca divergir entre as telas.
+  const bookOfMonth = await db.clubBookOfMonth.findUnique({
+    where: { clubId_month: { clubId: club.id, month: currentMonth() } },
+    select: { bookId: true, book: { select: { pages: true } } },
   });
+
+  const entries = bookOfMonth
+    ? await db.shelfEntry.findMany({
+        where: { bookId: bookOfMonth.bookId, userId: { in: club.members.map((m) => m.userId) } },
+        select: { userId: true, status: true, currentPage: true },
+      })
+    : [];
   const byUser = new Map(entries.map((e) => [e.userId, e]));
 
   const members = club.members.map((m) => ({
@@ -41,7 +51,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     avatar: m.user.avatar,
     avatarUrl: m.user.avatarUrl,
     role: m.role,
-    percent: shelfPercent(byUser.get(m.userId), club.book.pages),
+    percent: bookOfMonth ? shelfPercent(byUser.get(m.userId), bookOfMonth.book.pages) : 0,
   }));
   const progress =
     members.length > 0
