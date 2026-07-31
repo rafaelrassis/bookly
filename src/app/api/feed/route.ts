@@ -58,16 +58,25 @@ export async function GET(req: Request) {
 
   let where: Prisma.FeedEventWhereInput = {};
   if (scope === "following") {
-    const following = await db.follow.findMany({
-      where: { followerId: uid },
-      select: { followingId: true },
-    });
+    const [following, memberships] = await Promise.all([
+      db.follow.findMany({ where: { followerId: uid }, select: { followingId: true } }),
+      db.clubMember.findMany({ where: { userId: uid }, select: { clubId: true } }),
+    ]);
     const ids = following.map((f) => f.followingId);
-    // Sem follows → empty state real (não cai mais pro geral)
-    if (ids.length === 0) {
+    const myClubIds = memberships.map((m) => m.clubId);
+    // Sem follows nem clubes → empty state real (não cai mais pro geral)
+    if (ids.length === 0 && myClubIds.length === 0) {
       return NextResponse.json({ items: [], nextCursor: null, emptyReason: "no_follows" });
     }
-    where = { userId: { in: ids } };
+    // Evento de clube (clubId preenchido) é visível pra quem segue o autor OU
+    // é membro do clube — vale pra qualquer tipo com clubId, não só o novo
+    // CLUB_BOOK_OF_MONTH_SET (mesma regra pra CLUB_JOINED).
+    where = {
+      OR: [
+        ...(ids.length > 0 ? [{ userId: { in: ids } }] : []),
+        ...(myClubIds.length > 0 ? [{ clubId: { in: myClubIds } }] : []),
+      ],
+    };
   }
 
   const events = await db.feedEvent.findMany({

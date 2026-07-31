@@ -252,7 +252,13 @@ export type ApiBookReview = Omit<ApiReview, "book">;
 /** Review de `GET /api/users/[username]/reviews` — sem o campo `user` (já conhecido). */
 export type ApiUserReview = Omit<ApiReview, "user">;
 
-export type FeedEventType = "REVIEW" | "BOOK_FINISHED" | "DONATION_CREATED" | "CLUB_JOINED" | "HIGHLIGHT";
+export type FeedEventType =
+  | "REVIEW"
+  | "BOOK_FINISHED"
+  | "DONATION_CREATED"
+  | "CLUB_JOINED"
+  | "HIGHLIGHT"
+  | "CLUB_BOOK_OF_MONTH_SET";
 
 /** Evento do feed unificado (stream) — GET /api/feed com scope=all|following.
  * Só o campo correspondente a `type` vem populado (os outros, undefined). */

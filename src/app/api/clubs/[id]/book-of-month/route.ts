@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { serializeBook } from "@/lib/books";
 import { currentMonth, MONTH_REGEX } from "@/lib/clubs";
 import { checkRateLimit } from "@/lib/ratelimit";
+import { recordFeedEvent } from "@/lib/feed-event";
 
 /** Livro do mês do clube (histórico por `month`) + progresso agregado dos
  * membros, lido de ShelfEntry (nunca recalculado/persistido aqui).
@@ -123,6 +124,13 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     create: { clubId: params.id, bookId, month, setById: uid },
     update: { bookId, setById: uid },
     include: { book: true, setBy: { select: { username: true, name: true } } },
+  });
+
+  await recordFeedEvent(db, {
+    userId: uid,
+    type: "CLUB_BOOK_OF_MONTH_SET",
+    clubId: params.id,
+    bookId,
   });
 
   return NextResponse.json({

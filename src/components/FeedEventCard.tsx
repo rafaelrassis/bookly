@@ -147,5 +147,23 @@ export function FeedEventCard({ event }: { event: ApiFeedEvent }) {
     );
   }
 
+  if (event.type === "CLUB_BOOK_OF_MONTH_SET" && event.club && event.book) {
+    return (
+      <SimpleEventPost
+        event={event}
+        icon={<GroupIcon size={16} />}
+        href={`/clubs/${event.club.id}`}
+        text={
+          <>
+            <span className="font-display font-bold italic text-paper">{event.club.name}</span> vai
+            ler{" "}
+            <span className="font-display font-bold italic text-paper">{event.book.title}</span> este
+            mês
+          </>
+        }
+      />
+    );
+  }
+
   return null;
 }

@@ -582,6 +582,7 @@ enum FeedEventType {
   DONATION_CREATED
   CLUB_JOINED
   HIGHLIGHT
+  CLUB_BOOK_OF_MONTH_SET
 }
 
 /// Feed social unificado (Spec stream unificado) — 1 linha por evento
