@@ -81,7 +81,7 @@ export default function LandingPage() {
               </span>
               <h3 className="font-bold">{feature.title}</h3>
             </div>
-            <p className="mt-2 text-sm text-paperDim">{feature.text}</p>
+            <p className="mt-2 text-sm text-paperMuted">{feature.text}</p>
           </div>
         ))}
       </section>
