@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { Button } from "@/components/ui/Button";
 
 type Action = { label: string; href: string } | { label: string; onClick: () => void };
 
@@ -30,23 +31,16 @@ export function EmptyState({
         </div>
       )}
       <p className="font-bold">{title}</p>
-      {description && <p className="max-w-64 text-sm text-paperDim">{description}</p>}
+      {description && <p className="max-w-64 text-caption text-paperMuted">{description}</p>}
       {action &&
         ("href" in action ? (
-          <Link
-            href={action.href}
-            className="mt-4 rounded-xl bg-foil px-5 py-3 text-sm font-bold text-leather transition-opacity hover:opacity-90"
-          >
-            {action.label}
-          </Link>
+          <Button variant="primary" asChild className="mt-4">
+            <Link href={action.href}>{action.label}</Link>
+          </Button>
         ) : (
-          <button
-            type="button"
-            onClick={action.onClick}
-            className="mt-4 rounded-xl bg-foil px-5 py-3 text-sm font-bold text-leather transition-opacity hover:opacity-90"
-          >
+          <Button variant="primary" onClick={action.onClick} className="mt-4">
             {action.label}
-          </button>
+          </Button>
         ))}
       {children}
     </div>

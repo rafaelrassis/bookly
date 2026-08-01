@@ -520,7 +520,7 @@ export default function ClubPage({ params }: { params: { id: string } }) {
         {club.visibility === "private" && club.isCreator && club.code && (
           <div className="mt-3 flex w-full items-center justify-between rounded-2xl border border-foil/40 bg-card px-4 py-3">
             <div className="text-left">
-              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-paperDim">
+              <p className="text-meta uppercase text-paperMuted">
                 Código de convite
               </p>
               <p className="font-mono text-lg font-bold tracking-[0.3em] text-foil">

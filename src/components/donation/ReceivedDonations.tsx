@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
-import { SectionError } from "@/components/SectionError";
+import { ErrorRetry } from "@/components/ui/ErrorRetry";
 import { Skeleton } from "@/components/Skeleton";
 import { Spinner } from "@/components/Spinner";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -41,7 +41,7 @@ export function ReceivedDonations() {
     };
   }, [reloadSignal]);
 
-  if (error) return <SectionError message={error} onRetry={() => setReloadSignal((n) => n + 1)} />;
+  if (error) return <ErrorRetry message={error} onRetry={() => setReloadSignal((n) => n + 1)} />;
   if (!data) return <ReceivedSkeleton />;
 
   return (
