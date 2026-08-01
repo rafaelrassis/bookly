@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Logo } from "@/components/Logo";
 import { SocialLoginButtons } from "@/components/SocialLoginButtons";
+import { Field } from "@/components/ui/Field";
+import { Input } from "@/components/ui/Input";
 import { emailLoginEnabled } from "@/lib/featureFlags";
 
 export default function LoginPage() {
@@ -52,30 +54,26 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-3">
-            <label className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
-              E-mail
-              <input
+            <Field label="E-mail" id="login-email">
+              <Input
                 type="email"
                 name="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="capitu@biblioteca.com"
-                className="rounded-xl border border-line bg-card px-4 py-3 text-base text-paper"
               />
-            </label>
-            <label className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
-              Senha
-              <input
+            </Field>
+            <Field label="Senha" id="login-password">
+              <Input
                 type="password"
                 name="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="••••••••"
-                className="rounded-xl border border-line bg-card px-4 py-3 text-base text-paper"
               />
-            </label>
+            </Field>
 
             {error && (
               <p role="alert" className="text-sm text-red-400">
