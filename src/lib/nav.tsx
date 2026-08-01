@@ -19,7 +19,7 @@ const iconProps = {
 export const NAV_LINKS: NavLink[] = [
   {
     href: "/home",
-    label: "Início",
+    label: "Hoje",
     icon: (
       <svg {...iconProps}>
         <path d="M3 10.5 12 3l9 7.5" />

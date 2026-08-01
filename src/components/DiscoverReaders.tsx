@@ -10,7 +10,7 @@ import { useStore } from "@/lib/store";
 import type { ApiAuthor } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/apiError";
 
-export function DiscoverReaders() {
+export function DiscoverReaders({ anchorId = "discover-readers" }: { anchorId?: string }) {
   const showToast = useStore((s) => s.showToast);
   const [suggestions, setSuggestions] = useState<ApiAuthor[] | null>(null);
   const [pending, setPending] = useState<string | null>(null);
@@ -40,7 +40,7 @@ export function DiscoverReaders() {
   if (!suggestions || suggestions.length === 0) return null;
 
   return (
-    <Section id="discover-readers" title="Descobrir leitores">
+    <Section id={anchorId} title="Descobrir leitores">
       <div className="no-scrollbar -mx-5 mt-3 flex gap-3 overflow-x-auto px-5">
         {suggestions.map((u) => (
           <div

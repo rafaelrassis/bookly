@@ -36,7 +36,7 @@ export function QuotesSection({ quotes, onAdd, onRemove }: Props) {
   }
 
   return (
-    <Section title="Citações">
+    <Section id="citacoes" title="Citações">
       <div className="flex flex-col gap-3">
         {quotes.map((quote) => (
           <blockquote
