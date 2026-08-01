@@ -94,7 +94,10 @@ test("seguir leitor e filtrar feed por Seguindo", async ({ page }) => {
 // C6: descobrir leitores sugere usuários não seguidos e some ao seguir
 test("descobrir leitores atualiza sugestoes ao seguir", async ({ page }) => {
   await loginAsSeedUser(page);
-  const section = page.locator('section:has-text("Descobrir leitores")');
+  // #discover-readers é a instância visível no mobile; a Home também porta
+  // uma cópia (#discover-readers-aside) pro slot de aside do desktop, que
+  // fica no DOM (só oculta por CSS) mesmo em telas pequenas.
+  const section = page.locator("#discover-readers");
   await expect(section).toBeVisible();
   const before = await section.locator("button:has-text(\"Seguir\")").count();
   await section.locator('button:has-text("Seguir")').first().click();
