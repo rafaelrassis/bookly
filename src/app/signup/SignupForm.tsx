@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Logo } from "@/components/Logo";
 import { VerificationModal } from "@/components/VerificationModal";
+import { Field } from "@/components/ui/Field";
+import { Input } from "@/components/ui/Input";
 
 export function SignupForm() {
   const router = useRouter();
@@ -65,17 +67,15 @@ export function SignupForm() {
       </div>
 
       <form onSubmit={handleSubmit} className="mt-10 flex flex-col gap-3">
-        <label className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
-          Nome
-          <input
+        <Field label="Nome" id="signup-name">
+          <Input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
             placeholder="Victor Frankenstein"
-            className="rounded-xl border border-line bg-card px-4 py-3 text-base text-paper"
           />
-        </label>
+        </Field>
         <label className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
           Nome de usuário
           <div className="flex items-center rounded-xl border border-line bg-card px-4">
@@ -93,29 +93,25 @@ export function SignupForm() {
             />
           </div>
         </label>
-        <label className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
-          E-mail
-          <input
+        <Field label="E-mail" id="signup-email">
+          <Input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
             placeholder="capitu@biblioteca.com"
-            className="rounded-xl border border-line bg-card px-4 py-3 text-base text-paper"
           />
-        </label>
-        <label className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
-          Senha (mín. 8 caracteres)
-          <input
+        </Field>
+        <Field label="Senha (mín. 8 caracteres)" id="signup-password">
+          <Input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
             minLength={8}
             placeholder="••••••••"
-            className="rounded-xl border border-line bg-card px-4 py-3 text-base text-paper"
           />
-        </label>
+        </Field>
 
         {error && (
           <p role="alert" className="text-sm text-red-400">

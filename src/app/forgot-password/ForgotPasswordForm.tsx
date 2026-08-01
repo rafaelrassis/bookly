@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Logo } from "@/components/Logo";
+import { Field } from "@/components/ui/Field";
+import { Input } from "@/components/ui/Input";
 
 type Step = "request" | "reset";
 
@@ -63,17 +65,15 @@ export function ForgotPasswordForm() {
 
       {step === "request" ? (
         <form onSubmit={requestCode} className="mt-10 flex flex-col gap-3">
-          <label className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
-            E-mail
-            <input
+          <Field label="E-mail" id="forgot-email">
+            <Input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="capitu@biblioteca.com"
-              className="rounded-xl border border-line bg-card px-4 py-3 text-base text-paper"
             />
-          </label>
+          </Field>
           <button
             type="submit"
             disabled={loading}
@@ -98,18 +98,16 @@ export function ForgotPasswordForm() {
               className="rounded-xl border border-line bg-card px-4 py-3 text-center text-lg tracking-[0.5em] text-paper"
             />
           </label>
-          <label className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
-            Nova senha (mín. 8 caracteres)
-            <input
+          <Field label="Nova senha (mín. 8 caracteres)" id="forgot-password">
+            <Input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={8}
               placeholder="••••••••"
-              className="rounded-xl border border-line bg-card px-4 py-3 text-base text-paper"
             />
-          </label>
+          </Field>
 
           {error && (
             <p role="alert" className="text-sm text-red-400">

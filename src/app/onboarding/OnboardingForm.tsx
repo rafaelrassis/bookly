@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { GENRES } from "@/lib/genres";
 import { Logo } from "@/components/Logo";
+import { Field } from "@/components/ui/Field";
+import { Input } from "@/components/ui/Input";
 import { withoutAt } from "@/lib/handle";
 import { useUsernameCheck } from "@/hooks/useUsernameCheck";
 import { useStore } from "@/lib/store";
@@ -118,16 +120,15 @@ export function OnboardingForm() {
             )}
           </label>
 
-          <label className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
-            Bio
+          <Field label="Bio" id="onboarding-bio">
             <textarea
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               rows={2}
               placeholder="Era uma vez..."
-              className="resize-none rounded-xl border border-line bg-card px-4 py-3 text-base text-paper"
+              className="min-h-tap w-full resize-none rounded-xl border border-line bg-card px-4 py-3 text-base text-paper focus:border-foil/60"
             />
-          </label>
+          </Field>
 
           <div className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
             Localização (opcional)
@@ -145,14 +146,14 @@ export function OnboardingForm() {
                   </option>
                 ))}
               </select>
-              <input
+              <Input
                 type="text"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
                 placeholder="Cidade"
                 aria-label="Cidade"
                 maxLength={80}
-                className="min-w-0 flex-1 rounded-xl border border-line bg-card px-4 py-3 text-base text-paper"
+                className="min-w-0 flex-1"
               />
             </div>
             <p className="text-xs text-paperMuted">

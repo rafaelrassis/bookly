@@ -6,6 +6,8 @@ import { BackHeader } from "@/components/BackHeader";
 import { LockIcon } from "@/components/icons";
 import { SectionTitle } from "@/components/SectionTitle";
 import { Spinner } from "@/components/Spinner";
+import { Field } from "@/components/ui/Field";
+import { Input } from "@/components/ui/Input";
 import { useStore } from "@/lib/store";
 import type { Visibility } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -49,26 +51,23 @@ export default function NewClubPage() {
       </BackHeader>
 
       <div className="mt-4 flex flex-col gap-3">
-        <label className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
-          Nome do clube
-          <input
+        <Field label="Nome do clube" id="club-name">
+          <Input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Ex.: Leitoras de domingo"
-            className="rounded-xl border border-line bg-card px-4 py-3 text-base text-paper"
           />
-        </label>
-        <label className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
-          Descrição
+        </Field>
+        <Field label="Descrição" id="club-desc">
           <textarea
             value={desc}
             onChange={(e) => setDesc(e.target.value)}
             rows={2}
             placeholder="Sobre o que é o clube?"
-            className="resize-none rounded-xl border border-line bg-card px-4 py-3 text-base text-paper"
+            className="min-h-tap w-full resize-none rounded-xl border border-line bg-card px-4 py-3 text-base text-paper focus:border-foil/60"
           />
-        </label>
+        </Field>
       </div>
 
       <section className="mt-6">

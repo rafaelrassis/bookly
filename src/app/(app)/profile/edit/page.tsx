@@ -7,6 +7,8 @@ import { AvatarUpload } from "@/components/AvatarUpload";
 import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
 import { SectionTitle } from "@/components/SectionTitle";
+import { Field } from "@/components/ui/Field";
+import { Input } from "@/components/ui/Input";
 import { withoutAt } from "@/lib/handle";
 import { UF_LIST } from "@/lib/uf";
 import { useUsernameCheck } from "@/hooks/useUsernameCheck";
@@ -153,15 +155,14 @@ export default function EditProfilePage() {
             <p className="text-xs text-red-600">{usernameCheck.error}</p>
           )}
         </label>
-        <label className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
-          Bio
+        <Field label="Bio" id="profile-bio">
           <textarea
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             rows={3}
-            className="resize-none rounded-xl border border-line bg-card px-4 py-3 text-base text-paper"
+            className="min-h-tap w-full resize-none rounded-xl border border-line bg-card px-4 py-3 text-base text-paper focus:border-foil/60"
           />
-        </label>
+        </Field>
         <div className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
           Localização
           <div className="flex gap-2">
@@ -178,14 +179,14 @@ export default function EditProfilePage() {
                 </option>
               ))}
             </select>
-            <input
+            <Input
               type="text"
               value={city}
               onChange={(e) => setCity(e.target.value)}
               placeholder="Cidade"
               aria-label="Cidade"
               maxLength={80}
-              className="min-w-0 flex-1 rounded-xl border border-line bg-card px-4 py-3 text-base text-paper"
+              className="min-w-0 flex-1"
             />
           </div>
           <p className="text-xs text-paperMuted">Usado para mostrar doações perto de você.</p>
