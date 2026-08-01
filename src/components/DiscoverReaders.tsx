@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { SectionTitle } from "@/components/SectionTitle";
+import { Button } from "@/components/ui/Button";
 import { withAt } from "@/lib/handle";
 import { useStore } from "@/lib/store";
 import type { ApiAuthor } from "@/lib/types";
@@ -54,14 +55,15 @@ export function DiscoverReaders() {
                 <p className="truncate text-xs text-paperDim">{withAt(u.username)}</p>
               </div>
             </Link>
-            <button
-              type="button"
+            <Button
+              variant="primary"
+              full
+              className="mt-3"
               onClick={() => follow(u.username)}
               disabled={pending === u.username}
-              className="mt-3 w-full rounded-full bg-foil px-3 py-1.5 text-xs font-bold text-leather hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foil focus-visible:ring-offset-2 focus-visible:ring-offset-card disabled:opacity-60"
             >
               Seguir
-            </button>
+            </Button>
           </div>
         ))}
       </div>

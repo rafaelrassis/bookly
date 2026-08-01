@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BookCover } from "@/components/BookCover";
-import { BottomSheet } from "@/components/BottomSheet";
 import { EmptyState } from "@/components/EmptyState";
 import { BookOpenIcon, GiftIcon, LockIcon } from "@/components/icons";
 import { NotificationBell } from "@/components/NotificationBell";
@@ -230,7 +229,7 @@ export default function ShelfPage() {
         <NotificationBell className="-mr-2" />
       </header>
 
-      <div className="sticky top-0 z-30 -mx-5 mt-4 flex items-center gap-2 border-b border-line bg-leather/95 px-5 py-3 backdrop-blur md:top-16">
+      <div className="sticky top-0 z-30 -mx-5 mt-4 flex items-center gap-2 border-b border-line bg-leather/95 px-5 py-3 backdrop-blur md:top-16 lg:top-0">
         <input
           type="search"
           value={query}
@@ -445,14 +444,14 @@ export default function ShelfPage() {
       )}
 
       {tagSheetItem && (
-        <BottomSheet onClose={() => setTagSheetItem(null)} title={`Tags · ${tagSheetItem.book.title}`}>
+        <Sheet onClose={() => setTagSheetItem(null)} title={`Tags · ${tagSheetItem.book.title}`}>
           <TagEditor
             bookId={tagSheetItem.book.id}
             tags={tagSheetItem.tags}
             onChanged={() => reload()}
             onToast={showToast}
           />
-        </BottomSheet>
+        </Sheet>
       )}
     </div>
   );

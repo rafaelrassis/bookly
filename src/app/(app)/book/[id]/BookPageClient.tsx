@@ -282,7 +282,7 @@ export function BookPageClient({ params }: { params: { id: string } }) {
       <BackHeader className="lg:hidden" />
 
       <div className="lg:grid lg:grid-cols-[220px_1fr] lg:items-start lg:gap-10 lg:pt-6">
-        <div className="lg:sticky lg:top-20">
+        <div className="lg:sticky lg:top-6">
           <BookHeader book={book} />
           <div className="hidden lg:block">
             <StatusSection

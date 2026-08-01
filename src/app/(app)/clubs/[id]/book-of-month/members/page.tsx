@@ -8,6 +8,7 @@ import { BookCover } from "@/components/BookCover";
 import { PageLoader } from "@/components/PageLoader";
 import { SectionTitle } from "@/components/SectionTitle";
 import { Spinner } from "@/components/Spinner";
+import { ErrorRetry } from "@/components/ui/ErrorRetry";
 import { withAt, withoutAt } from "@/lib/handle";
 import { useStore } from "@/lib/store";
 import type { ApiBookOfMonthMember, ApiBookOfMonthMembers, ApiClubBookOfMonthDetail } from "@/lib/types";
@@ -114,16 +115,7 @@ export default function BookOfMonthMembersPage({ params }: { params: { id: strin
     return (
       <div className="pt-4">
         <BackHeader />
-        <div className="mt-10 flex flex-col items-center gap-3 text-center">
-          <p className="text-paperDim">Não foi possível carregar o progresso. Tente de novo.</p>
-          <button
-            type="button"
-            onClick={load}
-            className="rounded-xl border border-line bg-card px-4 py-2.5 text-sm font-bold text-paper hover:border-foil/50"
-          >
-            Tentar de novo
-          </button>
-        </div>
+        <ErrorRetry className="mt-10" message="Não foi possível carregar o progresso. Tente de novo." onRetry={load} />
       </div>
     );
   }

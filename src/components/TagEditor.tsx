@@ -90,7 +90,7 @@ export function TagEditor({ bookId, tags, onChanged, onToast }: Props) {
             onClick={() => removeTag(tag)}
             aria-label={`Remover tag ${tag}`}
             disabled={busy}
-            className="flex h-4 w-4 items-center justify-center rounded-full text-paperDim hover:text-ribbonText disabled:opacity-40"
+            className="tap flex h-4 w-4 items-center justify-center rounded-full text-paperDim hover:text-ribbonText disabled:opacity-40"
           >
             ✕
           </button>

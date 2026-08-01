@@ -23,7 +23,9 @@ export function Section({
       {(title || action) && (
         <div
           className={`mb-3 flex min-h-tap items-center justify-between gap-3 ${
-            stickyHeader ? "sticky top-0 z-10 -mx-5 bg-leather/95 px-5 py-2 backdrop-blur" : ""
+            stickyHeader
+              ? "sticky top-0 z-10 -mx-5 bg-leather/95 px-5 py-2 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
+              : ""
           }`}
         >
           {title && <h2 className="text-meta uppercase text-paperMuted">{title}</h2>}

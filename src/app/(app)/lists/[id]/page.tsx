@@ -9,6 +9,8 @@ import { LockIcon } from "@/components/icons";
 import { PageLoader } from "@/components/PageLoader";
 import { SectionTitle } from "@/components/SectionTitle";
 import { Spinner } from "@/components/Spinner";
+import { Chip } from "@/components/ui/Chip";
+import { ErrorRetry } from "@/components/ui/ErrorRetry";
 import { useStore } from "@/lib/store";
 import type { ApiList, Book } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -77,16 +79,11 @@ export default function ListPage({ params }: { params: { id: string } }) {
     return (
       <div className="pt-4">
         <BackHeader />
-        <div className="mt-10 flex flex-col items-center gap-3 text-center">
-          <p className="text-paperDim">Não foi possível carregar a lista. Tente de novo.</p>
-          <button
-            type="button"
-            onClick={() => setRetryCount((n) => n + 1)}
-            className="rounded-xl border border-line bg-card px-4 py-2.5 text-sm font-bold text-paper hover:border-foil/50"
-          >
-            Tentar de novo
-          </button>
-        </div>
+        <ErrorRetry
+          className="mt-10"
+          message="Não foi possível carregar a lista. Tente de novo."
+          onRetry={() => setRetryCount((n) => n + 1)}
+        />
       </div>
     );
   }
@@ -184,20 +181,14 @@ export default function ListPage({ params }: { params: { id: string } }) {
             { key: "private", label: "Privada" },
           ] as const
         ).map(({ key, label }) => (
-          <button
+          <Chip
             key={key}
-            type="button"
-            aria-pressed={list.visibility === key}
+            active={list.visibility === key}
             onClick={() => list!.visibility !== key && toggleVisibility()}
-            className={`flex items-center gap-1 rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors ${
-              list.visibility === key
-                ? "bg-foil text-leather"
-                : "border border-line bg-card text-paperDim hover:text-paper"
-            }`}
           >
             {key === "private" && <LockIcon size={10} />}
             {label}
-          </button>
+          </Chip>
         ))}
         <span className="ml-auto text-xs font-bold uppercase tracking-[0.14em] text-paperDim">
           {books.length} {books.length === 1 ? "livro" : "livros"}
@@ -225,7 +216,7 @@ export default function ListPage({ params }: { params: { id: string } }) {
                 onClick={() => removeBook(book.id)}
                 disabled={removingId === book.id}
                 aria-label={`Remover ${book.title} da lista`}
-                className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-card2 text-[10px] font-bold text-paperDim ring-1 ring-line hover:text-ribbonText disabled:opacity-60"
+                className="tap absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-card2 text-[10px] font-bold text-paperDim ring-1 ring-line hover:text-ribbonText disabled:opacity-60"
               >
                 {removingId === book.id ? <Spinner size={10} className="text-paperDim" /> : "✕"}
               </button>
