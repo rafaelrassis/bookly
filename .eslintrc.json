@@ -1,4 +1,51 @@
 {
   "extends": ["next/core-web-vitals", "next/typescript", "plugin:jsx-a11y/recommended"],
-  "plugins": ["jsx-a11y"]
+  "plugins": ["jsx-a11y"],
+  "rules": {
+    "no-restricted-syntax": [
+      "warn",
+      {
+        "selector": "Literal[value=/text-\\[\\d+px\\]/]",
+        "message": "Tamanho de fonte avulso. Use a escala: text-meta (11px) | text-caption (13px) | text-body (15px) | text-title | text-h1."
+      },
+      {
+        "selector": "TemplateElement[value.raw=/text-\\[\\d+px\\]/]",
+        "message": "Tamanho de fonte avulso. Use a escala: text-meta (11px) | text-caption (13px) | text-body (15px) | text-title | text-h1."
+      },
+      {
+        "selector": "Literal[value=/text-paperDim(?![\\w-])/]",
+        "message": "Texto secundário usa text-paperMuted — paperDim não atinge 4.5:1 sobre --card. Mantenha paperDim apenas em elemento decorativo (divisória, ícone apagado)."
+      },
+      {
+        "selector": "TemplateElement[value.raw=/text-paperDim(?![\\w-])/]",
+        "message": "Texto secundário usa text-paperMuted — paperDim não atinge 4.5:1 sobre --card. Mantenha paperDim apenas em elemento decorativo (divisória, ícone apagado)."
+      },
+      {
+        "selector": "Literal[value=/\\bh-[1-9] w-[1-9]\\b/]",
+        "message": "Ícone-botão abaixo de 40px. Use <IconButton> (min-h-tap/min-w-tap) ou, em grade, alvo visível de 32px com espaçamento adequado."
+      },
+      {
+        "selector": "Literal[value=/\\bmin-h-\\[44px\\]|\\bmin-w-\\[44px\\]/]",
+        "message": "Use os tokens min-h-tap / min-w-tap."
+      },
+      {
+        "selector": "Literal[value=/tracking-\\[0\\.1[48]em\\]/]",
+        "message": "Rótulo em caixa alta já vem com tracking no token text-meta. Não repita à mão."
+      },
+      {
+        "selector": "ImportDeclaration[source.value='@/components/SectionTitle']",
+        "message": "SectionTitle está sendo removido. Use <Section title=\"…\"> de @/components/ui/Section, ou um <h2 className=\"text-meta uppercase text-paperMuted\">."
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "src/components/ui/*.tsx",
+        "src/components/SectionTitle.tsx",
+        "tailwind.config.ts"
+      ],
+      "rules": { "no-restricted-syntax": "off" }
+    }
+  ]
 }
