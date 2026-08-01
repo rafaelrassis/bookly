@@ -7,6 +7,7 @@ import { FeedPost } from "@/components/FeedPost";
 import { Chip } from "@/components/ui/Chip";
 import { Stars } from "@/components/Stars";
 import { useLikedReviews } from "@/lib/store/hooks";
+import { handleTablistKeyDown } from "@/lib/tablist";
 import { useProfileStats } from "../ProfileStatsContext";
 
 type ActivityTab = "ratings" | "reviews" | "likes";
@@ -24,10 +25,12 @@ export default function ProfileActivityPage() {
 
   return (
     <div className="mt-6 mb-4">
+      {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- onKeyDown aqui só delega a navegação por setas pros [role=tab] filhos (já focáveis); o tablist em si não recebe foco no padrão ARIA */}
       <div
         role="tablist"
         aria-label="Atividade do perfil"
         className="no-scrollbar flex gap-2 overflow-x-auto"
+        onKeyDown={handleTablistKeyDown}
       >
         {ACTIVITY_TABS.map(({ key, label }) => (
           <Chip

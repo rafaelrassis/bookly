@@ -40,7 +40,7 @@ function SimpleEventPost({
           <Avatar user={authorHandle} avatarIndex={event.user.avatar} avatarUrl={event.user.avatarUrl} />
         </Link>
         <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-1.5 text-sm leading-snug text-paperDim">
+          <p className="flex flex-wrap items-center gap-1.5 text-sm leading-snug text-paperDim">
             <span className="shrink-0 text-foil">{icon}</span>
             {text}
           </p>

@@ -8,7 +8,7 @@ export function RecommendationsSection({ recommendations }: { recommendations: B
 
   return (
     <Section title="Quem leu isso também leu" className="mb-4">
-      <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0 lg:grid-cols-5">
+      <div className="no-scrollbar -mx-5 flex gap-3 overflow-x-auto px-5 md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0 lg:grid-cols-5">
         {recommendations.map((rec) => (
           <Link key={rec.id} href={`/book/${rec.id}`} className="w-28 shrink-0 md:w-auto">
             <BookCover book={rec} fluid sizes="(min-width: 1024px) 18vw, (min-width: 768px) 22vw, 112px" />

@@ -80,7 +80,7 @@ export function VerificationModal({ email, onVerified, onSkip }: Props) {
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
             placeholder="000000"
-            className="rounded-xl border border-line bg-card2 px-4 py-3 text-center text-lg tracking-[0.5em] text-paper placeholder:text-paperDim/40"
+            className="rounded-xl border border-line bg-card2 px-4 py-3 text-center text-lg tracking-[0.5em] text-paper"
           />
 
           {error && (

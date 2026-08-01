@@ -109,7 +109,7 @@ export default function SearchPage() {
 
   return (
     <div className="pt-4">
-      <div className="sticky top-0 z-30 -mx-4 bg-leather/95 px-4 pb-2 pt-4 backdrop-blur md:top-16">
+      <div className="sticky top-0 z-30 -mx-5 bg-leather/95 px-5 pb-2 pt-4 backdrop-blur md:top-16">
         <BackHeader className="lg:hidden">
           <input
             type="search"

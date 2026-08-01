@@ -56,7 +56,7 @@ export default function NewClubPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Ex.: Leitoras de domingo"
-            className="rounded-xl border border-line bg-card px-4 py-3 text-base text-paper placeholder:text-paperDim/60"
+            className="rounded-xl border border-line bg-card px-4 py-3 text-base text-paper"
           />
         </label>
         <label className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
@@ -66,7 +66,7 @@ export default function NewClubPage() {
             onChange={(e) => setDesc(e.target.value)}
             rows={2}
             placeholder="Sobre o que é o clube?"
-            className="resize-none rounded-xl border border-line bg-card px-4 py-3 text-base text-paper placeholder:text-paperDim/60"
+            className="resize-none rounded-xl border border-line bg-card px-4 py-3 text-base text-paper"
           />
         </label>
       </div>

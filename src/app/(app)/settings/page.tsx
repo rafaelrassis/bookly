@@ -113,7 +113,7 @@ export default function SettingsPage() {
                 onChange={(e) => setCurrent(e.target.value)}
                 placeholder="Senha atual"
                 aria-label="Senha atual"
-                className="rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper placeholder:text-paperDim/60"
+                className="rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper"
               />
               <input
                 type="password"
@@ -121,7 +121,7 @@ export default function SettingsPage() {
                 onChange={(e) => setNext(e.target.value)}
                 placeholder="Nova senha"
                 aria-label="Nova senha"
-                className="rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper placeholder:text-paperDim/60"
+                className="rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper"
               />
               <input
                 type="password"
@@ -129,7 +129,7 @@ export default function SettingsPage() {
                 onChange={(e) => setConfirm(e.target.value)}
                 placeholder="Confirmar nova senha"
                 aria-label="Confirmar nova senha"
-                className="rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper placeholder:text-paperDim/60"
+                className="rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper"
               />
             </div>
             <div className="mt-3 flex justify-end gap-2">

@@ -137,7 +137,7 @@ export function ClubDiscussionCard({ clubId }: { clubId: string }) {
               rows={2}
               placeholder="Comente sobre o que já leu…"
               aria-label="Novo comentário na discussão"
-              className="resize-none rounded-xl border border-line bg-card2 px-3.5 py-2.5 text-sm text-paper placeholder:text-paperDim/60"
+              className="resize-none rounded-xl border border-line bg-card2 px-3.5 py-2.5 text-sm text-paper"
             />
             <div className="flex items-center gap-2">
               <label className="flex items-center gap-1.5 text-xs text-paperDim">

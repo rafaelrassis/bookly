@@ -73,7 +73,7 @@ export function SignupForm() {
             onChange={(e) => setName(e.target.value)}
             required
             placeholder="Victor Frankenstein"
-            className="rounded-xl border border-line bg-card px-4 py-3 text-base text-paper placeholder:text-paperDim/60"
+            className="rounded-xl border border-line bg-card px-4 py-3 text-base text-paper"
           />
         </label>
         <label className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
@@ -89,7 +89,7 @@ export function SignupForm() {
               maxLength={20}
               pattern="[a-z0-9._-]+"
               placeholder="meninomaluquinho"
-              className="w-full bg-transparent py-3 pl-1 text-base text-paper placeholder:text-paperDim/60 focus:outline-none"
+              className="w-full bg-transparent py-3 pl-1 text-base text-paper focus:outline-none"
             />
           </div>
         </label>
@@ -101,7 +101,7 @@ export function SignupForm() {
             onChange={(e) => setEmail(e.target.value)}
             required
             placeholder="capitu@biblioteca.com"
-            className="rounded-xl border border-line bg-card px-4 py-3 text-base text-paper placeholder:text-paperDim/60"
+            className="rounded-xl border border-line bg-card px-4 py-3 text-base text-paper"
           />
         </label>
         <label className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
@@ -113,7 +113,7 @@ export function SignupForm() {
             required
             minLength={8}
             placeholder="••••••••"
-            className="rounded-xl border border-line bg-card px-4 py-3 text-base text-paper placeholder:text-paperDim/60"
+            className="rounded-xl border border-line bg-card px-4 py-3 text-base text-paper"
           />
         </label>
 

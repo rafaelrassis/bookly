@@ -79,7 +79,7 @@ export function CityAutocomplete({ city, state, onCityChange, onSelect, disabled
         aria-controls={listboxId}
         aria-autocomplete="list"
         disabled={disabled}
-        className="w-full rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper placeholder:text-paperDim/60"
+        className="w-full rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper"
       />
       {showDropdown && (
         <ul

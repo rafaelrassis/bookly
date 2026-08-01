@@ -210,7 +210,7 @@ export function ReviewPageClient({ params }: { params: { id: string } }) {
             }}
             placeholder="Adicione um comentário…"
             aria-label="Escrever comentário"
-            className="min-w-0 flex-1 rounded-full border border-line bg-card px-4 py-2 text-sm text-paper placeholder:text-paperDim/60"
+            className="min-w-0 flex-1 rounded-full border border-line bg-card px-4 py-2 text-sm text-paper"
           />
           <button
             type="button"

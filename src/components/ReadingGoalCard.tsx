@@ -110,7 +110,7 @@ function EditGoalSheet({
         placeholder="Ex.: 24"
         // eslint-disable-next-line jsx-a11y/no-autofocus -- sheet recém-aberto, único campo
         autoFocus
-        className="mt-2 w-full rounded-xl border border-line bg-card2 px-4 py-2.5 text-base text-paper placeholder:text-paperDim/60"
+        className="mt-2 w-full rounded-xl border border-line bg-card2 px-4 py-2.5 text-base text-paper"
       />
       <button
         type="button"

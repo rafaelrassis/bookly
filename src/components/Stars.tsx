@@ -25,7 +25,7 @@ export function Stars({ rating, className = "", showEmpty = false }: StarsProps)
     >
       {"★".repeat(full)}
       {hasHalf && "½"}
-      {showEmpty && empty > 0 && <span className="text-paperDim/40">{"★".repeat(empty)}</span>}
+      {showEmpty && empty > 0 && <span className="text-paperMuted">{"★".repeat(empty)}</span>}
     </span>
   );
 }

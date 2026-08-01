@@ -557,7 +557,7 @@ export default function ClubPage({ params }: { params: { id: string } }) {
               onChange={(e) => setEditName(e.target.value)}
               placeholder="Nome do clube"
               aria-label="Nome do clube"
-              className="rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper placeholder:text-paperDim/60"
+              className="rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper"
             />
             <textarea
               value={editDesc}
@@ -565,7 +565,7 @@ export default function ClubPage({ params }: { params: { id: string } }) {
               rows={2}
               placeholder="Bio do clube"
               aria-label="Bio do clube"
-              className="resize-none rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper placeholder:text-paperDim/60"
+              className="resize-none rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper"
             />
           </div>
           <div className="mt-3 flex justify-end gap-2">
@@ -711,7 +711,7 @@ export default function ClubPage({ params }: { params: { id: string } }) {
                   }}
                   placeholder="Escreva para o clube… use @ para marcar"
                   aria-label="Publicar no mural"
-                  className="min-w-0 flex-1 rounded-full border border-line bg-card px-4 py-2.5 text-sm text-paper placeholder:text-paperDim/60"
+                  className="min-w-0 flex-1 rounded-full border border-line bg-card px-4 py-2.5 text-sm text-paper"
                 />
                 <button
                   type="button"

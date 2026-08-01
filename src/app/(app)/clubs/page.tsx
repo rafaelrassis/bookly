@@ -34,13 +34,13 @@ function ClubCard({ club }: { club: ClubSummary }) {
         </div>
       )}
       <div className="min-w-0 flex-1">
-        <h3 className="flex items-center gap-1.5 font-display text-base font-bold">
+        <h3 className="flex min-w-0 items-center gap-1.5 font-display text-base font-bold">
           {club.visibility === "private" && (
-            <span className="text-paperMuted" aria-label="Clube privado">
+            <span className="shrink-0 text-paperMuted" aria-label="Clube privado">
               <LockIcon />
             </span>
           )}
-          {club.name}
+          <span className="truncate">{club.name}</span>
         </h3>
         <p className="text-xs text-paperMuted">{club.members} membros</p>
         <p className="mt-1.5 line-clamp-2 text-sm text-paperMuted">{club.desc}</p>

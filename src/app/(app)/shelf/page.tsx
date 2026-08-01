@@ -90,7 +90,7 @@ function MyLists() {
           type="button"
           onClick={() => setCreating((c) => !c)}
           aria-expanded={creating}
-          className="text-xs font-bold text-foil hover:opacity-80"
+          className="flex min-h-tap items-center text-xs font-bold text-foil hover:opacity-80"
         >
           + Criar lista
         </button>
@@ -112,17 +112,19 @@ function MyLists() {
             className="w-full rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper"
           />
           <div className="mt-2 flex items-center gap-2">
-            {(
-              [
-                { key: "public", label: "Pública" },
-                { key: "private", label: "Privada" },
-              ] as const
-            ).map(({ key, label }) => (
-              <Chip key={key} active={visibility === key} onClick={() => setVisibility(key)}>
-                {key === "private" && <LockIcon size={10} />}
-                {label}
-              </Chip>
-            ))}
+            <div role="group" aria-label="Visibilidade da lista" className="flex items-center gap-2">
+              {(
+                [
+                  { key: "public", label: "Pública" },
+                  { key: "private", label: "Privada" },
+                ] as const
+              ).map(({ key, label }) => (
+                <Chip key={key} active={visibility === key} onClick={() => setVisibility(key)}>
+                  {key === "private" && <LockIcon size={10} />}
+                  {label}
+                </Chip>
+              ))}
+            </div>
             <Button variant="primary" className="ml-auto" onClick={create} disabled={!name.trim() || saving}>
               {saving ? <Spinner size={14} className="text-leather" /> : "Criar"}
             </Button>
@@ -131,7 +133,13 @@ function MyLists() {
       )}
 
       {lists.length > 0 && (
-        <div className="no-scrollbar -mx-4 mt-3 flex gap-3 overflow-x-auto px-4 md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0">
+        <div
+          role="region"
+          aria-label="Minhas listas"
+          // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- carrossel horizontal no mobile: tabIndex permite rolar com teclado (vira grid, não-rolável, a partir de md)
+          tabIndex={0}
+          className="no-scrollbar -mx-5 mt-3 flex gap-3 overflow-x-auto px-5 md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0"
+        >
           {lists.map((list) => (
             <Link
               key={list.id}
@@ -222,7 +230,7 @@ export default function ShelfPage() {
         <NotificationBell className="-mr-2" />
       </header>
 
-      <div className="sticky top-0 z-30 -mx-4 mt-4 flex items-center gap-2 border-b border-line bg-leather/95 px-4 py-3 backdrop-blur md:top-16">
+      <div className="sticky top-0 z-30 -mx-5 mt-4 flex items-center gap-2 border-b border-line bg-leather/95 px-5 py-3 backdrop-blur md:top-16">
         <input
           type="search"
           value={query}
@@ -383,8 +391,10 @@ export default function ShelfPage() {
         <Sheet onClose={() => setFiltersOpen(false)} title="Filtros">
           <div className="flex flex-col gap-4">
             <div>
-              <h3 className="mb-2 text-meta uppercase text-paperMuted">Status</h3>
-              <div className="flex flex-wrap gap-2">
+              <h3 id="filter-status-label" className="mb-2 text-meta uppercase text-paperMuted">
+                Status
+              </h3>
+              <div role="group" aria-labelledby="filter-status-label" className="flex flex-wrap gap-2">
                 {statusOptions.map(({ key, label }) => (
                   <Chip key={key} active={status === key} onClick={() => setStatus(key)}>
                     {label}
@@ -394,8 +404,10 @@ export default function ShelfPage() {
             </div>
 
             <div>
-              <h3 className="mb-2 text-meta uppercase text-paperMuted">Gênero</h3>
-              <div className="flex flex-wrap gap-2">
+              <h3 id="filter-genre-label" className="mb-2 text-meta uppercase text-paperMuted">
+                Gênero
+              </h3>
+              <div role="group" aria-labelledby="filter-genre-label" className="flex flex-wrap gap-2">
                 <Chip active={genre === "ALL"} onClick={() => setGenre("ALL")}>
                   Todos
                 </Chip>
@@ -409,8 +421,10 @@ export default function ShelfPage() {
 
             {allTags.length > 0 && (
               <div>
-                <h3 className="mb-2 text-meta uppercase text-paperMuted">Tag</h3>
-                <div className="flex flex-wrap gap-2">
+                <h3 id="filter-tag-label" className="mb-2 text-meta uppercase text-paperMuted">
+                  Tag
+                </h3>
+                <div role="group" aria-labelledby="filter-tag-label" className="flex flex-wrap gap-2">
                   <Chip active={tag === "ALL"} onClick={() => setTag("ALL")}>
                     Todas
                   </Chip>

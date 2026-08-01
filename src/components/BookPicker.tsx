@@ -79,7 +79,7 @@ export function BookPicker({
         onChange={(e) => setQuery(e.target.value)}
         placeholder={placeholder}
         aria-label="Buscar livro"
-        className="w-full rounded-xl border border-line bg-card px-4 py-2.5 text-sm text-paper placeholder:text-paperDim/60"
+        className="w-full rounded-xl border border-line bg-card px-4 py-2.5 text-sm text-paper"
       />
       <div
         className={`mt-2 overflow-y-auto rounded-2xl border border-line bg-card ${dense ? "max-h-40" : "max-h-56"}`}

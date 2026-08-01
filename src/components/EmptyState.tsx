@@ -25,7 +25,7 @@ export function EmptyState({
   return (
     <div className={`flex flex-col items-center gap-1.5 py-10 text-center ${className}`}>
       {icon && (
-        <div aria-hidden="true" className="mb-2 text-paperDim/50">
+        <div aria-hidden="true" className="mb-2 text-paperMuted">
           {icon}
         </div>
       )}

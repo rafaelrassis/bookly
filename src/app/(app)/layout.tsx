@@ -37,7 +37,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
       <TopNav />
 
-      <div className="mx-auto flex w-full max-w-shell gap-8 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w-shell gap-8 px-5 sm:px-6 lg:px-8">
         <SideNav />
 
         <main

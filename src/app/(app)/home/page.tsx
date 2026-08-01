@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/Skeleton";
 import { Spinner } from "@/components/Spinner";
 import { AsideContent } from "@/lib/aside";
 import { readingPercent } from "@/lib/format";
+import { handleTablistKeyDown } from "@/lib/tablist";
 import { useFeed, useTrendingBooks } from "@/lib/store/hooks";
 import type { Book, ShelfEntry } from "@/lib/types";
 
@@ -92,7 +93,13 @@ function ReadingCard({ item, priority = false }: { item: ReadingItem; priority?:
 
 function TrendingList({ trending }: { trending: Book[] }) {
   return (
-    <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0 lg:grid-cols-1">
+    <div
+      role="region"
+      aria-label="Em alta esta semana"
+      // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- carrossel horizontal no mobile: tabIndex permite rolar com teclado (vira grid, não-rolável, a partir de md)
+      tabIndex={0}
+      className="no-scrollbar -mx-5 flex gap-3 overflow-x-auto px-5 md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0 lg:grid-cols-1"
+    >
       {trending.map((book) => (
         <Link
           key={book.id}
@@ -175,7 +182,13 @@ export default function HomePage() {
         title="Atividade"
         stickyHeader
         action={
-          <div role="tablist" aria-label="Filtro do feed" className="flex gap-2">
+          // eslint-disable-next-line jsx-a11y/interactive-supports-focus -- onKeyDown aqui só delega a navegação por setas pros [role=tab] filhos (já focáveis); o tablist em si não recebe foco no padrão ARIA
+          <div
+            role="tablist"
+            aria-label="Filtro do feed"
+            className="flex gap-2"
+            onKeyDown={handleTablistKeyDown}
+          >
             {(
               [
                 { key: "all", label: "Geral" },
