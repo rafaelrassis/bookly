@@ -15,7 +15,14 @@ export async function GET() {
 
   const donations = await db.donation.findMany({
     where: { donorId: session.user.id },
-    include: { book: true, requests: true },
+    include: {
+      book: true,
+      requests: {
+        include: {
+          requester: { select: { id: true, username: true, name: true, avatar: true, avatarUrl: true } },
+        },
+      },
+    },
     orderBy: { createdAt: "desc" },
   });
 
@@ -33,6 +40,8 @@ export async function GET() {
       createdAt: d.createdAt,
       donatedAt: d.donatedAt,
       receiverConfirmedAt: d.receiverConfirmedAt,
+      reservedAt: d.reservedAt,
+      chosenReceiver: d.requests.find((r) => r.status === "ESCOLHIDO")?.requester ?? null,
     })),
   });
 }

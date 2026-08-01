@@ -229,6 +229,9 @@ model ShelfEntry {
 
   @@unique([userId, bookId])
   @@index([bookId])
+  /// Suporta a listagem paginada de /api/shelf (filtro por status dentro da
+  /// estante do usuário) — ver Proposta 2 do audit de UX.
+  @@index([userId, status])
 }
 
 /// Registro histórico de cada conclusão de leitura (inclusive releituras) —

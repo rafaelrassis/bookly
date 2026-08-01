@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Sheet } from "@/components/ui/Sheet";
 import { Spinner } from "@/components/Spinner";
 import { GiftIcon } from "@/components/icons";
 import { Button } from "@/components/ui/Button";
@@ -11,7 +10,6 @@ import { Chip } from "@/components/ui/Chip";
 import { apiErrorMessage } from "@/lib/apiError";
 import type { ApiDonation, DonationStatus } from "@/lib/types";
 import { UF_LIST } from "@/lib/uf";
-import { DonorPanel } from "./DonorPanel";
 
 const STATUS_LABEL: Record<DonationStatus, string> = {
   DISPONIVEL: "Disponível",
@@ -40,7 +38,6 @@ export function DonationList({ bookId, myUf, myCity, reloadSignal, onToast }: Pr
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
-  const [managingId, setManagingId] = useState<string | null>(null);
   const [requestingId, setRequestingId] = useState<string | null>(null);
 
   function requestRadius() {
@@ -104,8 +101,6 @@ export function DonationList({ bookId, myUf, myCity, reloadSignal, onToast }: Pr
       setRequestingId(null);
     }
   }
-
-  const managing = donations.find((d) => d.id === managingId) ?? null;
 
   return (
     <div>
@@ -193,32 +188,19 @@ export function DonationList({ bookId, myUf, myCity, reloadSignal, onToast }: Pr
                   </p>
 
                   {d.isDonor ? (
-                    <Button variant="secondary" onClick={() => setManagingId(d.id)} className="mt-2">
-                      Sua doação · gerenciar{d.requestCount > 0 ? ` (${d.requestCount})` : ""}
+                    <Button variant="secondary" asChild className="mt-2">
+                      <Link href={`/donations/${d.id}`}>
+                        Sua doação · gerenciar{d.requestCount > 0 ? ` (${d.requestCount})` : ""}
+                      </Link>
                     </Button>
-                  ) : d.myRequest?.status === "ESCOLHIDO" && d.contact ? (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {d.contact.whatsapp && (
-                        <Button variant="primary" asChild>
-                          <a href={`https://wa.me/${d.contact.whatsapp}`} target="_blank" rel="noopener noreferrer">
-                            WhatsApp
-                          </a>
-                        </Button>
-                      )}
-                      {d.contact.instagram && (
-                        <Button variant="secondary" asChild>
-                          <a
-                            href={`https://instagram.com/${d.contact.instagram}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            @{d.contact.instagram}
-                          </a>
-                        </Button>
-                      )}
-                    </div>
+                  ) : d.myRequest?.status === "ESCOLHIDO" ? (
+                    <Button variant="primary" asChild className="mt-2">
+                      <Link href={`/donations/${d.id}`}>Você foi escolhido · abrir negociação</Link>
+                    </Button>
                   ) : d.myRequest ? (
-                    <p className="mt-2 text-caption font-bold text-paperMuted">Interesse enviado</p>
+                    <Button variant="secondary" asChild className="mt-2">
+                      <Link href={`/donations/${d.id}`}>Interesse enviado · ver status</Link>
+                    </Button>
                   ) : d.status === "DISPONIVEL" ? (
                     <Button variant="primary" onClick={() => quero(d.id)} disabled={requestingId === d.id} className="mt-2">
                       {requestingId === d.id ? (
@@ -236,23 +218,6 @@ export function DonationList({ bookId, myUf, myCity, reloadSignal, onToast }: Pr
             </li>
           ))}
         </ul>
-      )}
-
-      {managing && (
-        <Sheet onClose={() => setManagingId(null)} title="Gerenciar doação">
-          <DonorPanel
-            donationId={managing.id}
-            status={managing.status}
-            onStatusChange={(status) =>
-              setDonations((prev) => prev.map((d) => (d.id === managing.id ? { ...d, status } : d)))
-            }
-            onDeleted={() => {
-              setDonations((prev) => prev.filter((d) => d.id !== managing.id));
-              setManagingId(null);
-            }}
-            onToast={onToast}
-          />
-        </Sheet>
       )}
     </div>
   );

@@ -9,6 +9,9 @@ const VARIANTS = {
   secondary: "border border-line bg-card text-paper hover:bg-card2",
   ghost: "text-paperMuted hover:bg-card2 hover:text-paper",
   danger: "bg-ribbon text-ribbonText hover:opacity-90",
+  /** Ação destrutiva sem fundo — legível, mas nunca confundível com a ação
+   * principal (Proposta 3: "Cancelar reserva" no rodapé da negociação). */
+  dangerGhost: "text-ribbonText hover:bg-ribbon/10",
 } as const;
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {

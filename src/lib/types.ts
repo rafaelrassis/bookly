@@ -45,7 +45,7 @@ export type ApiDonationRequest = {
   requester: { id: string; username: string | null; name: string; avatar: number; avatarUrl: string | null };
 };
 
-/** Doação do próprio doador (GET /api/donations) — usada em "Minhas doações". */
+/** Doação do próprio doador (GET /api/donations) — usada no painel de doações do perfil. */
 export type ApiMyDonation = {
   id: string;
   bookId: string;
@@ -59,10 +59,14 @@ export type ApiMyDonation = {
   createdAt: string;
   donatedAt: string | null;
   receiverConfirmedAt: string | null;
+  /** Início da janela de reserva (RESERVE_EXPIRY_DAYS) — null fora de RESERVADO. */
+  reservedAt: string | null;
+  /** Interessado ESCOLHIDO atual, se houver — null em DISPONIVEL ou sem ninguém escolhido. */
+  chosenReceiver: { id: string; username: string | null; name: string; avatar: number; avatarUrl: string | null } | null;
 };
 
 /** Doação em que o usuário logado é o interessado ESCOLHIDO (GET /api/donations/received) —
- * usada em "Recebidos" no perfil. Contato do doador só vem preenchido enquanto RESERVADO. */
+ * usada no painel de doações do perfil. Contato do doador só vem preenchido enquanto RESERVADO. */
 export type ApiReceivedDonation = {
   requestId: string;
   donationId: string;
@@ -73,10 +77,54 @@ export type ApiReceivedDonation = {
   city: string;
   state: string;
   status: DonationStatus;
+  /** Quando o pedido foi feito — usada só pra ordenar o painel junto com ApiMyDonation. */
+  createdAt: string;
   donatedAt: string | null;
   receiverConfirmedAt: string | null;
+  reservedAt: string | null;
   contact: { whatsapp: string | null; instagram: string | null } | null;
   donor: { id: string; username: string | null; name: string; avatar: number; avatarUrl: string | null };
+};
+
+/** Item da fila de interessados dentro de GET /api/donations/[id] — só vem
+ * preenchido pro doador (mesmo shape de ApiDonationRequest). */
+export type ApiDonationDetailRequest = ApiDonationRequest;
+
+/** Entrada da linha do tempo de GET /api/donations/[id] — ver
+ * lib/donation-state (buildDonationTimeline) pra como é montada. */
+export type ApiDonationTimelineEntry = {
+  key: string;
+  type: NotificationType | "ANUNCIADA";
+  actor: { id: string; username: string | null; name: string; avatar: number; avatarUrl: string | null } | null;
+  createdAt: string;
+  sentence: string;
+};
+
+/** GET /api/donations/[id] — tudo que a tela de negociação precisa numa
+ * chamada só: a doação, o papel do viewer, a fila (só pro doador), o
+ * contato liberado (doador ou escolhido) e a linha do tempo. */
+export type ApiDonationDetail = {
+  id: string;
+  bookId: string;
+  book: { id: string; title: string; authors: string };
+  photoUrl: string;
+  city: string;
+  state: string;
+  status: DonationStatus;
+  createdAt: string;
+  donatedAt: string | null;
+  receiverConfirmedAt: string | null;
+  reservedAt: string | null;
+  donor: { id: string; username: string | null; name: string; avatar: number; avatarUrl: string | null };
+  myRole: "donor" | "receiver" | "requester";
+  myRequest: { id: string; status: DonationRequestStatus } | null;
+  contact: { whatsapp: string | null; instagram: string | null } | null;
+  /** Do ponto de vista do viewer: pro doador, o interessado ESCOLHIDO (ou
+   * null se ainda não há um); pra recebedor/interessado, o doador. */
+  counterpart: { id: string; username: string | null; name: string; avatar: number; avatarUrl: string | null } | null;
+  /** Só presente quando o viewer é o doador — fila de PENDENTE, mais antigos primeiro. */
+  requests?: ApiDonationDetailRequest[];
+  timeline: ApiDonationTimelineEntry[];
 };
 
 /** Lista pública de um usuário da comunidade, exibida na busca sem query. */

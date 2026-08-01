@@ -29,7 +29,7 @@ async function login(page: Page, account: ReturnType<typeof seedAccount>) {
 }
 
 test.describe("Doação de livros — fluxo ponta a ponta", () => {
-  test("doador cria, interessado pede, contato só libera após escolha, e some ao ser doado", async ({
+  test("doador cria, interessado pede, contato só libera após escolha (na negociação), e some ao ser doado", async ({
     browser,
   }) => {
     const donorCtx = await browser.newContext();
@@ -64,7 +64,7 @@ test.describe("Doação de livros — fluxo ponta a ponta", () => {
     await expect(card).toBeVisible();
     await expect(card.getByText(/sua doação/i)).toBeVisible();
 
-    // 2. Interessado vê a doação SEM contato e sem o botão de gerenciar
+    // 2. Interessado vê a doação SEM contato e sem o link de gerenciar
     await user.goto(`/book/${BOOK}`);
     await user.waitForSelector("h1");
     await expect(cardOnUser).toBeVisible();
@@ -75,31 +75,44 @@ test.describe("Doação de livros — fluxo ponta a ponta", () => {
     await cardOnUser.getByRole("button", { name: "Quero este" }).click();
     await expect(cardOnUser.getByText(/interesse enviado/i)).toBeVisible();
 
-    // 4. Doador escolhe o interessado
+    // 4. Doador abre a tela de negociação (Proposta 3: nada mais de sheet
+    // "Gerenciar doação" — cada doação vira uma tela própria em /donations/[id])
     await donor.reload();
     await expect(card).toBeVisible();
-    await card.getByRole("button", { name: /sua doação · gerenciar/i }).click();
-    const manageDialog = donor.getByRole("dialog", { name: "Gerenciar doação" });
-    // exact: true — sem isso, "Leitora ui_user" também casa com o botão
-    // "Escolher Leitora ui_user" (violação de strict mode).
-    await expect(manageDialog.getByText(userAccount.name, { exact: true })).toBeVisible();
-    await manageDialog.getByRole("button", { name: "Escolher" }).click();
-    await expect(manageDialog.getByRole("button", { name: /marcar como doado/i })).toBeVisible();
+    await card.getByRole("link", { name: /sua doação · gerenciar/i }).click();
+    await donor.waitForURL(/\/donations\//);
 
-    // 5. Agora o interessado vê o contato liberado
+    // Filtra pela li que tem o botão "Escolher" (não qualquer li com o nome —
+    // a linha do tempo logo abaixo também menciona o interessado, o que
+    // duplicaria o locator em modo estrito).
+    const candidateRow = donor.locator("li").filter({ has: donor.getByRole("button", { name: "Escolher" }) });
+    await expect(candidateRow.getByText(userAccount.name, { exact: true })).toBeVisible();
+    await candidateRow.getByRole("button", { name: "Escolher" }).click();
+
+    // Depois de escolher, a doação virou RESERVADO: bloco "Sua vez" do doador
+    // agora oferece "Confirmar entrega".
+    await expect(donor.getByRole("button", { name: /confirmar entrega/i })).toBeVisible();
+
+    // 5. Agora o interessado, na negociação, vê o contato liberado
     await user.reload();
     await expect(cardOnUser).toBeVisible();
-    const whatsappLink = cardOnUser.getByRole("link", { name: /whatsapp/i });
+    await cardOnUser.getByRole("link", { name: /você foi escolhido/i }).click();
+    await user.waitForURL(/\/donations\//);
+
+    const whatsappLink = user.getByRole("link", { name: /abrir conversa/i });
     await expect(whatsappLink).toBeVisible();
     await expect(whatsappLink).toHaveAttribute("href", /^https:\/\/wa\.me\/5511999998888$/);
 
-    // 6. Doador marca como doado (com confirmação) → some da lista de ambos
-    await manageDialog.getByRole("button", { name: /marcar como doado/i }).click();
-    const confirmDoadoDialog = donor.getByRole("dialog", { name: "Marcar como doado" });
-    await confirmDoadoDialog.getByRole("button", { name: /marcar como doado/i }).click();
-    await expect(manageDialog.getByText(/já foi doado/i)).toBeVisible();
+    // 6. Doador confirma a entrega (Sheet de confirmação nomeando a
+    // consequência) → some da lista pública de ambos
+    await donor.getByRole("button", { name: /confirmar entrega/i }).click();
+    const confirmDialog = donor.getByRole("dialog", { name: "Confirmar entrega" });
+    await confirmDialog.getByRole("button", { name: /confirmar entrega/i }).click();
+    await expect(donor.getByText(/doação concluída/i)).toBeVisible();
 
-    await user.reload();
+    // O usuário estava na tela de negociação (navegou pra lá no passo
+    // anterior) — volta pra página do livro pra checar a lista pública.
+    await user.goto(`/book/${BOOK}`);
     await expect(user.locator("li", { hasText: city })).toHaveCount(0);
 
     await donorCtx.close();

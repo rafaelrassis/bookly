@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BookCover } from "@/components/BookCover";
 import { EmptyState } from "@/components/EmptyState";
 import { BookOpenIcon, GiftIcon, LockIcon } from "@/components/icons";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ReadingGoalCard } from "@/components/ReadingGoalCard";
+import { Skeleton } from "@/components/Skeleton";
 import { Button } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
 import { ErrorRetry } from "@/components/ui/ErrorRetry";
@@ -21,17 +23,23 @@ import { apiErrorMessage } from "@/lib/apiError";
 
 type ShelfItem = { book: Book; entry: ShelfEntry; tags: string[]; rating: number | null };
 type ViewMode = "list" | "grid";
+type SortKey = "title" | "recent";
+type Facets = Record<ShelfStatus, number>;
 
-const STATUS_FILTERS: { key: ShelfStatus | "ALL"; label: string }[] = [
-  { key: "ALL", label: "Todos" },
+const LIMIT = 60;
+const STATUS_KEYS: ShelfStatus[] = ["WANT_TO_READ", "READING", "READ", "DNF"];
+const EMPTY_FACETS: Facets = { WANT_TO_READ: 0, READING: 0, READ: 0, DNF: 0 };
+
+const STATUS_FILTERS: { key: ShelfStatus; label: string }[] = [
   { key: "READING", label: "Lendo" },
   { key: "WANT_TO_READ", label: "Quero ler" },
   { key: "READ", label: "Lido" },
 ];
 
 /** Só aparece como chip quando o usuário tem pelo menos 1 livro em DNF —
- * ver `hasDnf` em ShelfPage. */
-const DNF_FILTER: { key: ShelfStatus | "ALL"; label: string } = { key: "DNF", label: "Abandonei" };
+ * vem direto da faceta (facets.DNF), não precisa de uma segunda leitura da
+ * estante inteira como antes. */
+const DNF_FILTER: { key: ShelfStatus; label: string } = { key: "DNF", label: "Abandonei" };
 
 const STATUS_BADGE: Record<ShelfStatus, { label: string; className: string }> = {
   READING: { label: "Lendo", className: "bg-ribbon/20 text-ribbonText" },
@@ -39,6 +47,14 @@ const STATUS_BADGE: Record<ShelfStatus, { label: string; className: string }> = 
   READ: { label: "Lido", className: "bg-foil/15 text-foil" },
   DNF: { label: "Abandonei", className: "bg-card2 text-paperMuted" },
 };
+
+function XIcon() {
+  return (
+    <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" aria-hidden="true">
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  );
+}
 
 /** Seção "Minhas listas": cards das listas + criação inline. */
 function MyLists() {
@@ -167,60 +183,175 @@ function MyLists() {
   );
 }
 
-export default function ShelfPage() {
-  const showToast = useStore((s) => s.showToast);
+type Filters = { q: string; status: ShelfStatus | "ALL"; genre: string; tag: string; sort: SortKey };
+
+function parseStatusParam(value: string | null): ShelfStatus | "ALL" {
+  return value && (STATUS_KEYS as string[]).includes(value) ? (value as ShelfStatus) : "ALL";
+}
+
+function shelfQuery(filters: Filters, cursor?: string) {
+  const params = new URLSearchParams();
+  if (filters.q) params.set("q", filters.q);
+  if (filters.status !== "ALL") params.set("status", filters.status);
+  if (filters.genre !== "ALL") params.set("genre", filters.genre);
+  if (filters.tag !== "ALL") params.set("tag", filters.tag);
+  if (filters.sort !== "title") params.set("sort", filters.sort);
+  params.set("limit", String(LIMIT));
+  if (cursor) params.set("cursor", cursor);
+  return params.toString();
+}
+
+/** Busca a estante paginada (`GET /api/shelf?...&limit=60`) pro filtro
+ * atual. Reseta e refaz a primeira página quando os filtros mudam;
+ * `loadMore()` só acrescenta (paginação por cursor — ver Proposta 2). Os
+ * itens da página anterior continuam visíveis enquanto a próxima carrega,
+ * pra filtrar não "piscar" a lista pro vazio. */
+function useShelf(filters: Filters) {
   const [items, setItems] = useState<ShelfItem[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [total, setTotal] = useState(0);
+  const [facets, setFacets] = useState<Facets>(EMPTY_FACETS);
   const [genres, setGenres] = useState<string[]>([]);
   const [allTags, setAllTags] = useState<string[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(false);
-
-  const [query, setQuery] = useState("");
-  const [status, setStatus] = useState<ShelfStatus | "ALL">("ALL");
-  const [genre, setGenre] = useState<string>("ALL");
-  const [tag, setTag] = useState<string>("ALL");
   const [retryCount, setRetryCount] = useState(0);
+
+  const key = `${filters.q} ${filters.status} ${filters.genre} ${filters.tag} ${filters.sort}`;
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(false);
+    fetch(`/api/shelf?${shelfQuery(filters)}`)
+      .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+      .then((data) => {
+        if (cancelled) return;
+        setItems(data.items);
+        setNextCursor(data.nextCursor);
+        setTotal(data.total);
+        setFacets(data.facets);
+        setGenres(data.genres);
+        setAllTags(data.tags);
+      })
+      .catch(() => !cancelled && setError(true))
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, retryCount]);
+
+  const loadMore = useCallback(() => {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    fetch(`/api/shelf?${shelfQuery(filters, nextCursor)}`)
+      .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+      .then((data) => {
+        setItems((current) => [...current, ...data.items]);
+        setNextCursor(data.nextCursor);
+        setTotal(data.total);
+        setFacets(data.facets);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingMore(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, nextCursor, loadingMore]);
+
+  return {
+    items,
+    nextCursor,
+    total,
+    facets,
+    genres,
+    allTags,
+    loading,
+    loadingMore,
+    error,
+    loadMore,
+    reload: () => setRetryCount((n) => n + 1),
+  };
+}
+
+function ShelfPageInner() {
+  const showToast = useStore((s) => s.showToast);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const filters: Filters = useMemo(
+    () => ({
+      q: searchParams.get("q") ?? "",
+      status: parseStatusParam(searchParams.get("status")),
+      genre: searchParams.get("genre") ?? "ALL",
+      tag: searchParams.get("tag") ?? "ALL",
+      sort: searchParams.get("sort") === "recent" ? "recent" : "title",
+    }),
+    [searchParams]
+  );
+
+  const updateParams = useCallback(
+    (patch: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      for (const [k, v] of Object.entries(patch)) {
+        if (v === null || v === "" || v === "ALL") params.delete(k);
+        else params.set(k, v);
+      }
+      const qs = params.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [searchParams, router, pathname]
+  );
+
+  // Campo de busca com debounce de 300ms antes de refletir na URL/request —
+  // digitar não dispara uma requisição por tecla.
+  const [queryInput, setQueryInput] = useState(filters.q);
+  useEffect(() => setQueryInput(filters.q), [filters.q]);
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      if (queryInput !== filters.q) updateParams({ q: queryInput || null });
+    }, 300);
+    return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryInput]);
+
+  const { items, nextCursor, total, facets, genres, allTags, loading, loadingMore, error, loadMore, reload } =
+    useShelf(filters);
+
   const [tagSheetItem, setTagSheetItem] = useState<ShelfItem | null>(null);
-  const [hasDnf, setHasDnf] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [view, setView] = useState<ViewMode>("list");
 
-  const reload = useCallback(() => {
-    const params = new URLSearchParams();
-    if (query.trim()) params.set("q", query.trim());
-    if (status !== "ALL") params.set("status", status);
-    if (genre !== "ALL") params.set("genre", genre);
-    if (tag !== "ALL") params.set("tag", tag);
-
-    setError(false);
-    return fetch(`/api/shelf?${params.toString()}`)
-      .then((res) => (res.ok ? res.json() : Promise.reject(res)))
-      .then((data) => {
-        setItems(data.items);
-        setGenres(data.genres);
-        setAllTags(data.tags);
-        setLoaded(true);
-        // Só a busca sem filtro de status reflete a estante inteira —
-        // usada pra decidir se o chip "Abandonei" aparece.
-        if (status === "ALL") {
-          setHasDnf((data.items as ShelfItem[]).some((item) => item.entry.status === "DNF"));
-        }
-      })
-      .catch(() => setError(true));
-  }, [query, status, genre, tag]);
-
-  useEffect(() => {
-    const handle = setTimeout(reload, 200);
-    return () => clearTimeout(handle);
-  }, [reload, retryCount]);
-
-  const isEmptyShelf = useMemo(
-    () => loaded && items.length === 0 && query === "" && status === "ALL" && genre === "ALL" && tag === "ALL",
-    [loaded, items.length, query, status, genre, tag]
-  );
-
-  const activeFilterCount = (status !== "ALL" ? 1 : 0) + (genre !== "ALL" ? 1 : 0) + (tag !== "ALL" ? 1 : 0);
+  const hasDnf = facets.DNF > 0;
   const statusOptions = hasDnf ? [...STATUS_FILTERS, DNF_FILTER] : STATUS_FILTERS;
+  const allFacetCount = STATUS_KEYS.reduce((sum, key) => sum + facets[key], 0);
+  const noFiltersActive = filters.q === "" && filters.status === "ALL" && filters.genre === "ALL" && filters.tag === "ALL";
+  const isEmptyShelf = !loading && items.length === 0 && noFiltersActive;
+  const sheetFilterCount = (filters.genre !== "ALL" ? 1 : 0) + (filters.tag !== "ALL" ? 1 : 0);
+
+  // Scroll infinito: o IntersectionObserver é conveniência (dispara sozinho
+  // perto do fim da lista); o botão "Carregar mais" logo abaixo continua
+  // sendo o alvo real de teclado/leitor de tela — ver Proposta 2.
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node || !nextCursor) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) loadMore();
+      },
+      { rootMargin: "480px" }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [nextCursor, loadMore]);
+
+  const progressPct = total > 0 ? Math.min(100, Math.round((items.length / total) * 100)) : 0;
+  const remaining = Math.max(0, total - items.length);
+  const nextBatchLabel = `Carregar mais ${Math.min(LIMIT, remaining)}`;
+
+  const skeletonCount = view === "grid" ? Math.min(LIMIT, remaining || LIMIT) : Math.min(8, remaining || 8);
 
   return (
     <div className="pt-5">
@@ -232,17 +363,30 @@ export default function ShelfPage() {
       <div className="sticky top-0 z-30 -mx-5 mt-4 flex items-center gap-2 border-b border-line bg-leather/95 px-5 py-3 backdrop-blur md:top-16 lg:top-0">
         <input
           type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          value={queryInput}
+          onChange={(e) => setQueryInput(e.target.value)}
           placeholder="Buscar na estante…"
           aria-label="Buscar na estante por título ou autor"
           className="min-h-tap min-w-0 flex-1 rounded-xl border border-line bg-card px-4 text-base text-paper"
         />
 
+        <label className="sr-only" htmlFor="shelf-sort">
+          Ordenar por
+        </label>
+        <select
+          id="shelf-sort"
+          value={filters.sort}
+          onChange={(e) => updateParams({ sort: e.target.value === "title" ? null : e.target.value })}
+          className="min-h-tap shrink-0 rounded-xl border border-line bg-card px-3 text-sm text-paper"
+        >
+          <option value="title">Título</option>
+          <option value="recent">Recentes</option>
+        </select>
+
         <Button onClick={() => setFiltersOpen(true)} aria-expanded={filtersOpen}>
           Filtros
-          {activeFilterCount > 0 && (
-            <span className="rounded-full bg-foil px-1.5 text-meta text-leather">{activeFilterCount}</span>
+          {sheetFilterCount > 0 && (
+            <span className="rounded-full bg-foil px-1.5 text-meta text-leather">{sheetFilterCount}</span>
           )}
         </Button>
 
@@ -268,19 +412,54 @@ export default function ShelfPage() {
         </div>
       </div>
 
-      <p className="mt-4 text-meta uppercase text-paperMuted" aria-live="polite">
-        {items.length} {items.length === 1 ? "livro" : "livros"}
-      </p>
+      <div role="group" aria-label="Status" className="no-scrollbar mt-4 flex gap-2 overflow-x-auto">
+        <Chip active={filters.status === "ALL"} onClick={() => updateParams({ status: null })}>
+          Todos · {allFacetCount}
+        </Chip>
+        {statusOptions.map(({ key, label }) => (
+          <Chip key={key} active={filters.status === key} onClick={() => updateParams({ status: key })}>
+            {label} · {facets[key]}
+          </Chip>
+        ))}
+      </div>
+
+      {(filters.genre !== "ALL" || filters.tag !== "ALL") && (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {filters.genre !== "ALL" && (
+            <button
+              type="button"
+              onClick={() => updateParams({ genre: null })}
+              className="inline-flex min-h-tap items-center gap-1.5 rounded-full bg-foil px-4 text-caption font-bold text-leather"
+            >
+              {filters.genre}
+              <XIcon />
+            </button>
+          )}
+          {filters.tag !== "ALL" && (
+            <button
+              type="button"
+              onClick={() => updateParams({ tag: null })}
+              className="inline-flex min-h-tap items-center gap-1.5 rounded-full bg-foil px-4 text-caption font-bold text-leather"
+            >
+              {filters.tag}
+              <XIcon />
+            </button>
+          )}
+        </div>
+      )}
 
       {error ? (
-        <ErrorRetry
-          className="mt-8"
-          message="Não foi possível carregar sua estante. Tente de novo."
-          onRetry={() => setRetryCount((n) => n + 1)}
-        />
+        <ErrorRetry className="mt-8" message="Não foi possível carregar sua estante. Tente de novo." onRetry={reload} />
       ) : items.length === 0 ? (
-        loaded &&
-        (isEmptyShelf ? (
+        loading ? (
+          <ul className={`mt-4 grid gap-x-3 gap-y-5 ${view === "grid" ? "grid-cols-3 xs:grid-cols-4 md:grid-cols-6 lg:grid-cols-7" : "grid-cols-1"}`}>
+            {Array.from({ length: view === "grid" ? 14 : 6 }).map((_, i) => (
+              <li key={i}>
+                <Skeleton className={view === "grid" ? "aspect-[2/3] w-full rounded-md" : "h-16 w-full rounded-2xl"} />
+              </li>
+            ))}
+          </ul>
+        ) : isEmptyShelf ? (
           <EmptyState
             icon={<BookOpenIcon />}
             title="Sua estante está vazia"
@@ -295,14 +474,12 @@ export default function ShelfPage() {
             action={{
               label: "Limpar filtros",
               onClick: () => {
-                setQuery("");
-                setStatus("ALL");
-                setGenre("ALL");
-                setTag("ALL");
+                setQueryInput("");
+                router.replace(pathname, { scroll: false });
               },
             }}
           />
-        ))
+        )
       ) : view === "grid" ? (
         <ul className="mt-2 grid grid-cols-3 gap-x-3 gap-y-5 xs:grid-cols-4 md:grid-cols-6 lg:grid-cols-7">
           {items.map(({ book, entry }) => (
@@ -321,6 +498,12 @@ export default function ShelfPage() {
               </Link>
             </li>
           ))}
+          {loadingMore &&
+            Array.from({ length: skeletonCount }).map((_, i) => (
+              <li key={`skeleton-${i}`} aria-hidden="true">
+                <Skeleton className="aspect-[2/3] w-full rounded-md" />
+              </li>
+            ))}
         </ul>
       ) : (
         <ul className="mt-2 flex flex-col">
@@ -380,7 +563,32 @@ export default function ShelfPage() {
               </li>
             );
           })}
+          {loadingMore &&
+            Array.from({ length: skeletonCount }).map((_, i) => (
+              <li key={`skeleton-${i}`} aria-hidden="true" className="px-2 py-3">
+                <Skeleton className="h-16 w-full rounded-2xl" />
+              </li>
+            ))}
         </ul>
+      )}
+
+      {!error && items.length > 0 && (
+        <div className="mt-6">
+          <p aria-live="polite" className="text-meta uppercase text-paperMuted">
+            {items.length} de {total}
+          </p>
+          <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-card2" aria-hidden="true">
+            <div className="h-full rounded-full bg-foil transition-[width]" style={{ width: `${progressPct}%` }} />
+          </div>
+          {nextCursor && (
+            <div className="mt-4 flex justify-center">
+              <Button onClick={loadMore} disabled={loadingMore}>
+                {loadingMore ? <Spinner size={14} /> : nextBatchLabel}
+              </Button>
+            </div>
+          )}
+          <div ref={sentinelRef} aria-hidden="true" />
+        </div>
       )}
 
       <ReadingGoalCard />
@@ -390,28 +598,15 @@ export default function ShelfPage() {
         <Sheet onClose={() => setFiltersOpen(false)} title="Filtros">
           <div className="flex flex-col gap-4">
             <div>
-              <h3 id="filter-status-label" className="mb-2 text-meta uppercase text-paperMuted">
-                Status
-              </h3>
-              <div role="group" aria-labelledby="filter-status-label" className="flex flex-wrap gap-2">
-                {statusOptions.map(({ key, label }) => (
-                  <Chip key={key} active={status === key} onClick={() => setStatus(key)}>
-                    {label}
-                  </Chip>
-                ))}
-              </div>
-            </div>
-
-            <div>
               <h3 id="filter-genre-label" className="mb-2 text-meta uppercase text-paperMuted">
                 Gênero
               </h3>
               <div role="group" aria-labelledby="filter-genre-label" className="flex flex-wrap gap-2">
-                <Chip active={genre === "ALL"} onClick={() => setGenre("ALL")}>
+                <Chip active={filters.genre === "ALL"} onClick={() => updateParams({ genre: null })}>
                   Todos
                 </Chip>
                 {genres.map((g) => (
-                  <Chip key={g} active={genre === g} onClick={() => setGenre(g)}>
+                  <Chip key={g} active={filters.genre === g} onClick={() => updateParams({ genre: g })}>
                     {g}
                   </Chip>
                 ))}
@@ -424,11 +619,11 @@ export default function ShelfPage() {
                   Tag
                 </h3>
                 <div role="group" aria-labelledby="filter-tag-label" className="flex flex-wrap gap-2">
-                  <Chip active={tag === "ALL"} onClick={() => setTag("ALL")}>
+                  <Chip active={filters.tag === "ALL"} onClick={() => updateParams({ tag: null })}>
                     Todas
                   </Chip>
                   {allTags.map((t) => (
-                    <Chip key={t} active={tag === t} onClick={() => setTag(t)}>
+                    <Chip key={t} active={filters.tag === t} onClick={() => updateParams({ tag: t })}>
                       {t}
                     </Chip>
                   ))}
@@ -437,7 +632,7 @@ export default function ShelfPage() {
             )}
 
             <Button variant="primary" full onClick={() => setFiltersOpen(false)}>
-              Ver {items.length} {items.length === 1 ? "livro" : "livros"}
+              Ver {total} {total === 1 ? "livro" : "livros"}
             </Button>
           </div>
         </Sheet>
@@ -454,5 +649,15 @@ export default function ShelfPage() {
         </Sheet>
       )}
     </div>
+  );
+}
+
+/** `useSearchParams` exige um limite de Suspense (mesmo em rota
+ * inteiramente client-side/dinâmica) — mesmo padrão de `SocialLoginButtons`. */
+export default function ShelfPage() {
+  return (
+    <Suspense fallback={null}>
+      <ShelfPageInner />
+    </Suspense>
   );
 }
