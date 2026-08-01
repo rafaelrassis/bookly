@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
+import { Badges } from "@/components/Badges";
 import { BookCover } from "@/components/BookCover";
 import { MyDonations } from "@/components/donation/MyDonations";
 import { ReceivedDonations } from "@/components/donation/ReceivedDonations";
@@ -55,6 +56,7 @@ export default function ProfilePage() {
     reviewCount,
     donatedCount,
     confirmedCount,
+    receivedCount,
     avgRating,
     histogram,
     maxCount,
@@ -170,6 +172,8 @@ export default function ProfilePage() {
           );
         })}
       </div>
+
+      <Badges donatedCount={donatedCount} receivedCount={receivedCount} />
 
       <YearInBooksCard />
 

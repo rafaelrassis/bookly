@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Avatar } from "@/components/Avatar";
 import { BackHeader } from "@/components/BackHeader";
+import { Badges } from "@/components/Badges";
 import { BookCover } from "@/components/BookCover";
 import { EmptyState } from "@/components/EmptyState";
 import { BadgeCheckIcon, BookOpenIcon } from "@/components/icons";
@@ -219,6 +220,8 @@ export function ProfilePageClient({ params }: { params: { username: string } }) 
           </div>
         ))}
       </div>
+
+      <Badges donatedCount={profile.stats.donatedCount} receivedCount={profile.stats.receivedCount} />
 
       {publicLists.length > 0 && (
         <section className="mt-7">

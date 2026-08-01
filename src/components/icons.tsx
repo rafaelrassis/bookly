@@ -80,6 +80,26 @@ export function BadgeCheckIcon({ size = 16 }: { size?: number }) {
   );
 }
 
+/** Selo de recebedor no perfil — doações recebidas e confirmadas. */
+export function InboxIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M3 12h4.5l2 3h5l2-3H21" />
+      <path d="M5.5 5h13L21 12v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-6L5.5 5Z" />
+    </svg>
+  );
+}
+
 export function CopyIcon({ size = 14 }: { size?: number }) {
   return (
     <svg
