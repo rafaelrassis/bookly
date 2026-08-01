@@ -6,7 +6,9 @@ const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /** Acessibilidade de modal: foca o primeiro elemento interativo ao abrir,
- * prende o Tab dentro do container, Esc chama onClose, e o foco volta pro
+ * prende o Tab dentro do container (reconsultando os focáveis a cada Tab,
+ * pra conteúdo assíncrono dentro do modal não escapar do trap), Esc chama
+ * onClose, trava o scroll do body enquanto aberto, e o foco volta pro
  * elemento que disparou o modal quando ele desmonta. */
 export function useModalA11y<T extends HTMLElement>(onClose: () => void) {
   const ref = useRef<T>(null);
@@ -18,6 +20,9 @@ export function useModalA11y<T extends HTMLElement>(onClose: () => void) {
     const container = ref.current;
     const focusables = container?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
     (focusables?.[0] ?? container)?.focus();
+
+    const { overflow } = document.body.style;
+    document.body.style.overflow = "hidden";
 
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
@@ -42,6 +47,7 @@ export function useModalA11y<T extends HTMLElement>(onClose: () => void) {
     document.addEventListener("keydown", onKeyDown);
     return () => {
       document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = overflow;
       trigger?.focus?.();
     };
   }, []);

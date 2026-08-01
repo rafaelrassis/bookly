@@ -11,7 +11,7 @@ import { FeedPost } from "@/components/FeedPost";
 import { SectionTitle } from "@/components/SectionTitle";
 import { Stars } from "@/components/Stars";
 import { YearInBooksCard } from "@/components/YearInBooksCard";
-import { BadgeCheckIcon } from "@/components/icons";
+import { BadgeCheckIcon, SettingsIcon } from "@/components/icons";
 import { withAt } from "@/lib/handle";
 import { formatCount, formatDecimal } from "@/lib/format";
 import { useBooksByIds, useLikedReviews, useMyStats, useRecommendations } from "@/lib/store/hooks";
@@ -28,25 +28,6 @@ const ACTIVITY_TABS: { key: ActivityTab; label: string }[] = [
   { key: "reviews", label: "Reviews" },
   { key: "likes", label: "Curtidas" },
 ];
-
-function GearIcon() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.8}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.6 1.6 0 0 0 .32 1.77l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.6 1.6 0 0 0-1.77-.32 1.6 1.6 0 0 0-.97 1.47V21a2 2 0 1 1-4 0v-.09a1.6 1.6 0 0 0-1.05-1.47 1.6 1.6 0 0 0-1.77.32l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.6 1.6 0 0 0 4.6 15a1.6 1.6 0 0 0-1.47-.97H3a2 2 0 1 1 0-4h.09A1.6 1.6 0 0 0 4.56 9a1.6 1.6 0 0 0-.32-1.77l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.6 1.6 0 0 0 1.77.32H9a1.6 1.6 0 0 0 .97-1.47V3a2 2 0 1 1 4 0v.09c0 .64.38 1.21.97 1.47a1.6 1.6 0 0 0 1.77-.32l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.6 1.6 0 0 0-.32 1.77V9c.26.59.83.97 1.47.97H21a2 2 0 1 1 0 4h-.09a1.6 1.6 0 0 0-1.47.97z" />
-    </svg>
-  );
-}
 
 export default function ProfilePage() {
   const user = useStore((s) => s.user);
@@ -96,7 +77,7 @@ export default function ProfilePage() {
           aria-label="Configurações"
           className="flex h-10 w-10 items-center justify-center rounded-full text-paperDim hover:text-paper"
         >
-          <GearIcon />
+          <SettingsIcon />
         </Link>
       </div>
 
