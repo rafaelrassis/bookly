@@ -71,7 +71,7 @@ export function ForgotPasswordForm() {
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="capitu@biblioteca.com"
-              className="rounded-xl border border-line bg-card px-4 py-3 text-base text-paper placeholder:text-paperDim/60"
+              className="rounded-xl border border-line bg-card px-4 py-3 text-base text-paper"
             />
           </label>
           <button
@@ -107,7 +107,7 @@ export function ForgotPasswordForm() {
               required
               minLength={8}
               placeholder="••••••••"
-              className="rounded-xl border border-line bg-card px-4 py-3 text-base text-paper placeholder:text-paperDim/60"
+              className="rounded-xl border border-line bg-card px-4 py-3 text-base text-paper"
             />
           </label>
 

@@ -36,7 +36,7 @@ export function RatingInput({ rating, onChange }: RatingInputProps) {
               aria-pressed={isFull || isHalf}
               className="relative rounded-lg p-0.5 text-4xl leading-none transition-transform active:scale-90"
             >
-              <span className={isFull ? "text-foil" : "text-paperDim/30"}>★</span>
+              <span className={isFull ? "text-foil" : "text-paperMuted"}>★</span>
               {isHalf && (
                 <span
                   className="absolute inset-0 w-1/2 overflow-hidden p-0.5 text-foil"

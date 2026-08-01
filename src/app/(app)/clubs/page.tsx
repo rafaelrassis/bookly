@@ -5,9 +5,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BookCover } from "@/components/BookCover";
 import { EmptyState } from "@/components/EmptyState";
-import { SectionTitle } from "@/components/SectionTitle";
 import { BookOpenIcon, LockIcon } from "@/components/icons";
 import { NotificationBell } from "@/components/NotificationBell";
+import { Button } from "@/components/ui/Button";
+import { ErrorRetry } from "@/components/ui/ErrorRetry";
+import { Section } from "@/components/ui/Section";
+import { Sheet } from "@/components/ui/Sheet";
 import { Spinner } from "@/components/Spinner";
 import { useStore } from "@/lib/store";
 import type { ClubSummary } from "@/lib/types";
@@ -17,13 +20,13 @@ function ClubCard({ club }: { club: ClubSummary }) {
   return (
     <Link
       href={`/clubs/${club.id}`}
-      className="flex gap-4 rounded-2xl border border-line bg-card p-4 transition-colors hover:bg-card2"
+      className="flex h-full gap-4 rounded-2xl border border-line bg-card p-4 transition-colors hover:bg-card2"
     >
       {club.book ? (
         <BookCover book={club.book} width={56} />
       ) : (
         <div
-          className="flex w-14 shrink-0 items-center justify-center rounded-md border border-dashed border-line/70 bg-card2 text-center text-[9px] leading-tight text-paperDim/70"
+          className="flex w-14 shrink-0 items-center justify-center rounded-md border border-dashed border-line/70 bg-card2 text-center text-[9px] leading-tight text-paperMuted"
           style={{ height: 56 * 1.5 }}
           aria-label="Nenhum livro definido ainda"
         >
@@ -31,19 +34,17 @@ function ClubCard({ club }: { club: ClubSummary }) {
         </div>
       )}
       <div className="min-w-0 flex-1">
-        <h3 className="flex items-center gap-1.5 font-display text-base font-bold">
+        <h3 className="flex min-w-0 items-center gap-1.5 font-display text-base font-bold">
           {club.visibility === "private" && (
-            <span className="text-paperDim" aria-label="Clube privado">
+            <span className="shrink-0 text-paperMuted" aria-label="Clube privado">
               <LockIcon />
             </span>
           )}
-          {club.name}
+          <span className="truncate">{club.name}</span>
         </h3>
-        <p className="text-xs text-paperDim">{club.members} membros</p>
-        <p className="mt-1.5 line-clamp-2 text-sm text-paperDim">{club.desc}</p>
-        <p className={`mt-2 text-xs font-bold ${club.joined ? "text-foil" : "text-paperDim"}`}>
-          {club.joined ? "Participando ✓" : "Ver clube →"}
-        </p>
+        <p className="text-xs text-paperMuted">{club.members} membros</p>
+        <p className="mt-1.5 line-clamp-2 text-sm text-paperMuted">{club.desc}</p>
+        {club.joined && <p className="mt-2 text-xs font-bold text-foil">Participando ✓</p>}
       </div>
     </Link>
   );
@@ -68,8 +69,7 @@ export default function ClubsPage() {
       .catch(() => setError(true));
   }, [retryCount]);
 
-  const minePublic = (clubs ?? []).filter((c) => c.joined && c.visibility === "public");
-  const minePrivate = (clubs ?? []).filter((c) => c.joined && c.visibility === "private");
+  const mine = (clubs ?? []).filter((c) => c.joined);
   const discover = (clubs ?? []).filter((c) => !c.joined && c.visibility === "public");
 
   async function submitCode() {
@@ -101,110 +101,56 @@ export default function ClubsPage() {
   return (
     <div className="pt-5">
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold">Clubes</h1>
+        <h1 className="text-h1 font-extrabold">Clubes</h1>
         <NotificationBell className="-mr-2" />
       </header>
 
-      <div className="mt-4 flex gap-2">
-        <Link
-          href="/clubs/new"
-          className="flex-1 rounded-xl bg-foil px-4 py-3 text-center text-sm font-bold text-leather transition-opacity hover:opacity-90"
-        >
-          + Criar um clube
-        </Link>
-        <button
-          type="button"
-          onClick={() => setCodeOpen((o) => !o)}
-          aria-expanded={codeOpen}
-          className="flex-1 rounded-xl border border-line bg-card px-4 py-3 text-sm font-bold text-paper transition-colors hover:bg-card2"
-        >
+      <div className="mt-4 flex flex-col gap-2 xs:flex-row">
+        <Button variant="primary" full asChild>
+          <Link href="/clubs/new">+ Criar um clube</Link>
+        </Button>
+        <Button full onClick={() => setCodeOpen(true)} aria-expanded={codeOpen}>
           Entrar com código
-        </button>
+        </Button>
       </div>
 
-      {codeOpen && (
-        <div className="mt-3 flex items-center gap-2 rounded-2xl border border-line bg-card p-3">
-          <input
-            type="text"
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 6))}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && code.length === 6) submitCode();
-            }}
-            placeholder="ABC123"
-            aria-label="Código do clube"
-            className="min-w-0 flex-1 rounded-xl border border-line bg-card2 px-4 py-2.5 font-mono text-base uppercase tracking-[0.3em] text-paper placeholder:tracking-[0.3em] placeholder:text-paperDim/40"
-          />
-          <button
-            type="button"
-            onClick={submitCode}
-            disabled={code.length !== 6 || joining}
-            className="flex items-center justify-center rounded-xl bg-foil px-4 py-2.5 text-sm font-bold text-leather disabled:opacity-40"
-          >
-            {joining ? <Spinner size={16} className="text-leather" /> : "Entrar"}
-          </button>
-        </div>
-      )}
-
       {error ? (
-        <div className="mt-8 flex flex-col items-center gap-3 text-center">
-          <p className="text-sm text-paperDim">Não foi possível carregar os clubes. Tente de novo.</p>
-          <button
-            type="button"
-            onClick={() => setRetryCount((n) => n + 1)}
-            className="rounded-xl border border-line bg-card px-4 py-2.5 text-sm font-bold text-paper hover:border-foil/50"
-          >
-            Tentar de novo
-          </button>
-        </div>
+        <ErrorRetry
+          className="mt-8"
+          message="Não foi possível carregar os clubes. Tente de novo."
+          onRetry={() => setRetryCount((n) => n + 1)}
+        />
       ) : clubs === null ? (
         <div className="mt-8 flex justify-center">
           <Spinner size={28} className="text-foil" label="Carregando clubes" />
         </div>
       ) : (
         <>
-          {(minePublic.length > 0 || minePrivate.length > 0) && (
-            <section className="mt-6">
-              <SectionTitle>Seus clubes</SectionTitle>
-              {minePublic.length > 0 && (
-                <>
-                  <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.14em] text-paperDim/70">
-                    Públicos
-                  </p>
-                  <div className="mt-2 flex flex-col gap-3">
-                    {minePublic.map((club) => (
-                      <ClubCard key={club.id} club={club} />
-                    ))}
-                  </div>
-                </>
-              )}
-              {minePrivate.length > 0 && (
-                <>
-                  <p className="mt-4 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-paperDim/70">
-                    <LockIcon size={10} /> Privados
-                  </p>
-                  <div className="mt-2 flex flex-col gap-3">
-                    {minePrivate.map((club) => (
-                      <ClubCard key={club.id} club={club} />
-                    ))}
-                  </div>
-                </>
-              )}
-            </section>
+          {mine.length > 0 && (
+            <Section title="Seus clubes">
+              <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {mine.map((club) => (
+                  <li key={club.id}>
+                    <ClubCard club={club} />
+                  </li>
+                ))}
+              </ul>
+            </Section>
           )}
 
           {discover.length > 0 && (
-            <section className="mb-4 mt-6">
-              <SectionTitle>Descubra clubes</SectionTitle>
-              <div className="mt-3 flex flex-col gap-3">
+            <Section title="Descubra clubes">
+              <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {discover.map((club) => (
-                  <ClubCard key={club.id} club={club} />
+                  <li key={club.id}>
+                    <ClubCard club={club} />
+                  </li>
                 ))}
-              </div>
-            </section>
+              </ul>
+            </Section>
           )}
 
-          {minePublic.length === 0 && minePrivate.length === 0 && discover.length === 0 && (
+          {mine.length === 0 && discover.length === 0 && (
             <EmptyState
               icon={<BookOpenIcon />}
               title="Nenhum clube ainda"
@@ -213,6 +159,38 @@ export default function ClubsPage() {
             />
           )}
         </>
+      )}
+
+      {codeOpen && (
+        <Sheet onClose={() => setCodeOpen(false)} title="Entrar com código">
+          <label htmlFor="club-code-input" className="text-caption text-paperMuted">
+            Peça o código de 6 caracteres pra quem administra o clube.
+          </label>
+          <div className="mt-3 flex items-center gap-2">
+            <input
+              id="club-code-input"
+              type="text"
+              inputMode="text"
+              autoComplete="off"
+              value={code}
+              onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 6))}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && code.length === 6) submitCode();
+              }}
+              // eslint-disable-next-line jsx-a11y/no-autofocus -- sheet recém-aberto, único campo
+              autoFocus
+              placeholder="ABC123"
+              aria-describedby="club-code-hint"
+              className="min-h-tap min-w-0 flex-1 rounded-xl border border-line bg-card2 px-4 font-mono text-base uppercase tracking-[0.3em] text-paper"
+            />
+            <Button variant="primary" onClick={submitCode} disabled={code.length !== 6 || joining}>
+              {joining ? <Spinner size={16} className="text-leather" /> : "Entrar"}
+            </Button>
+          </div>
+          <p id="club-code-hint" className="mt-2 text-[11px] text-paperMuted">
+            6 letras e números, sem espaços.
+          </p>
+        </Sheet>
       )}
     </div>
   );

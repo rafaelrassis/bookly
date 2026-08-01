@@ -101,7 +101,7 @@ export function OnboardingForm() {
                 maxLength={20}
                 pattern="[a-z0-9._-]+"
                 placeholder="meninomaluquinho"
-                className="w-full bg-transparent py-3 pl-1 text-base text-paper placeholder:text-paperDim/60 focus:outline-none"
+                className="w-full bg-transparent py-3 pl-1 text-base text-paper focus:outline-none"
               />
             </div>
             {usernameCheck.state === "checking" && (
@@ -125,7 +125,7 @@ export function OnboardingForm() {
               onChange={(e) => setBio(e.target.value)}
               rows={2}
               placeholder="Era uma vez..."
-              className="resize-none rounded-xl border border-line bg-card px-4 py-3 text-base text-paper placeholder:text-paperDim/60"
+              className="resize-none rounded-xl border border-line bg-card px-4 py-3 text-base text-paper"
             />
           </label>
 
@@ -152,10 +152,10 @@ export function OnboardingForm() {
                 placeholder="Cidade"
                 aria-label="Cidade"
                 maxLength={80}
-                className="min-w-0 flex-1 rounded-xl border border-line bg-card px-4 py-3 text-base text-paper placeholder:text-paperDim/60"
+                className="min-w-0 flex-1 rounded-xl border border-line bg-card px-4 py-3 text-base text-paper"
               />
             </div>
-            <p className="text-xs text-paperDim/80">
+            <p className="text-xs text-paperMuted">
               Usado para mostrar doações perto de você. Pode pular e preencher depois no perfil.
             </p>
           </div>
@@ -163,7 +163,7 @@ export function OnboardingForm() {
 
         <fieldset className="mt-8">
           <legend className="text-sm font-medium text-paperDim">Gêneros de interesse</legend>
-          <p className="mt-1 text-xs text-paperDim/80">
+          <p className="mt-1 text-xs text-paperMuted">
             Usamos seus gêneros para recomendar livros na busca e no perfil.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">

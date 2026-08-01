@@ -139,7 +139,11 @@ test("perfil proprio mostra estatisticas", async ({ page }) => {
   });
   await page.goto("/profile");
   await expect(page.getByText("Favoritos")).toBeVisible();
-  await expect(page.getByText("lidos")).toBeVisible();
+
+  // Estatísticas e "Suas notas" viraram sua própria aba de rota (fase 4 da
+  // auditoria de UX/UI) pra tirar peso da visão geral do perfil.
+  await page.goto("/profile/estatisticas");
+  await expect(page.getByText("lidos", { exact: true })).toBeVisible();
   await expect(page.getByText("Suas notas")).toBeVisible();
 });
 
@@ -151,7 +155,7 @@ test("membros do clube listam progresso", async ({ page }) => {
   const firstClub = page.locator('a[href^="/clubs/"]:not([href="/clubs/new"])').first();
   await firstClub.click();
   await page.waitForURL(/\/clubs\/.+/);
-  await expect(page.getByText("Progresso dos membros")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Progresso dos membros" })).toBeVisible();
 });
 
 // C10: alinhamento — avatar e nome do autor alinhados na mesma linha do post

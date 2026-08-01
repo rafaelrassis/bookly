@@ -107,7 +107,7 @@ export function TagEditor({ bookId, tags, onChanged, onToast }: Props) {
         placeholder="+ Adicionar"
         aria-label="Adicionar tag"
         disabled={busy}
-        className="w-28 rounded-full border border-dashed border-line bg-transparent px-3.5 py-1.5 text-xs text-paper placeholder:text-paperDim/70 disabled:opacity-40"
+        className="w-28 rounded-full border border-dashed border-line bg-transparent px-3.5 py-1.5 text-xs text-paper disabled:opacity-40"
       />
     </div>
   );

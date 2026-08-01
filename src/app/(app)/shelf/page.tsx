@@ -8,7 +8,11 @@ import { EmptyState } from "@/components/EmptyState";
 import { BookOpenIcon, GiftIcon, LockIcon } from "@/components/icons";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ReadingGoalCard } from "@/components/ReadingGoalCard";
-import { SectionTitle } from "@/components/SectionTitle";
+import { Button } from "@/components/ui/Button";
+import { Chip } from "@/components/ui/Chip";
+import { ErrorRetry } from "@/components/ui/ErrorRetry";
+import { IconButton } from "@/components/ui/IconButton";
+import { Sheet } from "@/components/ui/Sheet";
 import { Spinner } from "@/components/Spinner";
 import { Stars } from "@/components/Stars";
 import { TagEditor } from "@/components/TagEditor";
@@ -17,6 +21,7 @@ import type { ApiList, Book, ShelfEntry, ShelfStatus, Visibility } from "@/lib/t
 import { apiErrorMessage } from "@/lib/apiError";
 
 type ShelfItem = { book: Book; entry: ShelfEntry; tags: string[]; rating: number | null };
+type ViewMode = "list" | "grid";
 
 const STATUS_FILTERS: { key: ShelfStatus | "ALL"; label: string }[] = [
   { key: "ALL", label: "Todos" },
@@ -31,9 +36,9 @@ const DNF_FILTER: { key: ShelfStatus | "ALL"; label: string } = { key: "DNF", la
 
 const STATUS_BADGE: Record<ShelfStatus, { label: string; className: string }> = {
   READING: { label: "Lendo", className: "bg-ribbon/20 text-ribbonText" },
-  WANT_TO_READ: { label: "Quero ler", className: "bg-card2 text-paperDim" },
+  WANT_TO_READ: { label: "Quero ler", className: "bg-card2 text-paperMuted" },
   READ: { label: "Lido", className: "bg-foil/15 text-foil" },
-  DNF: { label: "Abandonei", className: "bg-card2 text-paperDim/70" },
+  DNF: { label: "Abandonei", className: "bg-card2 text-paperMuted" },
 };
 
 /** Seção "Minhas listas": cards das listas + criação inline. */
@@ -78,14 +83,14 @@ function MyLists() {
   }
 
   return (
-    <section className="mt-5">
-      <div className="flex items-center justify-between">
-        <SectionTitle>Minhas listas</SectionTitle>
+    <section className="mt-8">
+      <div className="mb-3 flex min-h-tap items-center justify-between gap-3">
+        <h2 className="text-meta uppercase text-paperMuted">Minhas listas</h2>
         <button
           type="button"
           onClick={() => setCreating((c) => !c)}
           aria-expanded={creating}
-          className="text-xs font-bold text-foil hover:opacity-80"
+          className="flex min-h-tap items-center text-xs font-bold text-foil hover:opacity-80"
         >
           + Criar lista
         </button>
@@ -104,60 +109,53 @@ function MyLists() {
             autoFocus
             placeholder="Nome da lista…"
             aria-label="Nome da nova lista"
-            className="w-full rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper placeholder:text-paperDim/60"
+            className="w-full rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper"
           />
           <div className="mt-2 flex items-center gap-2">
-            {(
-              [
-                { key: "public", label: "Pública" },
-                { key: "private", label: "Privada" },
-              ] as const
-            ).map(({ key, label }) => (
-              <button
-                key={key}
-                type="button"
-                aria-pressed={visibility === key}
-                onClick={() => setVisibility(key)}
-                className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${
-                  visibility === key
-                    ? "bg-foil text-leather"
-                    : "border border-line bg-card2 text-paperDim hover:text-paper"
-                }`}
-              >
-                {key === "private" && <LockIcon size={10} />}
-                {label}
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={create}
-              disabled={!name.trim() || saving}
-              className="ml-auto flex items-center justify-center rounded-xl bg-foil px-4 py-1.5 text-xs font-bold text-leather disabled:opacity-40"
-            >
+            <div role="group" aria-label="Visibilidade da lista" className="flex items-center gap-2">
+              {(
+                [
+                  { key: "public", label: "Pública" },
+                  { key: "private", label: "Privada" },
+                ] as const
+              ).map(({ key, label }) => (
+                <Chip key={key} active={visibility === key} onClick={() => setVisibility(key)}>
+                  {key === "private" && <LockIcon size={10} />}
+                  {label}
+                </Chip>
+              ))}
+            </div>
+            <Button variant="primary" className="ml-auto" onClick={create} disabled={!name.trim() || saving}>
               {saving ? <Spinner size={14} className="text-leather" /> : "Criar"}
-            </button>
+            </Button>
           </div>
         </div>
       )}
 
       {lists.length > 0 && (
-        <div className="no-scrollbar -mx-5 mt-3 flex gap-3 overflow-x-auto px-5">
+        <div
+          role="region"
+          aria-label="Minhas listas"
+          // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- carrossel horizontal no mobile: tabIndex permite rolar com teclado (vira grid, não-rolável, a partir de md)
+          tabIndex={0}
+          className="no-scrollbar -mx-5 mt-3 flex gap-3 overflow-x-auto px-5 md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0"
+        >
           {lists.map((list) => (
             <Link
               key={list.id}
               href={`/lists/${list.id}`}
-              className="w-44 shrink-0 rounded-2xl border border-line bg-card p-3.5 transition-colors hover:bg-card2"
+              className="w-44 shrink-0 rounded-2xl border border-line bg-card p-3.5 transition-colors hover:bg-card2 md:w-auto"
             >
               <div className="flex gap-1.5">
                 {list.books.slice(0, 3).map((book) => (
                   <BookCover key={book.id} book={book} width={28} />
                 ))}
                 {list.bookIds.length === 0 && (
-                  <span className="text-xs text-paperDim">Lista vazia</span>
+                  <span className="text-xs text-paperMuted">Lista vazia</span>
                 )}
               </div>
               <p className="mt-2.5 line-clamp-1 text-sm font-bold">{list.name}</p>
-              <p className="mt-0.5 flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.12em] text-paperDim">
+              <p className="mt-0.5 flex items-center gap-1 text-meta uppercase text-paperMuted">
                 {list.visibility === "private" && <LockIcon size={9} />}
                 {list.visibility === "private" ? "Privada" : "Pública"} ·{" "}
                 {list.bookIds.length} {list.bookIds.length === 1 ? "livro" : "livros"}
@@ -167,29 +165,6 @@ function MyLists() {
         </div>
       )}
     </section>
-  );
-}
-
-function Chip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors ${
-        active ? "bg-foil text-leather" : "border border-line bg-card text-paperDim hover:text-paper"
-      }`}
-    >
-      {children}
-    </button>
   );
 }
 
@@ -208,6 +183,8 @@ export default function ShelfPage() {
   const [retryCount, setRetryCount] = useState(0);
   const [tagSheetItem, setTagSheetItem] = useState<ShelfItem | null>(null);
   const [hasDnf, setHasDnf] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [view, setView] = useState<ViewMode>("list");
 
   const reload = useCallback(() => {
     const params = new URLSearchParams();
@@ -243,73 +220,65 @@ export default function ShelfPage() {
     [loaded, items.length, query, status, genre, tag]
   );
 
+  const activeFilterCount = (status !== "ALL" ? 1 : 0) + (genre !== "ALL" ? 1 : 0) + (tag !== "ALL" ? 1 : 0);
+  const statusOptions = hasDnf ? [...STATUS_FILTERS, DNF_FILTER] : STATUS_FILTERS;
+
   return (
     <div className="pt-5">
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold">Estante</h1>
+        <h1 className="text-h1 font-extrabold">Estante</h1>
         <NotificationBell className="-mr-2" />
       </header>
 
-      <ReadingGoalCard />
+      <div className="sticky top-0 z-30 -mx-5 mt-4 flex items-center gap-2 border-b border-line bg-leather/95 px-5 py-3 backdrop-blur md:top-16">
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Buscar na estante…"
+          aria-label="Buscar na estante por título ou autor"
+          className="min-h-tap min-w-0 flex-1 rounded-xl border border-line bg-card px-4 text-base text-paper"
+        />
 
-      <MyLists />
+        <Button onClick={() => setFiltersOpen(true)} aria-expanded={filtersOpen}>
+          Filtros
+          {activeFilterCount > 0 && (
+            <span className="rounded-full bg-foil px-1.5 text-meta text-leather">{activeFilterCount}</span>
+          )}
+        </Button>
 
-      <input
-        type="search"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Buscar na estante…"
-        aria-label="Buscar na estante por título ou autor"
-        className="mt-4 w-full rounded-xl border border-line bg-card px-4 py-3 text-base text-paper placeholder:text-paperDim/60"
-      />
-
-      <div className="no-scrollbar -mx-5 mt-3 flex gap-2 overflow-x-auto px-5" aria-label="Filtrar por status">
-        {(hasDnf ? [...STATUS_FILTERS, DNF_FILTER] : STATUS_FILTERS).map(({ key, label }) => (
-          <Chip key={key} active={status === key} onClick={() => setStatus(key)}>
-            {label}
-          </Chip>
-        ))}
-      </div>
-
-      <div className="no-scrollbar -mx-5 mt-2 flex gap-2 overflow-x-auto px-5" aria-label="Filtrar por gênero">
-        <Chip active={genre === "ALL"} onClick={() => setGenre("ALL")}>
-          Todos
-        </Chip>
-        {genres.map((g) => (
-          <Chip key={g} active={genre === g} onClick={() => setGenre(g)}>
-            {g}
-          </Chip>
-        ))}
-      </div>
-
-      {allTags.length > 0 && (
-        <div className="no-scrollbar -mx-5 mt-2 flex gap-2 overflow-x-auto px-5" aria-label="Filtrar por tag">
-          <Chip active={tag === "ALL"} onClick={() => setTag("ALL")}>
-            Todas
-          </Chip>
-          {allTags.map((t) => (
-            <Chip key={t} active={tag === t} onClick={() => setTag(t)}>
-              {t}
-            </Chip>
-          ))}
+        <div
+          className="hidden rounded-xl border border-line bg-card p-0.5 md:flex"
+          role="group"
+          aria-label="Visualização"
+        >
+          <IconButton label="Ver em lista" aria-pressed={view === "list"} onClick={() => setView("list")}>
+            <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" aria-hidden="true">
+              <path d="M8 6h13M8 12h13M8 18h13" />
+              <path d="M3 6h.01M3 12h.01M3 18h.01" />
+            </svg>
+          </IconButton>
+          <IconButton label="Ver em grade" aria-pressed={view === "grid"} onClick={() => setView("grid")}>
+            <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="3" y="3" width="7" height="7" rx="1.5" />
+              <rect x="14" y="3" width="7" height="7" rx="1.5" />
+              <rect x="3" y="14" width="7" height="7" rx="1.5" />
+              <rect x="14" y="14" width="7" height="7" rx="1.5" />
+            </svg>
+          </IconButton>
         </div>
-      )}
+      </div>
 
-      <p className="mt-4 text-xs font-bold uppercase tracking-[0.18em] text-paperDim">
+      <p className="mt-4 text-meta uppercase text-paperMuted" aria-live="polite">
         {items.length} {items.length === 1 ? "livro" : "livros"}
       </p>
 
       {error ? (
-        <div className="mt-12 flex flex-col items-center gap-3 text-center">
-          <p className="text-paperDim">Não foi possível carregar sua estante. Tente de novo.</p>
-          <button
-            type="button"
-            onClick={() => setRetryCount((n) => n + 1)}
-            className="rounded-xl border border-line bg-card px-4 py-2.5 text-sm font-bold text-paper hover:border-foil/50"
-          >
-            Tentar de novo
-          </button>
-        </div>
+        <ErrorRetry
+          className="mt-8"
+          message="Não foi possível carregar sua estante. Tente de novo."
+          onRetry={() => setRetryCount((n) => n + 1)}
+        />
       ) : items.length === 0 ? (
         loaded &&
         (isEmptyShelf ? (
@@ -335,12 +304,31 @@ export default function ShelfPage() {
             }}
           />
         ))
+      ) : view === "grid" ? (
+        <ul className="mt-2 grid grid-cols-3 gap-x-3 gap-y-5 xs:grid-cols-4 md:grid-cols-6 lg:grid-cols-7">
+          {items.map(({ book, entry }) => (
+            <li key={book.id} className="group relative">
+              <Link href={`/book/${book.id}`} className="block">
+                <BookCover
+                  book={book}
+                  fluid
+                  sizes="(min-width: 1024px) 14vw, (min-width: 768px) 16vw, (min-width: 480px) 24vw, 32vw"
+                  className={entry.status === "DNF" ? "grayscale-[0.6] opacity-80" : ""}
+                />
+                <p className="mt-2 line-clamp-2 text-caption font-bold group-hover:text-foil">{book.title}</p>
+                <p className="text-meta font-normal normal-case tracking-normal text-paperMuted">
+                  {book.authors}
+                </p>
+              </Link>
+            </li>
+          ))}
+        </ul>
       ) : (
         <ul className="mt-2 flex flex-col">
           {items.map(({ book, entry, tags, rating }) => {
             const badge = STATUS_BADGE[entry.status];
             return (
-              <li key={book.id} className="flex items-center rounded-2xl transition-colors hover:bg-card">
+              <li key={book.id} className="group flex items-center rounded-2xl transition-colors hover:bg-card">
                 <Link
                   href={`/book/${book.id}`}
                   className="flex min-w-0 flex-1 items-center gap-3.5 px-2 py-3"
@@ -352,7 +340,7 @@ export default function ShelfPage() {
                   />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-display font-bold">{book.title}</p>
-                    <p className="truncate text-xs text-paperDim">
+                    <p className="truncate text-xs text-paperMuted">
                       {book.authors} · {book.genre}
                     </p>
                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
@@ -364,7 +352,7 @@ export default function ShelfPage() {
                       {tags.map((t) => (
                         <span
                           key={t}
-                          className="rounded-full bg-card2 px-2 py-0.5 text-[10px] text-paperDim"
+                          className="rounded-full bg-card2 px-2 py-0.5 text-[10px] text-paperMuted"
                         >
                           {t}
                         </span>
@@ -379,18 +367,81 @@ export default function ShelfPage() {
                   </div>
                   {rating !== null && <Stars rating={rating} className="shrink-0 text-xs" />}
                 </Link>
-                <button
-                  type="button"
+                <IconButton
+                  label={`Editar tags de ${book.title}`}
                   onClick={() => setTagSheetItem({ book, entry, tags, rating })}
-                  aria-label={`Editar tags de ${book.title}`}
-                  className="mr-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-paperDim hover:bg-card2 hover:text-paper"
+                  className="mr-1.5 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 md:focus-visible:opacity-100"
                 >
-                  ⋯
-                </button>
+                  <svg width={18} height={18} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <circle cx="5" cy="12" r="1.8" />
+                    <circle cx="12" cy="12" r="1.8" />
+                    <circle cx="19" cy="12" r="1.8" />
+                  </svg>
+                </IconButton>
               </li>
             );
           })}
         </ul>
+      )}
+
+      <ReadingGoalCard />
+      <MyLists />
+
+      {filtersOpen && (
+        <Sheet onClose={() => setFiltersOpen(false)} title="Filtros">
+          <div className="flex flex-col gap-4">
+            <div>
+              <h3 id="filter-status-label" className="mb-2 text-meta uppercase text-paperMuted">
+                Status
+              </h3>
+              <div role="group" aria-labelledby="filter-status-label" className="flex flex-wrap gap-2">
+                {statusOptions.map(({ key, label }) => (
+                  <Chip key={key} active={status === key} onClick={() => setStatus(key)}>
+                    {label}
+                  </Chip>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h3 id="filter-genre-label" className="mb-2 text-meta uppercase text-paperMuted">
+                Gênero
+              </h3>
+              <div role="group" aria-labelledby="filter-genre-label" className="flex flex-wrap gap-2">
+                <Chip active={genre === "ALL"} onClick={() => setGenre("ALL")}>
+                  Todos
+                </Chip>
+                {genres.map((g) => (
+                  <Chip key={g} active={genre === g} onClick={() => setGenre(g)}>
+                    {g}
+                  </Chip>
+                ))}
+              </div>
+            </div>
+
+            {allTags.length > 0 && (
+              <div>
+                <h3 id="filter-tag-label" className="mb-2 text-meta uppercase text-paperMuted">
+                  Tag
+                </h3>
+                <div role="group" aria-labelledby="filter-tag-label" className="flex flex-wrap gap-2">
+                  <Chip active={tag === "ALL"} onClick={() => setTag("ALL")}>
+                    Todas
+                  </Chip>
+                  {allTags.map((t) => (
+                    <Chip key={t} active={tag === t} onClick={() => setTag(t)}>
+                      {t}
+                    </Chip>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <Button variant="primary" full onClick={() => setFiltersOpen(false)}>
+              Ver {items.length} {items.length === 1 ? "livro" : "livros"}
+            </Button>
+          </div>
+        </Sheet>
       )}
 
       {tagSheetItem && (

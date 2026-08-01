@@ -185,10 +185,10 @@ export default function EditProfilePage() {
               placeholder="Cidade"
               aria-label="Cidade"
               maxLength={80}
-              className="min-w-0 flex-1 rounded-xl border border-line bg-card px-4 py-3 text-base text-paper placeholder:text-paperDim/60"
+              className="min-w-0 flex-1 rounded-xl border border-line bg-card px-4 py-3 text-base text-paper"
             />
           </div>
-          <p className="text-xs text-paperDim/80">Usado para mostrar doações perto de você.</p>
+          <p className="text-xs text-paperMuted">Usado para mostrar doações perto de você.</p>
         </div>
       </section>
 

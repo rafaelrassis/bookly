@@ -184,7 +184,7 @@ export function CreateDonationForm({
         onChange={(e) => setWhatsapp(e.target.value.replace(/\D/g, ""))}
         placeholder="WhatsApp (DDI+DDD+número, ex.: 5511999999999)"
         aria-label="WhatsApp"
-        className="w-full rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper placeholder:text-paperDim/60"
+        className="w-full rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper"
       />
       <input
         type="text"
@@ -192,7 +192,7 @@ export function CreateDonationForm({
         onChange={(e) => setInstagram(e.target.value)}
         placeholder="Instagram (opcional se já informou WhatsApp)"
         aria-label="Instagram"
-        className="w-full rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper placeholder:text-paperDim/60"
+        className="w-full rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper"
       />
       <p className="text-xs text-paperDim">
         O contato só é revelado pra pessoa que você escolher entre os interessados.

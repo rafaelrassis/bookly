@@ -61,7 +61,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="capitu@biblioteca.com"
-                className="rounded-xl border border-line bg-card px-4 py-3 text-base text-paper placeholder:text-paperDim/60"
+                className="rounded-xl border border-line bg-card px-4 py-3 text-base text-paper"
               />
             </label>
             <label className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
@@ -73,7 +73,7 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="••••••••"
-                className="rounded-xl border border-line bg-card px-4 py-3 text-base text-paper placeholder:text-paperDim/60"
+                className="rounded-xl border border-line bg-card px-4 py-3 text-base text-paper"
               />
             </label>
 

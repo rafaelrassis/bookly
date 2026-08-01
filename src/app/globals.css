@@ -32,9 +32,43 @@
   --line: 224 213 192;
 }
 
+/* Tom secundário com contraste garantido (≥4.5:1 sobre --card nos dois
+   temas), pra aposentar as opacidades sobre paperDim (/40…/70) que caem
+   abaixo de AA — ver AUDITORIA_E_PLANO.md fase 1. */
+:root,
+[data-theme="dark"] {
+  --paperMuted: 150 138 121;
+}
+[data-theme="light"] {
+  --paperMuted: 122 110 92;
+}
+
 body {
   background-color: rgb(var(--leather));
   color: rgb(var(--paper));
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgb(var(--paperMuted));
+  opacity: 1;
+}
+
+/* Alvo de toque mínimo (44×44) sem alterar o tamanho visual do controle. */
+@layer components {
+  .tap {
+    position: relative;
+  }
+  .tap::after {
+    content: "";
+    position: absolute;
+    inset: 50% 50%;
+    min-width: 44px;
+    min-height: 44px;
+    width: 100%;
+    height: 100%;
+    transform: translate(-50%, -50%);
+  }
 }
 
 /* Foco visível de teclado em todos os elementos interativos */
