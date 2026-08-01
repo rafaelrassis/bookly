@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BackHeader } from "@/components/BackHeader";
 import { PageLoader } from "@/components/PageLoader";
+import { ErrorRetry } from "@/components/ui/ErrorRetry";
 import { withAt } from "@/lib/handle";
 import { useStore } from "@/lib/store";
 import type { ApiClubStreaks, ClubDetail, ClubMessage } from "@/lib/types";
@@ -129,16 +130,11 @@ export default function ClubPage({ params }: { params: { id: string } }) {
     return (
       <div className="pt-4">
         <BackHeader />
-        <div className="mt-10 flex flex-col items-center gap-3 text-center">
-          <p className="text-paperDim">Não foi possível carregar o clube. Tente de novo.</p>
-          <button
-            type="button"
-            onClick={() => setRetryCount((n) => n + 1)}
-            className="rounded-xl border border-line bg-card px-4 py-2.5 text-sm font-bold text-paper hover:border-foil/50"
-          >
-            Tentar de novo
-          </button>
-        </div>
+        <ErrorRetry
+          className="mt-10"
+          message="Não foi possível carregar o clube. Tente de novo."
+          onRetry={() => setRetryCount((n) => n + 1)}
+        />
       </div>
     );
   }

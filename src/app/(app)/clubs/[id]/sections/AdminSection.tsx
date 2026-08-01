@@ -1,6 +1,7 @@
 import { CopyIcon } from "@/components/icons";
 import { SectionTitle } from "@/components/SectionTitle";
 import { Spinner } from "@/components/Spinner";
+import { Button } from "@/components/ui/Button";
 import type { ClubDetail } from "@/lib/types";
 
 type Props = {
@@ -41,20 +42,12 @@ export function AdminSection({
             <p className="font-mono text-lg font-bold tracking-[0.3em] text-foil">{club.code}</p>
           </div>
           <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={onCopyCode}
-              className="flex items-center gap-1.5 rounded-xl border border-line bg-card2 px-3 py-2 text-xs font-bold text-paper hover:border-foil/50"
-            >
+            <Button variant="secondary" onClick={onCopyCode}>
               <CopyIcon /> Copiar
-            </button>
-            <button
-              type="button"
-              onClick={onRegenerateCode}
-              className="rounded-xl border border-line bg-card2 px-3 py-2 text-xs font-bold text-paper hover:border-foil/50"
-            >
+            </Button>
+            <Button variant="secondary" onClick={onRegenerateCode}>
               Gerar novo
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -81,21 +74,12 @@ export function AdminSection({
             />
           </div>
           <div className="mt-3 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={onCancelEdit}
-              className="rounded-xl px-4 py-2.5 text-sm font-bold text-paperDim hover:text-paper"
-            >
+            <Button variant="ghost" onClick={onCancelEdit}>
               Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={onSaveEdit}
-              disabled={savingEdit}
-              className="flex items-center justify-center rounded-xl bg-foil px-4 py-2.5 text-sm font-bold text-leather disabled:opacity-60"
-            >
+            </Button>
+            <Button variant="primary" onClick={onSaveEdit} disabled={savingEdit}>
               {savingEdit ? <Spinner size={16} className="text-leather" /> : "Salvar"}
-            </button>
+            </Button>
           </div>
         </section>
       )}

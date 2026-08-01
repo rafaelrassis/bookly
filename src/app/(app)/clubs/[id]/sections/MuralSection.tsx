@@ -58,7 +58,7 @@ function Bubble({
       >
         <p className="flex items-baseline gap-2 text-xs">
           <span className="font-bold">{own ? "você" : message.user}</span>
-          <span className="text-[10px] text-paperDim">{formatClockTime(message.time)}</span>
+          <span className="text-meta text-paperMuted">{formatClockTime(message.time)}</span>
         </p>
         {message.replyTo && (
           <p className="mt-1.5 border-l-2 border-foil/60 pl-2 text-xs italic text-paperDim">
@@ -74,7 +74,7 @@ function Bubble({
         <button
           type="button"
           onClick={() => onReply(message)}
-          className="mt-1 text-[10px] font-bold text-paperDim hover:text-foil"
+          className="mt-1 text-meta text-paperMuted hover:text-foil"
         >
           Responder
         </button>

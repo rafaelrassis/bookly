@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { SectionTitle } from "@/components/SectionTitle";
+import { Button } from "@/components/ui/Button";
+import { IconButton } from "@/components/ui/IconButton";
 import { withoutAt } from "@/lib/handle";
 import { formatStreak } from "@/lib/streak";
 import { useModalA11y } from "@/lib/useModalA11y";
@@ -49,19 +51,15 @@ export function MembersSection({ club, me, streaks, onRemoveMember }: Props) {
                       style={{ width: `${m.percent}%` }}
                     />
                   </div>
-                  <p className="mt-1 text-[10px] text-paperDim">{formatStreak(streaks[m.userId] ?? 0)}</p>
+                  <p className="mt-1 text-meta text-paperMuted">{formatStreak(streaks[m.userId] ?? 0)}</p>
                 </div>
               </Link>
             );
           })}
           {extraMembers > 0 && (
-            <button
-              type="button"
-              onClick={() => setMembersOpen(true)}
-              className="text-left text-xs font-bold text-foil hover:opacity-80"
-            >
+            <Button variant="ghost" className="justify-start text-foil" onClick={() => setMembersOpen(true)}>
               +{extraMembers} {extraMembers === 1 ? "outro membro" : "outros membros"}
-            </button>
+            </Button>
           )}
         </div>
       </section>
@@ -110,14 +108,9 @@ function MembersModal({
       >
         <div className="flex items-center justify-between">
           <h2 className="font-display text-lg font-bold">Membros ({club.members.length})</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Fechar"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-paperDim hover:text-paper"
-          >
+          <IconButton label="Fechar" onClick={onClose}>
             ✕
-          </button>
+          </IconButton>
         </div>
         <div className="mt-4 flex flex-col gap-3">
           {club.members.map((m) => (
@@ -134,17 +127,17 @@ function MembersModal({
                     style={{ width: `${m.percent}%` }}
                   />
                 </div>
-                <p className="mt-1 text-[10px] text-paperDim">{formatStreak(streaks[m.userId] ?? 0)}</p>
+                <p className="mt-1 text-meta text-paperMuted">{formatStreak(streaks[m.userId] ?? 0)}</p>
               </div>
               {club.isCreator && m.user !== me && (
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  className="shrink-0"
                   onClick={() => onRemove(m.userId, m.user)}
                   aria-label={`Remover ${m.user} do clube`}
-                  className="shrink-0 rounded-full px-2 py-1 text-xs font-bold text-paperDim hover:text-ribbonText"
                 >
                   Excluir
-                </button>
+                </Button>
               )}
             </div>
           ))}

@@ -1,5 +1,6 @@
 import { LockIcon } from "@/components/icons";
 import { Spinner } from "@/components/Spinner";
+import { Button } from "@/components/ui/Button";
 import type { ClubDetail } from "@/lib/types";
 
 type Props = {
@@ -28,40 +29,22 @@ export function ClubHeader({ club, membershipBusy, onJoin, onLeave, onDelete, on
 
       <div className="mt-5 flex w-full gap-2">
         {club.isCreator ? (
-          <button
-            type="button"
-            onClick={onDelete}
-            className="flex-1 rounded-xl border border-line bg-card px-5 py-3 font-bold text-paperDim transition-colors hover:text-ribbonText"
-          >
+          <Button variant="secondary" className="flex-1" onClick={onDelete}>
             Excluir clube
-          </button>
+          </Button>
         ) : club.joined ? (
-          <button
-            type="button"
-            onClick={onLeave}
-            disabled={membershipBusy}
-            className="flex flex-1 items-center justify-center rounded-xl border border-line bg-card px-5 py-3 font-bold text-paperDim transition-colors hover:text-paper disabled:opacity-60"
-          >
+          <Button variant="secondary" className="flex-1" onClick={onLeave} disabled={membershipBusy}>
             {membershipBusy ? <Spinner size={18} className="text-paperDim" /> : "Sair do clube"}
-          </button>
+          </Button>
         ) : (
-          <button
-            type="button"
-            onClick={onJoin}
-            disabled={membershipBusy}
-            className="flex flex-1 items-center justify-center rounded-xl bg-foil px-5 py-3 font-bold text-leather transition-opacity hover:opacity-90 disabled:opacity-60"
-          >
+          <Button variant="primary" className="flex-1" onClick={onJoin} disabled={membershipBusy}>
             {membershipBusy ? <Spinner size={18} className="text-leather" /> : "Participar do clube"}
-          </button>
+          </Button>
         )}
         {club.isCreator && (
-          <button
-            type="button"
-            onClick={onOpenEdit}
-            className="rounded-xl border border-line bg-card px-4 py-3 font-bold text-paper transition-colors hover:bg-card2"
-          >
+          <Button variant="secondary" onClick={onOpenEdit}>
             Editar
-          </button>
+          </Button>
         )}
       </div>
     </section>
