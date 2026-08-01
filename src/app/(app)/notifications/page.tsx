@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { BackHeader } from "@/components/BackHeader";
+import { EmptyState } from "@/components/EmptyState";
 import { GiftIcon } from "@/components/icons";
+import { Button } from "@/components/ui/Button";
 import { ErrorRetry } from "@/components/ui/ErrorRetry";
 import { Skeleton } from "@/components/Skeleton";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -122,7 +124,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="px-5 pt-4">
+    <div className="pt-4">
       <BackHeader>
         <h1 className="text-lg font-extrabold">Notificações</h1>
       </BackHeader>
@@ -132,7 +134,7 @@ export default function NotificationsPage() {
       ) : !notifications ? (
         <NotificationsSkeleton />
       ) : notifications.length === 0 ? (
-        <p className="mt-6 text-sm text-paperDim">Nenhuma notificação por aqui ainda.</p>
+        <EmptyState title="Nenhuma notificação por aqui ainda." className="mt-6" />
       ) : (
         <div className="mt-4 flex flex-col gap-1 pb-8">
           {notifications.map((g) => (
@@ -142,22 +144,18 @@ export default function NotificationsPage() {
             >
               <Link
                 href={groupHref(g)}
-                className="flex min-h-[44px] min-w-0 flex-1 items-center gap-3 rounded-xl transition-colors hover:bg-card2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foil focus-visible:ring-offset-2 focus-visible:ring-offset-leather"
+                className="flex min-h-tap min-w-0 flex-1 items-center gap-3 rounded-xl transition-colors hover:bg-card2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foil focus-visible:ring-offset-2 focus-visible:ring-offset-leather"
               >
                 <GroupAvatar actors={g.actors} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm leading-snug text-paperDim">{groupText(g)}</p>
-                  <p className="mt-0.5 text-xs text-paperDim">{formatNotificationTime(g.createdAt)}</p>
+                  <p className="text-sm leading-snug text-paper">{groupText(g)}</p>
+                  <p className="mt-0.5 text-xs text-paperMuted">{formatNotificationTime(g.createdAt)}</p>
                 </div>
               </Link>
               {!g.read && g.actors.length > 1 && g.donationId ? (
-                <button
-                  type="button"
-                  onClick={() => markGroupRead(g)}
-                  className="shrink-0 rounded-full border border-line px-2.5 py-1 text-xs font-bold text-paper transition-colors hover:bg-card"
-                >
+                <Button variant="ghost" onClick={() => markGroupRead(g)} className="shrink-0">
                   Marcar lido
-                </button>
+                </Button>
               ) : (
                 !g.read && <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full bg-ribbon" />
               )}
