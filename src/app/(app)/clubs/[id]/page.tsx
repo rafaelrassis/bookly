@@ -1,181 +1,19 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Avatar } from "@/components/Avatar";
 import { BackHeader } from "@/components/BackHeader";
-import { ClubBookOfMonthCard } from "@/components/ClubBookOfMonthCard";
-import { ClubDiscussionCard } from "@/components/ClubDiscussionCard";
-import { CopyIcon, LockIcon } from "@/components/icons";
 import { PageLoader } from "@/components/PageLoader";
-import { SectionTitle } from "@/components/SectionTitle";
-import { Spinner } from "@/components/Spinner";
-import { formatClockTime } from "@/lib/format";
-import { withAt, withoutAt } from "@/lib/handle";
-import { formatStreak } from "@/lib/streak";
+import { withAt } from "@/lib/handle";
 import { useStore } from "@/lib/store";
-import { useModalA11y } from "@/lib/useModalA11y";
 import type { ApiClubStreaks, ClubDetail, ClubMessage } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/apiError";
+import { AdminSection } from "./sections/AdminSection";
+import { BookOfMonthSection } from "./sections/BookOfMonthSection";
+import { ClubHeader } from "./sections/ClubHeader";
+import { MembersSection } from "./sections/MembersSection";
+import { MuralSection } from "./sections/MuralSection";
 
 const POLL_INTERVAL_MS = 4000;
-
-/** Destaca menções (@usuario) em foil dentro do texto da bolha. */
-function MentionText({ text }: { text: string }) {
-  const parts = text.split(/(@[\w.\-á-úà-ùâ-ûã-õç]+)/gi);
-  return (
-    <>
-      {parts.map((part, i) =>
-        part.startsWith("@") ? (
-          <span key={i} className="font-bold text-foil">
-            {part}
-          </span>
-        ) : (
-          <span key={i}>{part}</span>
-        )
-      )}
-    </>
-  );
-}
-
-function Bubble({
-  message,
-  own,
-  onReply,
-}: {
-  message: ClubMessage;
-  own: boolean;
-  onReply: (m: ClubMessage) => void;
-}) {
-  if (message.system) {
-    return (
-      <p className="my-1 text-center text-xs text-paperDim">
-        <MentionText text={message.text} />
-      </p>
-    );
-  }
-
-  return (
-    <div className={`flex gap-2.5 ${own ? "flex-row-reverse" : ""}`}>
-      {!own && (
-        <Avatar
-          user={message.user}
-          avatarIndex={message.avatar}
-          avatarUrl={message.avatarUrl}
-          size={30}
-          className="mt-0.5"
-        />
-      )}
-      <div
-        className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 ${
-          own ? "border border-foil/40 bg-foil/10" : "bg-card"
-        }`}
-      >
-        <p className="flex items-baseline gap-2 text-xs">
-          <span className="font-bold">{own ? "você" : message.user}</span>
-          <span className="text-[10px] text-paperDim">{formatClockTime(message.time)}</span>
-        </p>
-        {message.replyTo && (
-          <p className="mt-1.5 border-l-2 border-foil/60 pl-2 text-xs italic text-paperDim">
-            <span className="font-bold not-italic">{message.replyTo.user}</span>{" "}
-            {message.replyTo.text.length > 80
-              ? `${message.replyTo.text.slice(0, 80)}…`
-              : message.replyTo.text}
-          </p>
-        )}
-        <p className="mt-1 text-sm">
-          <MentionText text={message.text} />
-        </p>
-        <button
-          type="button"
-          onClick={() => onReply(message)}
-          className="mt-1 text-[10px] font-bold text-paperDim hover:text-foil"
-        >
-          Responder
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/** Modal com todos os membros e progresso; se for o criador, permite remover membros. */
-function MembersModal({
-  club,
-  me,
-  streaks,
-  onClose,
-  onRemove,
-}: {
-  club: ClubDetail;
-  me: string;
-  streaks: Record<string, number>;
-  onClose: () => void;
-  onRemove: (userId: string, user: string) => void;
-}) {
-  const dialogRef = useModalA11y<HTMLDivElement>(onClose);
-  return (
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- fechar no clique fora é um atalho de mouse; teclado já fecha com Esc (useModalA11y) e o botão "Fechar" abaixo
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-5"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Membros do clube"
-        tabIndex={-1}
-        className="max-h-[80vh] w-full overflow-y-auto rounded-t-3xl border border-line bg-leather p-5 sm:max-w-md sm:rounded-3xl focus:outline-none"
-      >
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-lg font-bold">Membros ({club.members.length})</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Fechar"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-paperDim hover:text-paper"
-          >
-            ✕
-          </button>
-        </div>
-        <div className="mt-4 flex flex-col gap-3">
-          {club.members.map((m) => (
-            <div key={m.userId} className="flex items-center gap-3">
-              <Avatar user={m.user} avatarIndex={m.avatar} avatarUrl={m.avatarUrl} size={30} />
-              <div className="min-w-0 flex-1">
-                <p className="flex items-baseline justify-between text-xs">
-                  <span className="truncate font-bold">
-                    {m.user === me ? `${m.user} (você)` : m.user}
-                  </span>
-                  <span className="ml-2 shrink-0 text-paperDim">{m.percent}%</span>
-                </p>
-                <div className="mt-1 h-1 overflow-hidden rounded-full bg-card2">
-                  <div
-                    className={`h-full rounded-full ${m.user === me ? "bg-ribbon" : "bg-foil/70"}`}
-                    style={{ width: `${m.percent}%` }}
-                  />
-                </div>
-                <p className="mt-1 text-[10px] text-paperDim">
-                  {formatStreak(streaks[m.userId] ?? 0)}
-                </p>
-              </div>
-              {club.isCreator && m.user !== me && (
-                <button
-                  type="button"
-                  onClick={() => onRemove(m.userId, m.user)}
-                  aria-label={`Remover ${m.user} do clube`}
-                  className="shrink-0 rounded-full px-2 py-1 text-xs font-bold text-paperDim hover:text-ribbonText"
-                >
-                  Excluir
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function ClubPage({ params }: { params: { id: string } }) {
   const username = useStore((s) => s.user.username);
@@ -189,7 +27,6 @@ export default function ClubPage({ params }: { params: { id: string } }) {
 
   const [draft, setDraft] = useState("");
   const [replyTo, setReplyTo] = useState<ClubMessage | null>(null);
-  const [membersOpen, setMembersOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState("");
   const [editDesc, setEditDesc] = useState("");
@@ -319,9 +156,7 @@ export default function ClubPage({ params }: { params: { id: string } }) {
   const avatarByHandle = new Map(club.members.map((m) => [m.user, m]));
   const mentionables = club.members.map((m) => m.user);
   const suggestions = mentionMatch
-    ? mentionables.filter((u) =>
-        u.slice(1).toLowerCase().startsWith(mentionMatch[1].toLowerCase())
-      )
+    ? mentionables.filter((u) => u.slice(1).toLowerCase().startsWith(mentionMatch[1].toLowerCase()))
     : [];
 
   function applyMention(mention: string) {
@@ -460,286 +295,57 @@ export default function ClubPage({ params }: { params: { id: string } }) {
     window.location.href = "/clubs";
   }
 
-  const visibleMembers = club.members.slice(0, 6);
-  const extraMembers = Math.max(0, club.members.length - visibleMembers.length);
-
   return (
     <div className="pt-4">
       <BackHeader />
 
-      <section className="mt-2 flex flex-col items-center text-center">
-        <h1 className="flex items-center gap-2 font-display text-2xl font-bold">
-          {club.visibility === "private" && (
-            <span className="text-paperDim" aria-label="Clube privado">
-              <LockIcon size={16} />
-            </span>
-          )}
-          {club.name}
-        </h1>
-        <p className="mt-2 max-w-72 text-sm text-paperDim">{club.desc}</p>
+      <ClubHeader
+        club={club}
+        membershipBusy={membershipBusy}
+        onJoin={join}
+        onLeave={leave}
+        onDelete={deleteClub}
+        onOpenEdit={openEdit}
+      />
 
-        <div className="mt-5 flex w-full gap-2">
-          {club.isCreator ? (
-            <button
-              type="button"
-              onClick={deleteClub}
-              className="flex-1 rounded-xl border border-line bg-card px-5 py-3 font-bold text-paperDim transition-colors hover:text-ribbonText"
-            >
-              Excluir clube
-            </button>
-          ) : club.joined ? (
-            <button
-              type="button"
-              onClick={leave}
-              disabled={membershipBusy}
-              className="flex flex-1 items-center justify-center rounded-xl border border-line bg-card px-5 py-3 font-bold text-paperDim transition-colors hover:text-paper disabled:opacity-60"
-            >
-              {membershipBusy ? <Spinner size={18} className="text-paperDim" /> : "Sair do clube"}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={join}
-              disabled={membershipBusy}
-              className="flex flex-1 items-center justify-center rounded-xl bg-foil px-5 py-3 font-bold text-leather transition-opacity hover:opacity-90 disabled:opacity-60"
-            >
-              {membershipBusy ? <Spinner size={18} className="text-leather" /> : "Participar do clube"}
-            </button>
-          )}
-          {club.isCreator && (
-            <button
-              type="button"
-              onClick={openEdit}
-              className="rounded-xl border border-line bg-card px-4 py-3 font-bold text-paper transition-colors hover:bg-card2"
-            >
-              Editar
-            </button>
-          )}
-        </div>
+      <AdminSection
+        club={club}
+        editing={editing}
+        editName={editName}
+        editDesc={editDesc}
+        savingEdit={savingEdit}
+        onEditNameChange={setEditName}
+        onEditDescChange={setEditDesc}
+        onSaveEdit={saveEdit}
+        onCancelEdit={() => setEditing(false)}
+        onCopyCode={copyCode}
+        onRegenerateCode={regenerateCode}
+      />
 
-        {club.visibility === "private" && club.isCreator && club.code && (
-          <div className="mt-3 flex w-full items-center justify-between rounded-2xl border border-foil/40 bg-card px-4 py-3">
-            <div className="text-left">
-              <p className="text-meta uppercase text-paperMuted">
-                Código de convite
-              </p>
-              <p className="font-mono text-lg font-bold tracking-[0.3em] text-foil">
-                {club.code}
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={copyCode}
-                className="flex items-center gap-1.5 rounded-xl border border-line bg-card2 px-3 py-2 text-xs font-bold text-paper hover:border-foil/50"
-              >
-                <CopyIcon /> Copiar
-              </button>
-              <button
-                type="button"
-                onClick={regenerateCode}
-                className="rounded-xl border border-line bg-card2 px-3 py-2 text-xs font-bold text-paper hover:border-foil/50"
-              >
-                Gerar novo
-              </button>
-            </div>
-          </div>
-        )}
-      </section>
+      <BookOfMonthSection clubId={club.id} isCreator={club.isCreator} joined={club.joined} />
 
-      {editing && club.isCreator && (
-        <section className="mt-5 rounded-2xl border border-foil/40 bg-card p-4">
-          <SectionTitle>Editar clube</SectionTitle>
-          <div className="mt-3 flex flex-col gap-2.5">
-            <input
-              type="text"
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              placeholder="Nome do clube"
-              aria-label="Nome do clube"
-              className="rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper"
-            />
-            <textarea
-              value={editDesc}
-              onChange={(e) => setEditDesc(e.target.value)}
-              rows={2}
-              placeholder="Bio do clube"
-              aria-label="Bio do clube"
-              className="resize-none rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper"
-            />
-          </div>
-          <div className="mt-3 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setEditing(false)}
-              className="rounded-xl px-4 py-2.5 text-sm font-bold text-paperDim hover:text-paper"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={saveEdit}
-              disabled={savingEdit}
-              className="flex items-center justify-center rounded-xl bg-foil px-4 py-2.5 text-sm font-bold text-leather disabled:opacity-60"
-            >
-              {savingEdit ? <Spinner size={16} className="text-leather" /> : "Salvar"}
-            </button>
-          </div>
-        </section>
-      )}
+      <MembersSection club={club} me={me} streaks={streaks} onRemoveMember={removeMember} />
 
-      <ClubBookOfMonthCard clubId={club.id} isCreator={club.isCreator} />
-
-      {club.joined && <ClubDiscussionCard clubId={club.id} />}
-
-      <section className="mt-6">
-        <SectionTitle>Progresso dos membros</SectionTitle>
-        <div className="mt-3 flex flex-col gap-2.5 rounded-2xl border border-line bg-card p-4">
-          {visibleMembers.map((m) => {
-            const isMe = m.user === me;
-            const href = isMe ? "/profile" : `/u/${withoutAt(m.user)}`;
-            return (
-              <Link
-                key={m.userId}
-                href={href}
-                className="flex min-h-11 items-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foil focus-visible:ring-offset-2 focus-visible:ring-offset-card"
-              >
-                <Avatar user={m.user} avatarIndex={m.avatar} avatarUrl={m.avatarUrl} size={28} />
-                <div className="min-w-0 flex-1">
-                  <p className="flex items-baseline justify-between text-xs">
-                    <span className="truncate font-bold">
-                      {isMe ? `${m.user} (você)` : m.user}
-                    </span>
-                    <span className="ml-2 shrink-0 text-paperDim">{m.percent}%</span>
-                  </p>
-                  <div className="mt-1 h-1 overflow-hidden rounded-full bg-card2">
-                    <div
-                      className={`h-full rounded-full ${isMe ? "bg-ribbon" : "bg-foil/70"}`}
-                      style={{ width: `${m.percent}%` }}
-                    />
-                  </div>
-                  <p className="mt-1 text-[10px] text-paperDim">
-                    {formatStreak(streaks[m.userId] ?? 0)}
-                  </p>
-                </div>
-              </Link>
-            );
-          })}
-          {extraMembers > 0 && (
-            <button
-              type="button"
-              onClick={() => setMembersOpen(true)}
-              className="text-left text-xs font-bold text-foil hover:opacity-80"
-            >
-              +{extraMembers} {extraMembers === 1 ? "outro membro" : "outros membros"}
-            </button>
-          )}
-        </div>
-      </section>
-
-      <section className="mb-4 mt-6">
-        <SectionTitle>Mural</SectionTitle>
-
-        {club.joined ? (
-          <>
-            <div className="mt-3 flex max-h-[26rem] flex-col gap-3 overflow-y-auto">
-              {messages.map((message) => (
-                <Bubble
-                  key={message.id}
-                  message={message}
-                  own={message.user === me && !message.system}
-                  onReply={(m) => {
-                    setReplyTo(m);
-                    inputRef.current?.focus();
-                  }}
-                />
-              ))}
-              {messages.length === 0 && (
-                <p className="text-sm text-paperDim">Ainda não há mensagens. Comece a conversa!</p>
-              )}
-              <div ref={feedEndRef} />
-            </div>
-
-            <div className="mt-4">
-              {replyTo && (
-                <div className="mb-2 flex items-start justify-between gap-2 rounded-xl border-l-2 border-foil bg-card px-3 py-2 text-xs text-paperDim">
-                  <p className="min-w-0">
-                    Respondendo <span className="font-bold text-paper">{replyTo.user}</span>:{" "}
-                    <span className="italic">
-                      {replyTo.text.length > 60 ? `${replyTo.text.slice(0, 60)}…` : replyTo.text}
-                    </span>
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setReplyTo(null)}
-                    aria-label="Cancelar resposta"
-                    className="shrink-0 text-paperDim hover:text-ribbonText"
-                  >
-                    ✕
-                  </button>
-                </div>
-              )}
-              {suggestions.length > 0 && (
-                <div className="mb-2 overflow-hidden rounded-xl border border-line bg-card">
-                  {suggestions.map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => applyMention(s)}
-                      className="flex w-full items-center gap-2 border-b border-line px-3 py-2 text-left text-sm last:border-b-0 hover:bg-card2"
-                    >
-                      <Avatar
-                        user={s}
-                        avatarIndex={avatarByHandle.get(s)?.avatar}
-                        avatarUrl={avatarByHandle.get(s)?.avatarUrl}
-                        size={22}
-                      />
-                      <span className="font-bold text-foil">{s}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-              <div className="flex items-center gap-2">
-                <Avatar user={me} size={30} />
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && suggestions.length === 0) publish();
-                  }}
-                  placeholder="Escreva para o clube… use @ para marcar"
-                  aria-label="Publicar no mural"
-                  className="min-w-0 flex-1 rounded-full border border-line bg-card px-4 py-2.5 text-sm text-paper"
-                />
-                <button
-                  type="button"
-                  onClick={publish}
-                  disabled={!draft.trim() || publishing}
-                  className="flex items-center justify-center rounded-full bg-foil px-3.5 py-2.5 text-xs font-bold text-leather disabled:opacity-40"
-                >
-                  {publishing ? <Spinner size={14} className="text-leather" /> : "Publicar"}
-                </button>
-              </div>
-            </div>
-          </>
-        ) : (
-          <p className="mt-3 text-sm text-paperDim">
-            Participe do clube pra ver e escrever no mural.
-          </p>
-        )}
-      </section>
-
-      {membersOpen && (
-        <MembersModal
-          club={club}
-          me={me}
-          streaks={streaks}
-          onClose={() => setMembersOpen(false)}
-          onRemove={removeMember}
-        />
-      )}
+      <MuralSection
+        joined={club.joined}
+        messages={messages}
+        me={me}
+        draft={draft}
+        replyTo={replyTo}
+        suggestions={suggestions}
+        avatarByHandle={avatarByHandle}
+        publishing={publishing}
+        inputRef={inputRef}
+        feedEndRef={feedEndRef}
+        onDraftChange={setDraft}
+        onPublish={publish}
+        onReply={(m) => {
+          setReplyTo(m);
+          inputRef.current?.focus();
+        }}
+        onCancelReply={() => setReplyTo(null)}
+        onApplyMention={applyMention}
+      />
     </div>
   );
 }
