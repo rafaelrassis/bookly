@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { Spinner } from "@/components/Spinner";
+import { Button } from "@/components/ui/Button";
+import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { withAt } from "@/lib/handle";
 import { apiErrorMessage } from "@/lib/apiError";
 import type { ApiDonationRequest, DonationStatus } from "@/lib/types";
@@ -21,6 +23,7 @@ export function DonorPanel({ donationId, status, onStatusChange, onDeleted, onTo
   const [requests, setRequests] = useState<ApiDonationRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] = useState<"doado" | "remover" | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -90,6 +93,7 @@ export function DonorPanel({ donationId, status, onStatusChange, onDeleted, onTo
       onToast("Doado! Obrigado por compartilhar essa leitura 📖");
     } finally {
       setBusyId(null);
+      setConfirmAction(null);
     }
   }
 
@@ -119,6 +123,7 @@ export function DonorPanel({ donationId, status, onStatusChange, onDeleted, onTo
       onToast("Doação removida");
     } finally {
       setBusyId(null);
+      setConfirmAction(null);
     }
   }
 
@@ -148,22 +153,24 @@ export function DonorPanel({ donationId, status, onStatusChange, onDeleted, onTo
               <p className="text-xs text-foil">Escolhido — contato liberado</p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={marcarDoado}
+          <Button
+            variant="primary"
+            full
+            onClick={() => setConfirmAction("doado")}
             disabled={busyId !== null}
-            className="mt-3 flex w-full items-center justify-center rounded-xl bg-foil px-4 py-2.5 text-sm font-bold text-leather disabled:opacity-40"
+            className="mt-3"
           >
             {busyId === "doado" ? <Spinner size={16} className="text-leather" /> : "Marcar como doado"}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="secondary"
+            full
             onClick={estenderPrazo}
             disabled={busyId !== null}
-            className="mt-2 flex w-full items-center justify-center rounded-xl border border-line px-4 py-2.5 text-sm font-bold text-paper disabled:opacity-40"
+            className="mt-2"
           >
             {busyId === "estender" ? <Spinner size={16} className="text-paper" /> : "Estender prazo"}
-          </button>
+          </Button>
         </div>
       )}
 
@@ -176,31 +183,25 @@ export function DonorPanel({ donationId, status, onStatusChange, onDeleted, onTo
               {pending.map((r) => (
                 <li
                   key={r.id}
-                  className="flex items-center gap-2.5 rounded-xl border border-line bg-card2 p-3"
+                  className="flex flex-col gap-2.5 rounded-xl border border-line bg-card2 p-3"
                 >
-                  <Avatar
-                    user={withAt(r.requester.username ?? r.requester.name)}
-                    avatarIndex={r.requester.avatar}
-                    avatarUrl={r.requester.avatarUrl}
-                    size={32}
-                  />
-                  <p className="min-w-0 flex-1 truncate text-sm font-bold">{r.requester.name}</p>
-                  <button
-                    type="button"
-                    onClick={() => recusar(r.id)}
-                    disabled={busyId !== null}
-                    className="rounded-full px-3 py-1.5 text-xs font-bold text-paperDim hover:text-ribbonText disabled:opacity-40"
-                  >
-                    Recusar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => escolher(r.id)}
-                    disabled={busyId !== null}
-                    className="flex items-center justify-center rounded-full bg-foil px-3 py-1.5 text-xs font-bold text-leather disabled:opacity-40"
-                  >
-                    {busyId === r.id ? <Spinner size={12} className="text-leather" /> : "Escolher"}
-                  </button>
+                  <div className="flex items-center gap-2.5">
+                    <Avatar
+                      user={withAt(r.requester.username ?? r.requester.name)}
+                      avatarIndex={r.requester.avatar}
+                      avatarUrl={r.requester.avatarUrl}
+                      size={32}
+                    />
+                    <p className="min-w-0 flex-1 truncate text-sm font-bold">{r.requester.name}</p>
+                  </div>
+                  <div className="flex flex-col-reverse gap-2 xs:flex-row xs:justify-end">
+                    <Button variant="ghost" onClick={() => recusar(r.id)} disabled={busyId !== null}>
+                      Recusar
+                    </Button>
+                    <Button variant="primary" onClick={() => escolher(r.id)} disabled={busyId !== null}>
+                      {busyId === r.id ? <Spinner size={12} className="text-leather" /> : `Escolher ${r.requester.name}`}
+                    </Button>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -209,14 +210,42 @@ export function DonorPanel({ donationId, status, onStatusChange, onDeleted, onTo
       )}
 
       {status !== "DOADO" && (
-        <button
-          type="button"
-          onClick={remover}
+        <Button
+          variant="ghost"
+          full
+          onClick={() => setConfirmAction("remover")}
           disabled={busyId !== null}
-          className="mt-1 rounded-xl px-4 py-2.5 text-center text-sm font-bold text-paperDim hover:text-ribbonText disabled:opacity-40"
+          className="mt-1"
         >
           {busyId === "remover" ? "Removendo…" : "Remover doação"}
-        </button>
+        </Button>
+      )}
+
+      {confirmAction === "doado" && (
+        <ConfirmSheet
+          title="Marcar como doado"
+          message="Isso conclui a doação e libera a avaliação do recebedor. Não dá pra desfazer."
+          confirmLabel="Marcar como doado"
+          busy={busyId === "doado"}
+          onConfirm={marcarDoado}
+          onClose={() => setConfirmAction(null)}
+        />
+      )}
+
+      {confirmAction === "remover" && (
+        <ConfirmSheet
+          title="Remover doação"
+          message={
+            status === "RESERVADO"
+              ? "A reserva atual será cancelada e o livro sai da lista de doações. Não dá pra desfazer."
+              : "O livro sai da lista de doações. Não dá pra desfazer."
+          }
+          confirmLabel="Remover doação"
+          danger
+          busy={busyId === "remover"}
+          onConfirm={remover}
+          onClose={() => setConfirmAction(null)}
+        />
       )}
     </div>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { useModalA11y } from "@/lib/useModalA11y";
 
 type SheetProps = {
@@ -13,6 +14,7 @@ type SheetProps = {
  * reescrever largura, posicionamento e a11y de modal em cada tela. */
 export function Sheet({ onClose, title, children }: SheetProps) {
   const dialogRef = useModalA11y<HTMLDivElement>(onClose);
+  const titleId = useId();
 
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- fechar no clique fora é um atalho de mouse; teclado já fecha com Esc (useModalA11y)
@@ -24,7 +26,7 @@ export function Sheet({ onClose, title, children }: SheetProps) {
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby={title ? "sheet-title" : undefined}
+        aria-labelledby={title ? titleId : undefined}
         aria-label={title ? undefined : "Diálogo"}
         tabIndex={-1}
         className="max-h-[85dvh] w-full overflow-y-auto rounded-t-3xl border-t border-line bg-card
@@ -33,7 +35,7 @@ export function Sheet({ onClose, title, children }: SheetProps) {
       >
         <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-line md:hidden" aria-hidden="true" />
         {title && (
-          <h2 id="sheet-title" className="mb-3 text-title font-bold">
+          <h2 id={titleId} className="mb-3 text-title font-bold">
             {title}
           </h2>
         )}

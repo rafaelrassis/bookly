@@ -4,9 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
+import { Button } from "@/components/ui/Button";
+import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { ErrorRetry } from "@/components/ui/ErrorRetry";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Skeleton } from "@/components/Skeleton";
-import { Spinner } from "@/components/Spinner";
 import { apiErrorMessage } from "@/lib/apiError";
 import { formatShortDate } from "@/lib/format";
 import { withAt } from "@/lib/handle";
@@ -97,9 +99,9 @@ function ReceivedCard({
   const donor = donation.donor;
   const donorHandle = withAt(donor.username ?? donor.name);
   const [confirming, setConfirming] = useState(false);
+  const [confirmSheetOpen, setConfirmSheetOpen] = useState(false);
 
   async function confirmarRecebimento() {
-    if (!confirm("Confirmar que você recebeu este livro?")) return;
     setConfirming(true);
     try {
       const res = await fetch(`/api/donations/${donation.donationId}/confirm-receipt`, {
@@ -113,6 +115,7 @@ function ReceivedCard({
       onConfirmed();
     } finally {
       setConfirming(false);
+      setConfirmSheetOpen(false);
     }
   }
 
@@ -137,11 +140,9 @@ function ReceivedCard({
 
           {donation.status === "DOADO" ? (
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
-              <span className="rounded-full bg-card2 px-2.5 py-1 text-[11px] font-bold text-paperDim">
-                Recebido
-              </span>
+              <StatusBadge tone="neutral">Recebido</StatusBadge>
               {donation.donatedAt && (
-                <span className="text-[11px] text-paperDim">{formatShortDate(donation.donatedAt)}</span>
+                <span className="text-caption text-paperMuted">{formatShortDate(donation.donatedAt)}</span>
               )}
             </div>
           ) : (
@@ -149,45 +150,53 @@ function ReceivedCard({
             (donation.contact.whatsapp || donation.contact.instagram) && (
               <div className="mt-2 flex flex-wrap gap-2">
                 {donation.contact.whatsapp && (
-                  <a
-                    href={`https://wa.me/${donation.contact.whatsapp}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded-full bg-foil px-3 py-1 text-xs font-bold text-leather"
-                  >
-                    Falar no WhatsApp
-                  </a>
+                  <Button variant="primary" asChild>
+                    <a
+                      href={`https://wa.me/${donation.contact.whatsapp}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Falar no WhatsApp
+                    </a>
+                  </Button>
                 )}
                 {donation.contact.instagram && (
-                  <a
-                    href={`https://instagram.com/${donation.contact.instagram}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded-full border border-line px-3 py-1 text-xs font-bold text-paper"
-                  >
-                    Instagram
-                  </a>
+                  <Button variant="secondary" asChild>
+                    <a
+                      href={`https://instagram.com/${donation.contact.instagram}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Instagram
+                    </a>
+                  </Button>
                 )}
               </div>
             )
           )}
 
           {donation.receiverConfirmedAt ? (
-            <span className="mt-2 inline-flex w-fit rounded-full bg-foil/15 px-2.5 py-1 text-[11px] font-bold text-foil">
+            <StatusBadge tone="positive" className="mt-2 w-fit">
               Você confirmou
-            </span>
+            </StatusBadge>
           ) : (
-            <button
-              type="button"
-              onClick={confirmarRecebimento}
-              disabled={confirming}
-              className="mt-2 flex items-center justify-center gap-1.5 rounded-full bg-foil px-3 py-1.5 text-xs font-bold text-leather disabled:opacity-40"
-            >
-              {confirming ? <Spinner size={12} className="text-leather" /> : "Confirmei o recebimento"}
-            </button>
+            <Button variant="primary" onClick={() => setConfirmSheetOpen(true)} className="mt-2">
+              Confirmei o recebimento
+            </Button>
           )}
         </div>
       </div>
+
+      {confirmSheetOpen && (
+        <ConfirmSheet
+          title="Confirmar recebimento"
+          message="Confirma que você recebeu este livro? Isso conclui a doação do seu lado."
+          confirmLabel="Confirmei o recebimento"
+          busy={confirming}
+          onConfirm={confirmarRecebimento}
+          onClose={() => setConfirmSheetOpen(false)}
+        />
+      )}
     </li>
   );
 }

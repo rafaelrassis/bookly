@@ -6,16 +6,17 @@ import { BottomSheet } from "@/components/BottomSheet";
 import { EmptyState } from "@/components/EmptyState";
 import { GiftIcon } from "@/components/icons";
 import { ErrorRetry } from "@/components/ui/ErrorRetry";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Skeleton } from "@/components/Skeleton";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useStore } from "@/lib/store";
 import type { ApiMyDonation, DonationStatus } from "@/lib/types";
 import { DonorPanel } from "./DonorPanel";
 
-const STATUS_BADGE: Record<DonationStatus, { label: string; className: string }> = {
-  DISPONIVEL: { label: "Disponível", className: "bg-foil/15 text-foil" },
-  RESERVADO: { label: "Reservado", className: "bg-ribbon/20 text-ribbonText" },
-  DOADO: { label: "Doado", className: "bg-card2 text-paperDim" },
+const STATUS_BADGE: Record<DonationStatus, { label: string; tone: "positive" | "warning" | "neutral" }> = {
+  DISPONIVEL: { label: "Disponível", tone: "positive" },
+  RESERVADO: { label: "Reservado", tone: "warning" },
+  DOADO: { label: "Doado", tone: "neutral" },
 };
 
 export function MyDonations() {
@@ -121,8 +122,8 @@ function DonationCard({ donation, onManage }: { donation: ApiMyDonation; onManag
   const receiptBadge =
     donation.status === "DOADO"
       ? donation.receiverConfirmedAt
-        ? { label: "Recebimento confirmado", className: "bg-foil/15 text-foil" }
-        : { label: "Aguardando confirmação", className: "bg-card2 text-paperDim" }
+        ? { label: "Recebimento confirmado", tone: "positive" as const }
+        : { label: "Aguardando confirmação", tone: "neutral" as const }
       : null;
 
   return (
@@ -141,19 +142,13 @@ function DonationCard({ donation, onManage }: { donation: ApiMyDonation; onManag
             {donation.city} · {donation.state}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${badge.className}`}>
-              {badge.label}
-            </span>
+            <StatusBadge tone={badge.tone}>{badge.label}</StatusBadge>
             {showPending && (
-              <span className="rounded-full bg-ribbon/15 px-2.5 py-1 text-[11px] font-bold text-ribbon">
+              <StatusBadge tone="danger">
                 {donation.pendingRequests} {donation.pendingRequests === 1 ? "pedido" : "pedidos"}
-              </span>
+              </StatusBadge>
             )}
-            {receiptBadge && (
-              <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${receiptBadge.className}`}>
-                {receiptBadge.label}
-              </span>
-            )}
+            {receiptBadge && <StatusBadge tone={receiptBadge.tone}>{receiptBadge.label}</StatusBadge>}
           </div>
         </div>
       </button>

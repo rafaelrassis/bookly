@@ -6,6 +6,8 @@ import Link from "next/link";
 import { BottomSheet } from "@/components/BottomSheet";
 import { Spinner } from "@/components/Spinner";
 import { GiftIcon } from "@/components/icons";
+import { Button } from "@/components/ui/Button";
+import { Chip } from "@/components/ui/Chip";
 import { apiErrorMessage } from "@/lib/apiError";
 import type { ApiDonation, DonationStatus } from "@/lib/types";
 import { UF_LIST } from "@/lib/uf";
@@ -107,45 +109,23 @@ export function DonationList({ bookId, myUf, myCity, reloadSignal, onToast }: Pr
 
   return (
     <div>
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={() => setMode("uf")}
-          aria-pressed={mode === "uf"}
-          className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${
-            mode === "uf" ? "bg-foil text-leather" : "border border-line bg-card text-paperDim hover:text-paper"
-          }`}
-        >
+      <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filtrar doações por localização">
+        <Chip active={mode === "uf"} onClick={() => setMode("uf")}>
           Minha cidade
-        </button>
-        <button
-          type="button"
-          onClick={requestRadius}
-          disabled={geoLoading}
-          aria-pressed={mode === "radius"}
-          className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-colors disabled:opacity-60 ${
-            mode === "radius" ? "bg-foil text-leather" : "border border-line bg-card text-paperDim hover:text-paper"
-          }`}
-        >
-          {geoLoading && <Spinner size={11} className={mode === "radius" ? "text-leather" : "text-paperDim"} />}
+        </Chip>
+        <Chip active={mode === "radius"} onClick={requestRadius} disabled={geoLoading}>
+          {geoLoading && <Spinner size={11} className={mode === "radius" ? "text-leather" : "text-paperMuted"} />}
           Até {radiusKm} km
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("brazil")}
-          aria-pressed={mode === "brazil"}
-          className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${
-            mode === "brazil" ? "bg-foil text-leather" : "border border-line bg-card text-paperDim hover:text-paper"
-          }`}
-        >
+        </Chip>
+        <Chip active={mode === "brazil"} onClick={() => setMode("brazil")}>
           Todo o Brasil
-        </button>
+        </Chip>
         {mode === "uf" && (
           <select
             value={uf}
             onChange={(e) => setUf(e.target.value)}
             aria-label="Filtrar por estado (UF)"
-            className="rounded-full border border-line bg-card px-3 py-1.5 text-xs font-bold text-paper"
+            className="min-h-tap rounded-full border border-line bg-card px-3 text-caption font-bold text-paper"
           >
             <option value="">Todos os estados</option>
             {UF_LIST.map((u) => (
@@ -156,7 +136,7 @@ export function DonationList({ bookId, myUf, myCity, reloadSignal, onToast }: Pr
           </select>
         )}
         {mode === "uf" && myCity && uf === myUf && (
-          <span className="text-xs text-paperDim">perto de {myCity}</span>
+          <span className="text-caption text-paperMuted">perto de {myCity}</span>
         )}
       </div>
 
@@ -213,54 +193,43 @@ export function DonationList({ bookId, myUf, myCity, reloadSignal, onToast }: Pr
                   </p>
 
                   {d.isDonor ? (
-                    <button
-                      type="button"
-                      onClick={() => setManagingId(d.id)}
-                      className="mt-2 rounded-full bg-foil/15 px-3 py-1 text-xs font-bold text-foil"
-                    >
+                    <Button variant="secondary" onClick={() => setManagingId(d.id)} className="mt-2">
                       Sua doação · gerenciar{d.requestCount > 0 ? ` (${d.requestCount})` : ""}
-                    </button>
+                    </Button>
                   ) : d.myRequest?.status === "ESCOLHIDO" && d.contact ? (
                     <div className="mt-2 flex flex-wrap gap-2">
                       {d.contact.whatsapp && (
-                        <a
-                          href={`https://wa.me/${d.contact.whatsapp}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="rounded-full bg-foil px-3 py-1 text-xs font-bold text-leather"
-                        >
-                          WhatsApp
-                        </a>
+                        <Button variant="primary" asChild>
+                          <a href={`https://wa.me/${d.contact.whatsapp}`} target="_blank" rel="noopener noreferrer">
+                            WhatsApp
+                          </a>
+                        </Button>
                       )}
                       {d.contact.instagram && (
-                        <a
-                          href={`https://instagram.com/${d.contact.instagram}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="rounded-full border border-line px-3 py-1 text-xs font-bold text-paper"
-                        >
-                          @{d.contact.instagram}
-                        </a>
+                        <Button variant="secondary" asChild>
+                          <a
+                            href={`https://instagram.com/${d.contact.instagram}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            @{d.contact.instagram}
+                          </a>
+                        </Button>
                       )}
                     </div>
                   ) : d.myRequest ? (
-                    <p className="mt-2 text-xs font-bold text-paperDim">Interesse enviado</p>
+                    <p className="mt-2 text-caption font-bold text-paperMuted">Interesse enviado</p>
                   ) : d.status === "DISPONIVEL" ? (
-                    <button
-                      type="button"
-                      onClick={() => quero(d.id)}
-                      disabled={requestingId === d.id}
-                      className="mt-2 flex items-center gap-1.5 rounded-full bg-foil px-3 py-1.5 text-xs font-bold text-leather disabled:opacity-40"
-                    >
+                    <Button variant="primary" onClick={() => quero(d.id)} disabled={requestingId === d.id} className="mt-2">
                       {requestingId === d.id ? (
                         <Spinner size={12} className="text-leather" />
                       ) : (
                         <GiftIcon size={11} />
                       )}
                       Quero este
-                    </button>
+                    </Button>
                   ) : (
-                    <p className="mt-2 text-xs text-paperDim">Já reservado com outra pessoa</p>
+                    <p className="mt-2 text-caption text-paperMuted">Já reservado com outra pessoa</p>
                   )}
                 </div>
               </div>
