@@ -59,6 +59,9 @@ test.describe("alvos de toque >= 44px no mobile", () => {
             if ((el as HTMLElement).offsetParent === null && style.position !== "fixed") continue;
             if ((el as HTMLButtonElement).disabled) continue;
             if (isInlineException(el)) continue;
+            // Skip link e afins: sr-only até o foco por teclado, então mede
+            // 1x1 fora do fluxo de toque — não é um alvo de toque real.
+            if (el.classList.contains("sr-only")) continue;
 
             // Considera a área estendida pelo utilitário `.tap` (::after), que
             // não entra no rect do próprio elemento.

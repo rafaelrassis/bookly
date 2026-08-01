@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { SectionTitle } from "@/components/SectionTitle";
+import { Section } from "@/components/ui/Section";
 import { ShareIcon } from "@/components/icons";
 import { formatCount, formatDecimal } from "@/lib/format";
 import { useStore } from "@/lib/store";
@@ -54,16 +54,16 @@ export function YearInBooksCard() {
   const maxGenreCount = Math.max(0, ...(stats?.topGenres.map((g) => g.count) ?? []));
 
   return (
-    <section className="mt-6">
-      <div className="flex items-center justify-between gap-3">
-        <SectionTitle>Seu {year} em livros</SectionTitle>
+    <Section
+      title={`Seu ${year} em livros`}
+      action={
         <div className="flex items-center gap-1.5">
           {stats && stats.booksRead > 0 && (
             <button
               type="button"
               onClick={onShare}
               aria-label="Compartilhar"
-              className="flex items-center gap-1 rounded-full border border-line bg-card px-2.5 py-1 text-xs font-bold text-paperDim transition-colors hover:text-paper"
+              className="flex min-h-tap items-center gap-1 rounded-full border border-line bg-card px-2.5 text-xs font-bold text-paperMuted transition-colors hover:text-paper"
             >
               <ShareIcon size={12} />
               Compartilhar
@@ -74,21 +74,21 @@ export function YearInBooksCard() {
               key={y}
               type="button"
               onClick={() => setYear(y)}
-              className={`rounded-full px-2.5 py-1 text-xs font-bold transition-colors ${
+              className={`flex min-h-tap items-center rounded-full px-2.5 text-xs font-bold transition-colors ${
                 y === year
                   ? "bg-foil text-leather"
-                  : "border border-line bg-card text-paperDim hover:text-paper"
+                  : "border border-line bg-card text-paperMuted hover:text-paper"
               }`}
             >
               {y}
             </button>
           ))}
         </div>
-      </div>
-
-      <div className="mt-3 rounded-2xl border border-line bg-card p-4">
+      }
+    >
+      <div className="rounded-2xl border border-line bg-card p-4">
         {!loaded ? null : !stats || stats.booksRead === 0 ? (
-          <p className="text-sm text-paperDim">Nenhum livro concluído em {year} ainda.</p>
+          <p className="text-sm text-paperMuted">Nenhum livro concluído em {year} ainda.</p>
         ) : (
           <>
             <div className="flex">
@@ -120,7 +120,7 @@ export function YearInBooksCard() {
               <div className="mt-4 flex flex-col gap-2 border-t border-line pt-4">
                 {stats.topGenres.map(({ genre, count }) => (
                   <div key={genre} className="flex items-center gap-2">
-                    <span className="w-24 shrink-0 truncate text-xs text-paperDim">{genre}</span>
+                    <span className="w-24 shrink-0 truncate text-xs text-paperMuted">{genre}</span>
                     <div className="h-2 flex-1 overflow-hidden rounded-full bg-card2">
                       <div
                         className="h-full rounded-full bg-foil"
@@ -137,6 +137,6 @@ export function YearInBooksCard() {
           </>
         )}
       </div>
-    </section>
+    </Section>
   );
 }

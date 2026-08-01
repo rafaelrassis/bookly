@@ -34,7 +34,7 @@ export function RatingInput({ rating, onChange }: RatingInputProps) {
               onClick={() => handleTap(star)}
               aria-label={`${star} ${star === 1 ? "estrela" : "estrelas"}`}
               aria-pressed={isFull || isHalf}
-              className="relative rounded-lg p-0.5 text-4xl leading-none transition-transform active:scale-90"
+              className="relative flex min-h-tap min-w-tap items-center justify-center rounded-lg text-4xl leading-none transition-transform active:scale-90"
             >
               <span className={isFull ? "text-foil" : "text-paperMuted"}>★</span>
               {isHalf && (
@@ -49,7 +49,7 @@ export function RatingInput({ rating, onChange }: RatingInputProps) {
           );
         })}
       </div>
-      <p className="mt-2 text-xs text-paperDim">
+      <p className="mt-2 text-xs text-paperMuted">
         Toque para dar a nota. Toque de novo na mesma estrela para meia estrela; mais um toque
         remove a nota.
       </p>

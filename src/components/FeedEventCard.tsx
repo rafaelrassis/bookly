@@ -36,7 +36,11 @@ function SimpleEventPost({
   return (
     <article className="border-b border-line py-4">
       <div className="flex gap-3">
-        <Link href={`/u/${event.user.username}`} aria-label={authorHandle} className="rounded-full">
+        <Link
+          href={`/u/${event.user.username}`}
+          aria-label={authorHandle}
+          className="flex min-h-tap min-w-tap items-center justify-center rounded-full"
+        >
           <Avatar user={authorHandle} avatarIndex={event.user.avatar} avatarUrl={event.user.avatarUrl} />
         </Link>
         <div className="min-w-0 flex-1">

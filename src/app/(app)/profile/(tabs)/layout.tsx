@@ -29,7 +29,7 @@ function ProfileHeader() {
         <Link
           href="/settings"
           aria-label="Configurações"
-          className="flex h-10 w-10 items-center justify-center rounded-full text-paperMuted hover:text-paper"
+          className="flex min-h-tap min-w-tap items-center justify-center rounded-full text-paperMuted hover:text-paper"
         >
           <SettingsIcon />
         </Link>

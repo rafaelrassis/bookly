@@ -95,7 +95,7 @@ function EditGoalSheet({
 
   return (
     <Sheet onClose={onClose} title={`Meta de ${year}`}>
-      <label htmlFor="reading-goal-input" className="text-xs font-bold text-paperDim">
+      <label htmlFor="reading-goal-input" className="text-xs font-bold text-paperMuted">
         Quantos livros você quer ler este ano?
       </label>
       <input
@@ -160,15 +160,15 @@ export function ReadingGoalCard() {
       {!hasGoal ? (
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-paperDim">
+            <p className="text-meta uppercase text-paperMuted">
               Meta de {year}
             </p>
-            <p className="mt-1 text-sm text-paperDim">Defina quantos livros quer ler neste ano</p>
+            <p className="mt-1 text-sm text-paperMuted">Defina quantos livros quer ler neste ano</p>
           </div>
           <button
             type="button"
             onClick={() => setEditing(true)}
-            className="shrink-0 rounded-xl bg-foil px-4 py-2 text-xs font-bold text-leather"
+            className="flex min-h-tap shrink-0 items-center justify-center rounded-xl bg-foil px-4 text-xs font-bold text-leather"
           >
             Definir meta
           </button>
@@ -182,21 +182,21 @@ export function ReadingGoalCard() {
             </div>
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-paperDim">
+            <p className="text-meta uppercase text-paperMuted">
               Meta de {year}
             </p>
             <p className="mt-1 font-display text-2xl font-bold text-paper">
-              {goal.read} <span className="text-paperDim">de {goal.target}</span> livros
+              {goal.read} <span className="text-paperMuted">de {goal.target}</span> livros
             </p>
             {goal.percent === 100 ? (
               <p className="mt-1 text-xs text-foil">Meta concluída 🎉</p>
             ) : (
-              goal.pace != null && <p className="mt-1 text-xs text-paperDim">{paceLabel(goal.pace)}</p>
+              goal.pace != null && <p className="mt-1 text-xs text-paperMuted">{paceLabel(goal.pace)}</p>
             )}
             <button
               type="button"
               onClick={() => setEditing(true)}
-              className="mt-2 text-xs font-bold text-foil hover:opacity-80"
+              className="mt-2 flex min-h-tap items-center text-xs font-bold text-foil hover:opacity-80"
             >
               Editar meta
             </button>

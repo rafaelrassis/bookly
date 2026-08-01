@@ -127,7 +127,11 @@ export function FeedPost({ review }: { review: ApiReview }) {
   return (
     <article className="border-b border-line py-4">
       <div className="flex gap-3">
-        <Link href={`/u/${review.user.username}`} aria-label={authorHandle} className="rounded-full">
+        <Link
+          href={`/u/${review.user.username}`}
+          aria-label={authorHandle}
+          className="flex min-h-tap min-w-tap items-center justify-center rounded-full"
+        >
           <Avatar user={authorHandle} avatarIndex={review.user.avatar} avatarUrl={review.user.avatarUrl} />
         </Link>
         <div className="min-w-0 flex-1">
@@ -135,7 +139,7 @@ export function FeedPost({ review }: { review: ApiReview }) {
             <Link href={`/u/${review.user.username}`} className="font-bold hover:text-foil">
               {authorHandle}
             </Link>{" "}
-            <span className="text-paperDim">avaliou</span>{" "}
+            <span className="text-paperMuted">avaliou</span>{" "}
             <Link
               href={`/book/${book.id}`}
               className="font-display font-bold italic hover:text-foil"
@@ -147,25 +151,25 @@ export function FeedPost({ review }: { review: ApiReview }) {
           </p>
           <Link
             href={`/review/${review.id}`}
-            className="mt-1.5 block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foil focus-visible:ring-offset-2 focus-visible:ring-offset-leather"
+            className="mt-1.5 flex min-h-tap flex-col justify-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foil focus-visible:ring-offset-2 focus-visible:ring-offset-leather"
           >
             {review.title && (
               <span className="block font-display text-base font-bold leading-snug text-paper">
                 {review.title}
               </span>
             )}
-            <span className="mt-0.5 block text-sm text-paperDim line-clamp-3 hover:text-paper/90">
+            <span className="mt-0.5 block text-sm text-paperMuted line-clamp-3 hover:text-paper/90">
               {review.text}
             </span>
           </Link>
 
-          <div className="mt-2.5 flex items-center gap-5 text-xs text-paperDim">
+          <div className="mt-1 flex items-center gap-3 text-xs text-paperMuted">
             <button
               type="button"
               onClick={toggleLike}
               aria-pressed={liked}
               aria-label={liked ? "Remover curtida" : "Curtir review"}
-              className={`flex items-center gap-1.5 rounded-full py-1 transition-colors ${
+              className={`flex min-h-tap items-center gap-1.5 rounded-full px-2 transition-colors ${
                 liked ? "text-ribbonText" : "hover:text-paper"
               }`}
             >
@@ -176,7 +180,7 @@ export function FeedPost({ review }: { review: ApiReview }) {
               type="button"
               onClick={openThread}
               aria-expanded={threadOpen}
-              className="flex items-center gap-1.5 rounded-full py-1 transition-colors hover:text-paper"
+              className="flex min-h-tap items-center gap-1.5 rounded-full px-2 transition-colors hover:text-paper"
             >
               <CommentIcon />
               {commentCount}
@@ -192,7 +196,7 @@ export function FeedPost({ review }: { review: ApiReview }) {
         <div className="ml-12 mt-3 flex flex-col gap-3">
           {loadingComments && (
             <div className="flex justify-center py-2">
-              <Spinner size={16} className="text-paperDim" label="Carregando comentários" />
+              <Spinner size={16} className="text-paperMuted" label="Carregando comentários" />
             </div>
           )}
           {comments?.map((comment) => {
@@ -207,7 +211,7 @@ export function FeedPost({ review }: { review: ApiReview }) {
                     size={26}
                   />
                 </Link>
-                <p className="min-w-0 text-sm text-paperDim">
+                <p className="min-w-0 text-sm text-paperMuted">
                   <Link
                     href={`/u/${comment.user.username}`}
                     className="font-bold text-paper hover:text-foil"

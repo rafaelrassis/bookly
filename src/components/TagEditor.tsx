@@ -74,7 +74,7 @@ export function TagEditor({ bookId, tags, onChanged, onToast }: Props) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       {list.length === 0 && (
-        <p className="w-full text-xs text-paperDim">
+        <p className="w-full text-xs text-paperMuted">
           Tags são suas: use para organizar e filtrar a estante (ex.: &quot;favoritos do
           ano&quot;).
         </p>
@@ -90,7 +90,7 @@ export function TagEditor({ bookId, tags, onChanged, onToast }: Props) {
             onClick={() => removeTag(tag)}
             aria-label={`Remover tag ${tag}`}
             disabled={busy}
-            className="tap flex h-4 w-4 items-center justify-center rounded-full text-paperDim hover:text-ribbonText disabled:opacity-40"
+            className="tap flex h-6 w-6 items-center justify-center rounded-full text-sm text-paperMuted hover:text-ribbonText disabled:opacity-40"
           >
             ✕
           </button>
@@ -107,7 +107,7 @@ export function TagEditor({ bookId, tags, onChanged, onToast }: Props) {
         placeholder="+ Adicionar"
         aria-label="Adicionar tag"
         disabled={busy}
-        className="w-28 rounded-full border border-dashed border-line bg-transparent px-3.5 py-1.5 text-xs text-paper disabled:opacity-40"
+        className="min-h-tap w-28 rounded-full border border-dashed border-line bg-transparent px-3.5 text-xs text-paper disabled:opacity-40"
       />
     </div>
   );

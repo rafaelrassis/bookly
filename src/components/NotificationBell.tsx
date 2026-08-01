@@ -55,11 +55,11 @@ export function NotificationBell({ className = "" }: { className?: string }) {
     <Link
       href="/notifications"
       aria-label={unread > 0 ? `Notificações, ${unread} não lidas` : "Notificações"}
-      className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-paperDim transition-colors hover:text-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foil focus-visible:ring-offset-2 focus-visible:ring-offset-leather ${className}`}
+      className={`relative flex min-h-tap min-w-tap shrink-0 items-center justify-center rounded-full text-paperMuted transition-colors hover:text-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foil focus-visible:ring-offset-2 focus-visible:ring-offset-leather ${className}`}
     >
       <BellIcon />
       {unread > 0 && (
-        <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-ribbon px-1 text-[10px] font-bold text-white">
+        <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-ribbon px-1 text-meta font-bold text-white">
           {unread}
         </span>
       )}
