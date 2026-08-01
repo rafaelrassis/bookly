@@ -15,7 +15,7 @@ import { withAt, withoutAt } from "@/lib/handle";
 import { formatCount } from "@/lib/format";
 import { useBooksByIds } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
-import { trustTier } from "@/lib/trust-badge";
+import { receiverTier, trustTier } from "@/lib/trust-badge";
 import type { ApiList, ApiUserReview } from "@/lib/types";
 import type { UserStats } from "@/lib/stats";
 import PublicProfileLoading from "./loading";
@@ -119,6 +119,7 @@ export function ProfilePageClient({ params }: { params: { username: string } }) 
 
   const handle = withAt(profile.username);
   const tier = trustTier(profile.stats.confirmedCount);
+  const receiverBadge = receiverTier(profile.stats.receivedCount);
 
   async function onFollow() {
     if (followBusy || !profile) return;
@@ -152,14 +153,29 @@ export function ProfilePageClient({ params }: { params: { username: string } }) 
         <div className="min-w-0 flex-1">
           <h2 className="font-display text-xl font-bold">{profile.name}</h2>
           <p className="text-sm text-paperDim">{handle}</p>
-          {tier && (
-            <span
-              className="mt-1 inline-flex items-center gap-1 text-foil"
-              title="Baseado em doações confirmadas pelos dois lados."
-            >
-              <BadgeCheckIcon size={16} />
-              <span className="text-xs font-extrabold uppercase tracking-wide">{tier.label}</span>
-            </span>
+          {(tier || receiverBadge) && (
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+              {tier && (
+                <span
+                  className="inline-flex items-center gap-1 text-foil"
+                  title="Baseado em doações confirmadas pelos dois lados."
+                >
+                  <BadgeCheckIcon size={16} />
+                  <span className="text-xs font-extrabold uppercase tracking-wide">{tier.label}</span>
+                </span>
+              )}
+              {receiverBadge && (
+                <span
+                  className="inline-flex items-center gap-1 text-foil"
+                  title="Baseado em doações recebidas e confirmadas."
+                >
+                  <BadgeCheckIcon size={16} />
+                  <span className="text-xs font-extrabold uppercase tracking-wide">
+                    {receiverBadge.label}
+                  </span>
+                </span>
+              )}
+            </div>
           )}
           <div className="mt-1 flex gap-4 text-xs text-paperDim">
             <span>
@@ -221,7 +237,7 @@ export function ProfilePageClient({ params }: { params: { username: string } }) 
         ))}
       </div>
 
-      <Badges donatedCount={profile.stats.donatedCount} receivedCount={profile.stats.receivedCount} />
+      <Badges donatedCount={profile.stats.donatedCount} />
 
       {publicLists.length > 0 && (
         <section className="mt-7">

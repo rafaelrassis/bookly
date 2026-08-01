@@ -16,7 +16,7 @@ import { withAt } from "@/lib/handle";
 import { formatCount, formatDecimal } from "@/lib/format";
 import { useBooksByIds, useLikedReviews, useMyStats, useRecommendations } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
-import { trustTier } from "@/lib/trust-badge";
+import { receiverTier, trustTier } from "@/lib/trust-badge";
 import type { ApiList } from "@/lib/types";
 
 const HISTOGRAM_LABELS: Record<number, string> = { 0.5: "½★", 5: "★★★★★" };
@@ -64,6 +64,7 @@ export default function ProfilePage() {
     reviewEntries,
   } = useMyStats();
   const tier = trustTier(confirmedCount);
+  const receiverBadge = receiverTier(receivedCount);
   const recommended = useRecommendations(6);
   const { items: likedFeedReviews } = useLikedReviews();
   const favoriteBooks = useBooksByIds(user.top4);
@@ -112,14 +113,29 @@ export default function ProfilePage() {
             </Link>
           </div>
           <p className="text-sm text-paperDim">@{user.username}</p>
-          {tier && (
-            <span
-              className="mt-1 inline-flex items-center gap-1 text-foil"
-              title="Baseado em doações confirmadas pelos dois lados."
-            >
-              <BadgeCheckIcon size={16} />
-              <span className="text-xs font-extrabold uppercase tracking-wide">{tier.label}</span>
-            </span>
+          {(tier || receiverBadge) && (
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+              {tier && (
+                <span
+                  className="inline-flex items-center gap-1 text-foil"
+                  title="Baseado em doações confirmadas pelos dois lados."
+                >
+                  <BadgeCheckIcon size={16} />
+                  <span className="text-xs font-extrabold uppercase tracking-wide">{tier.label}</span>
+                </span>
+              )}
+              {receiverBadge && (
+                <span
+                  className="inline-flex items-center gap-1 text-foil"
+                  title="Baseado em doações recebidas e confirmadas."
+                >
+                  <BadgeCheckIcon size={16} />
+                  <span className="text-xs font-extrabold uppercase tracking-wide">
+                    {receiverBadge.label}
+                  </span>
+                </span>
+              )}
+            </div>
           )}
           <p className="mt-1 text-xs text-paperDim">
             <span className="font-bold text-paper">{user.followers}</span> seguidores ·{" "}
@@ -173,7 +189,7 @@ export default function ProfilePage() {
         })}
       </div>
 
-      <Badges donatedCount={donatedCount} receivedCount={receivedCount} />
+      <Badges donatedCount={donatedCount} />
 
       <YearInBooksCard />
 

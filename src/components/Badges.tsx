@@ -1,32 +1,18 @@
-import { GiftIcon, InboxIcon } from "@/components/icons";
+import { GiftIcon } from "@/components/icons";
 import { SectionTitle } from "@/components/SectionTitle";
 
 type BadgeItem = { key: string; icon: React.ReactNode; label: string; count: number };
 
-/** Seção "Selos" no perfil (próprio e público) — reputação de doação, sem
- * ranking entre usuários. Selo só aparece se count > 0; seção some por
- * completo se nenhum dos dois. */
-export function Badges({
-  donatedCount,
-  receivedCount,
-}: {
-  donatedCount: number;
-  receivedCount: number;
-}) {
-  if (donatedCount === 0 && receivedCount === 0) return null;
+/** Seção "Selos" no perfil (próprio e público) — total de livros doados.
+ * O lado do recebedor tem selo próprio por tier (ver trust-badge.ts,
+ * receiverTier), exibido junto do selo de confiança do doador no cabeçalho
+ * do perfil, não aqui. */
+export function Badges({ donatedCount }: { donatedCount: number }) {
+  if (donatedCount === 0) return null;
 
-  const badges: BadgeItem[] = [];
-  if (donatedCount > 0) {
-    badges.push({ key: "doador", icon: <GiftIcon size={18} />, label: "Doador", count: donatedCount });
-  }
-  if (receivedCount > 0) {
-    badges.push({
-      key: "recebedor",
-      icon: <InboxIcon size={18} />,
-      label: "Recebedor",
-      count: receivedCount,
-    });
-  }
+  const badges: BadgeItem[] = [
+    { key: "doador", icon: <GiftIcon size={18} />, label: "Doador", count: donatedCount },
+  ];
 
   return (
     <section className="mt-6">
