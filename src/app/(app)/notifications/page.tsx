@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { BackHeader } from "@/components/BackHeader";
 import { GiftIcon } from "@/components/icons";
-import { SectionError } from "@/components/SectionError";
+import { ErrorRetry } from "@/components/ui/ErrorRetry";
 import { Skeleton } from "@/components/Skeleton";
 import { apiErrorMessage } from "@/lib/apiError";
 import { withAt } from "@/lib/handle";
@@ -128,7 +128,7 @@ export default function NotificationsPage() {
       </BackHeader>
 
       {error ? (
-        <SectionError message={error} onRetry={() => setReloadSignal((n) => n + 1)} />
+        <ErrorRetry message={error} onRetry={() => setReloadSignal((n) => n + 1)} />
       ) : !notifications ? (
         <NotificationsSkeleton />
       ) : notifications.length === 0 ? (

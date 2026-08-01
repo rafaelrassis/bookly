@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { SectionError } from "@/components/SectionError";
+import { ErrorRetry } from "@/components/ui/ErrorRetry";
 
 export default function PublicProfileError({
   error,
@@ -14,5 +14,5 @@ export default function PublicProfileError({
     console.error("[u/error]", error);
   }, [error]);
 
-  return <SectionError message="Não foi possível carregar este perfil. Tente de novo." onRetry={reset} />;
+  return <ErrorRetry message="Não foi possível carregar este perfil. Tente de novo." onRetry={reset} />;
 }

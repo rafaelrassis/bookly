@@ -26,7 +26,7 @@ export function Badges({ donatedCount }: { donatedCount: number }) {
             <span className="text-foil">{badge.icon}</span>
             <div>
               <p className="font-display text-xl font-bold text-foil">{badge.count}</p>
-              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-paperDim">
+              <p className="text-meta uppercase text-paperMuted">
                 {badge.label}
               </p>
             </div>

@@ -94,7 +94,7 @@ export function YearInBooksCard() {
             <div className="flex">
               <div className="flex-1 text-center">
                 <p className="font-display text-2xl font-bold text-foil">{stats.booksRead}</p>
-                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-paperDim">
+                <p className="mt-0.5 text-meta uppercase text-paperMuted">
                   livros lidos
                 </p>
               </div>
@@ -102,7 +102,7 @@ export function YearInBooksCard() {
                 <p className="font-display text-2xl font-bold text-foil">
                   {formatCount(stats.pagesRead)}
                 </p>
-                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-paperDim">
+                <p className="mt-0.5 text-meta uppercase text-paperMuted">
                   páginas
                 </p>
               </div>
@@ -110,7 +110,7 @@ export function YearInBooksCard() {
                 <p className="font-display text-2xl font-bold text-foil">
                   {stats.avgRating !== null ? formatDecimal(stats.avgRating) : "–"}
                 </p>
-                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-paperDim">
+                <p className="mt-0.5 text-meta uppercase text-paperMuted">
                   nota média
                 </p>
               </div>

@@ -230,7 +230,7 @@ export function ProfilePageClient({ params }: { params: { username: string } }) 
             className={`flex-1 text-center ${i > 0 ? "border-l border-line" : ""}`}
           >
             <p className="font-display text-2xl font-bold text-foil">{stat.value}</p>
-            <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-paperDim">
+            <p className="mt-0.5 text-meta uppercase text-paperMuted">
               {stat.label}
             </p>
           </div>

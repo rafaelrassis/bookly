@@ -5,7 +5,7 @@ import Image from "next/image";
 import { BottomSheet } from "@/components/BottomSheet";
 import { EmptyState } from "@/components/EmptyState";
 import { GiftIcon } from "@/components/icons";
-import { SectionError } from "@/components/SectionError";
+import { ErrorRetry } from "@/components/ui/ErrorRetry";
 import { Skeleton } from "@/components/Skeleton";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useStore } from "@/lib/store";
@@ -40,7 +40,7 @@ export function MyDonations() {
     };
   }, [reloadSignal]);
 
-  if (error) return <SectionError message={error} onRetry={() => setReloadSignal((n) => n + 1)} />;
+  if (error) return <ErrorRetry message={error} onRetry={() => setReloadSignal((n) => n + 1)} />;
   if (!donations) return <DonationsSkeleton />;
 
   const managing = donations.find((d) => d.id === managingId) ?? null;
