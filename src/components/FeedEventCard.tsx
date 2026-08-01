@@ -24,12 +24,17 @@ function SimpleEventPost({
   icon,
   text,
   href,
+  linkLabel,
   children,
 }: {
   event: ApiFeedEvent;
   icon: React.ReactNode;
   text: React.ReactNode;
   href: string;
+  /** Nome acessível do link de conteúdo quando ele não tem `children`
+   * visível (a maioria dos tipos de evento) — sem isso ele vira um link
+   * vazio focável, e sem `min-h-tap` ele colapsa pra altura 0. */
+  linkLabel: string;
   children?: React.ReactNode;
 }) {
   const authorHandle = withAt(event.user.username);
@@ -39,7 +44,7 @@ function SimpleEventPost({
         <Link
           href={`/u/${event.user.username}`}
           aria-label={authorHandle}
-          className="flex min-h-tap min-w-tap items-center justify-center rounded-full"
+          className="tap rounded-full"
         >
           <Avatar user={authorHandle} avatarIndex={event.user.avatar} avatarUrl={event.user.avatarUrl} />
         </Link>
@@ -48,7 +53,11 @@ function SimpleEventPost({
             <span className="shrink-0 text-foil">{icon}</span>
             {text}
           </p>
-          <Link href={href} className="mt-1.5 block rounded-lg">
+          <Link
+            href={href}
+            aria-label={children ? undefined : linkLabel}
+            className="mt-1.5 flex min-h-tap flex-col justify-center rounded-lg"
+          >
             {children}
           </Link>
         </div>
@@ -77,6 +86,7 @@ export function FeedEventCard({ event }: { event: ApiFeedEvent }) {
         event={event}
         icon={<BookOpenIcon size={16} />}
         href={`/book/${event.book.id}`}
+        linkLabel={`Ver ${event.book.title}`}
         text={
           <>
             <Link href={`/u/${event.user.username}`} className="font-bold text-paper hover:text-foil">
@@ -96,6 +106,7 @@ export function FeedEventCard({ event }: { event: ApiFeedEvent }) {
         event={event}
         icon={<GiftIcon size={16} />}
         href={`/book/${event.book.id}`}
+        linkLabel={`Ver ${event.book.title}`}
         text={
           <>
             <Link href={`/u/${event.user.username}`} className="font-bold text-paper hover:text-foil">
@@ -115,6 +126,7 @@ export function FeedEventCard({ event }: { event: ApiFeedEvent }) {
         event={event}
         icon={<GroupIcon size={16} />}
         href={`/clubs/${event.club.id}`}
+        linkLabel={`Ver clube ${event.club.name}`}
         text={
           <>
             <Link href={`/u/${event.user.username}`} className="font-bold text-paper hover:text-foil">
@@ -134,6 +146,7 @@ export function FeedEventCard({ event }: { event: ApiFeedEvent }) {
         event={event}
         icon={<QuoteMark />}
         href={`/book/${event.book.id}`}
+        linkLabel={`Ver ${event.book.title}`}
         text={
           <>
             <Link href={`/u/${event.user.username}`} className="font-bold text-paper hover:text-foil">
@@ -157,6 +170,7 @@ export function FeedEventCard({ event }: { event: ApiFeedEvent }) {
         event={event}
         icon={<GroupIcon size={16} />}
         href={`/clubs/${event.club.id}`}
+        linkLabel={`Ver clube ${event.club.name}`}
         text={
           <>
             <span className="font-display font-bold italic text-paper">{event.club.name}</span> vai

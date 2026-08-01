@@ -126,11 +126,7 @@ export function ReviewPageClient({ params }: { params: { id: string } }) {
 
       <article className="mt-4">
         <div className="flex items-center gap-3">
-          <Link
-            href={profileHref}
-            aria-label={authorHandle}
-            className="flex min-h-tap min-w-tap items-center justify-center rounded-full"
-          >
+          <Link href={profileHref} aria-label={authorHandle} className="tap rounded-full">
             <Avatar user={authorHandle} avatarIndex={review.user.avatar} avatarUrl={review.user.avatarUrl} />
           </Link>
           <div className="min-w-0">

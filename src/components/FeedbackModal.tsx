@@ -72,7 +72,7 @@ export function FeedbackModal({ onClose, onToast }: Props) {
         aria-label="Sua mensagem"
         className="mt-4 w-full resize-none rounded-xl border border-line bg-card2 p-3 text-sm text-paper focus:outline-none"
       />
-      <div className="mt-1 text-right text-[11px] text-paperMuted">{message.length}/2000</div>
+      <div className="mt-1 text-right text-meta text-paperMuted">{message.length}/2000</div>
 
       <div className="mt-4 flex justify-end gap-2">
         <Button variant="ghost" onClick={onClose}>
