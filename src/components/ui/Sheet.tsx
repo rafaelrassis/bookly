@@ -10,8 +10,9 @@ type SheetProps = {
 };
 
 /** Modal com duas apresentações: folha subindo do rodapé no mobile, diálogo
- * centralizado no desktop. Base de `BottomSheet` e `FeedbackModal` — evita
- * reescrever largura, posicionamento e a11y de modal em cada tela. */
+ * centralizado no desktop. Base de todo modal do app (`FeedbackModal`,
+ * gerenciar doação, meta de leitura, tags...) — evita reescrever largura,
+ * posicionamento e a11y de modal em cada tela. */
 export function Sheet({ onClose, title, children }: SheetProps) {
   const dialogRef = useModalA11y<HTMLDivElement>(onClose);
   const titleId = useId();

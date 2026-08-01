@@ -149,7 +149,7 @@ export default function HomePage() {
 
       <Link
         href="/search"
-        className="mt-5 flex min-h-tap items-center gap-2.5 rounded-xl border border-line bg-card px-4 text-paperMuted transition-colors hover:bg-card2 lg:mt-0"
+        className="mt-5 hidden min-h-tap items-center gap-2.5 rounded-xl border border-line bg-card px-4 text-paperMuted transition-colors hover:bg-card2 md:flex lg:mt-0"
       >
         <SearchIcon />
         Buscar livros ou autores…

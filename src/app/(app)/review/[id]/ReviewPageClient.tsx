@@ -7,6 +7,7 @@ import { Avatar } from "@/components/Avatar";
 import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
 import { Stars } from "@/components/Stars";
+import { ErrorRetry } from "@/components/ui/ErrorRetry";
 import { withAt } from "@/lib/handle";
 import { readingDates } from "@/lib/format";
 import { useStore } from "@/lib/store";
@@ -63,20 +64,15 @@ export function ReviewPageClient({ params }: { params: { id: string } }) {
 
   if (status === "error") {
     return (
-      <div className="px-5 pt-4">
+      <div className="pt-4">
         <BackHeader>
           <h1 className="text-lg font-extrabold">Resenha</h1>
         </BackHeader>
-        <div className="mt-10 flex flex-col items-center gap-3 text-center">
-          <p className="text-paperDim">Não foi possível carregar a review. Tente de novo.</p>
-          <button
-            type="button"
-            onClick={() => setRetryCount((n) => n + 1)}
-            className="rounded-xl border border-line bg-card px-4 py-2.5 text-sm font-bold text-paper hover:border-foil/50"
-          >
-            Tentar de novo
-          </button>
-        </div>
+        <ErrorRetry
+          className="mt-10"
+          message="Não foi possível carregar a review. Tente de novo."
+          onRetry={() => setRetryCount((n) => n + 1)}
+        />
       </div>
     );
   }
@@ -123,7 +119,7 @@ export function ReviewPageClient({ params }: { params: { id: string } }) {
   }
 
   return (
-    <div className="px-5 pt-4">
+    <div className="pt-4">
       <BackHeader>
         <h1 className="text-lg font-extrabold">Resenha</h1>
       </BackHeader>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { BottomSheet } from "@/components/BottomSheet";
+import { Sheet } from "@/components/ui/Sheet";
 import { Spinner } from "@/components/Spinner";
 import { useStore } from "@/lib/store";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -94,7 +94,7 @@ function EditGoalSheet({
   }
 
   return (
-    <BottomSheet onClose={onClose} title={`Meta de ${year}`}>
+    <Sheet onClose={onClose} title={`Meta de ${year}`}>
       <label htmlFor="reading-goal-input" className="text-xs font-bold text-paperDim">
         Quantos livros você quer ler este ano?
       </label>
@@ -120,7 +120,7 @@ function EditGoalSheet({
       >
         {saving ? <Spinner size={16} className="text-leather" /> : "Salvar meta"}
       </button>
-    </BottomSheet>
+    </Sheet>
   );
 }
 

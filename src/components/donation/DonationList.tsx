@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { BottomSheet } from "@/components/BottomSheet";
+import { Sheet } from "@/components/ui/Sheet";
 import { Spinner } from "@/components/Spinner";
 import { GiftIcon } from "@/components/icons";
 import { Button } from "@/components/ui/Button";
@@ -239,7 +239,7 @@ export function DonationList({ bookId, myUf, myCity, reloadSignal, onToast }: Pr
       )}
 
       {managing && (
-        <BottomSheet onClose={() => setManagingId(null)} title="Gerenciar doação">
+        <Sheet onClose={() => setManagingId(null)} title="Gerenciar doação">
           <DonorPanel
             donationId={managing.id}
             status={managing.status}
@@ -252,7 +252,7 @@ export function DonationList({ bookId, myUf, myCity, reloadSignal, onToast }: Pr
             }}
             onToast={onToast}
           />
-        </BottomSheet>
+        </Sheet>
       )}
     </div>
   );

@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { BadgeCheckIcon, BookOpenIcon } from "@/components/icons";
 import { Stars } from "@/components/Stars";
 import { SectionTitle } from "@/components/SectionTitle";
+import { ErrorRetry } from "@/components/ui/ErrorRetry";
 import { withAt, withoutAt } from "@/lib/handle";
 import { formatCount } from "@/lib/format";
 import { useBooksByIds } from "@/lib/store/hooks";
@@ -86,20 +87,15 @@ export function ProfilePageClient({ params }: { params: { username: string } }) 
 
   if (error) {
     return (
-      <div className="px-5 pt-4">
+      <div className="pt-4">
         <BackHeader>
           <h1 className="text-lg font-extrabold">Perfil</h1>
         </BackHeader>
-        <div className="mt-10 flex flex-col items-center gap-3 text-center">
-          <p className="text-paperDim">Não foi possível carregar o perfil. Tente de novo.</p>
-          <button
-            type="button"
-            onClick={() => setRetryCount((n) => n + 1)}
-            className="rounded-xl border border-line bg-card px-4 py-2.5 text-sm font-bold text-paper hover:border-foil/50"
-          >
-            Tentar de novo
-          </button>
-        </div>
+        <ErrorRetry
+          className="mt-10"
+          message="Não foi possível carregar o perfil. Tente de novo."
+          onRetry={() => setRetryCount((n) => n + 1)}
+        />
       </div>
     );
   }
@@ -108,7 +104,7 @@ export function ProfilePageClient({ params }: { params: { username: string } }) 
 
   if (!profile) {
     return (
-      <div className="px-5 pt-4">
+      <div className="pt-4">
         <BackHeader>
           <h1 className="text-lg font-extrabold">Perfil</h1>
         </BackHeader>
@@ -143,7 +139,7 @@ export function ProfilePageClient({ params }: { params: { username: string } }) 
   const publicLists = lists.filter((l) => l.visibility === "public");
 
   return (
-    <div className="px-5 pt-4">
+    <div className="pt-4">
       <BackHeader>
         <h1 className="text-lg font-extrabold">Perfil</h1>
       </BackHeader>

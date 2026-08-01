@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/Skeleton";
 
 export default function ReviewLoading() {
   return (
-    <div className="px-5 pt-4" role="status" aria-label="Carregando review">
+    <div className="pt-4" role="status" aria-label="Carregando review">
       <div className="flex items-center gap-2">
         <Skeleton className="h-10 w-10 rounded-full" />
         <Skeleton className="h-5 w-24" />

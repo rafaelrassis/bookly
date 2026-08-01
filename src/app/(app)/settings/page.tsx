@@ -6,6 +6,8 @@ import { BackHeader } from "@/components/BackHeader";
 import { FeedbackModal } from "@/components/FeedbackModal";
 import { GoodreadsImport } from "@/components/GoodreadsImport";
 import { SectionTitle } from "@/components/SectionTitle";
+import { Button } from "@/components/ui/Button";
+import { Chip } from "@/components/ui/Chip";
 import { emailLoginEnabled } from "@/lib/featureFlags";
 import { useStore } from "@/lib/store";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -133,21 +135,12 @@ export default function SettingsPage() {
               />
             </div>
             <div className="mt-3 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={resetPasswordFlow}
-                className="rounded-xl px-4 py-2.5 text-sm font-bold text-paperDim hover:text-paper"
-              >
+              <Button variant="ghost" onClick={resetPasswordFlow}>
                 Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={submitPassword}
-                disabled={passwordBusy}
-                className="rounded-xl bg-foil px-4 py-2.5 text-sm font-bold text-leather disabled:opacity-40"
-              >
+              </Button>
+              <Button variant="primary" onClick={submitPassword} disabled={passwordBusy}>
                 {passwordBusy ? "Salvando…" : "Salvar senha"}
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -157,28 +150,16 @@ export default function SettingsPage() {
         <SectionTitle>Aparência</SectionTitle>
         <div className="mt-3 flex items-center justify-between rounded-2xl border border-line bg-card px-4 py-3.5">
           <span className="text-sm">Tema</span>
-          <div
-            className="flex rounded-full border border-line bg-card2 p-0.5 text-xs font-bold"
-            role="group"
-            aria-label="Tema do aplicativo"
-          >
+          <div className="flex gap-1" role="group" aria-label="Tema do aplicativo">
             {(
               [
                 { key: "dark", label: "Escuro" },
                 { key: "light", label: "Claro" },
               ] as const
             ).map(({ key, label }) => (
-              <button
-                key={key}
-                type="button"
-                aria-pressed={theme === key}
-                onClick={() => setTheme(key)}
-                className={`rounded-full px-3.5 py-1.5 transition-colors ${
-                  theme === key ? "bg-foil text-leather" : "text-paperDim hover:text-paper"
-                }`}
-              >
+              <Chip key={key} active={theme === key} onClick={() => setTheme(key)}>
                 {label}
-              </button>
+              </Chip>
             ))}
           </div>
         </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BottomSheet } from "@/components/BottomSheet";
+import { Sheet } from "@/components/ui/Sheet";
 import { CreateDonationForm } from "@/components/donation/CreateDonationForm";
 import { DonationList } from "@/components/donation/DonationList";
 import { Section } from "@/components/ui/Section";
@@ -33,7 +33,7 @@ export function DonationSection({ bookId, myState, myCity, showToast }: Props) {
       <DonationList bookId={bookId} myUf={myState} myCity={myCity} reloadSignal={reloadSignal} onToast={showToast} />
 
       {donating && (
-        <BottomSheet onClose={() => setDonating(false)} title="Doar este livro">
+        <Sheet onClose={() => setDonating(false)} title="Doar este livro">
           <CreateDonationForm
             bookId={bookId}
             defaultState={myState}
@@ -45,7 +45,7 @@ export function DonationSection({ bookId, myState, myCity, showToast }: Props) {
               setReloadSignal((n) => n + 1);
             }}
           />
-        </BottomSheet>
+        </Sheet>
       )}
     </Section>
   );

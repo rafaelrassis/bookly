@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { notFound } from "next/navigation";
 import { Avatar } from "@/components/Avatar";
 import { BackHeader } from "@/components/BackHeader";
+import { ErrorRetry } from "@/components/ui/ErrorRetry";
 import { withAt, withoutAt } from "@/lib/handle";
 import { formatCount, formatDecimal } from "@/lib/format";
 import type { YearStats } from "@/lib/stats";
@@ -52,20 +53,15 @@ export function YearInBooksPageClient({
 
   if (error) {
     return (
-      <div className="px-5 pt-4">
+      <div className="pt-4">
         <BackHeader>
           <h1 className="text-lg font-extrabold">{year} em livros</h1>
         </BackHeader>
-        <div className="mt-10 flex flex-col items-center gap-3 text-center">
-          <p className="text-paperDim">Não foi possível carregar esta página. Tente de novo.</p>
-          <button
-            type="button"
-            onClick={() => setRetryCount((n) => n + 1)}
-            className="rounded-xl border border-line bg-card px-4 py-2.5 text-sm font-bold text-paper hover:border-foil/50"
-          >
-            Tentar de novo
-          </button>
-        </div>
+        <ErrorRetry
+          className="mt-10"
+          message="Não foi possível carregar esta página. Tente de novo."
+          onRetry={() => setRetryCount((n) => n + 1)}
+        />
       </div>
     );
   }
@@ -76,7 +72,7 @@ export function YearInBooksPageClient({
   const handle = withAt(user.username);
 
   return (
-    <div className="px-5 pt-4">
+    <div className="pt-4">
       <BackHeader>
         <h1 className="text-lg font-extrabold">{year} em livros</h1>
       </BackHeader>

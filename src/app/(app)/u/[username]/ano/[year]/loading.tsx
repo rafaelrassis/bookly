@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/Skeleton";
 
 export default function YearInBooksLoading() {
   return (
-    <div className="px-5 pt-4" role="status" aria-label="Carregando ano em livros">
+    <div className="pt-4" role="status" aria-label="Carregando ano em livros">
       <Skeleton className="h-10 w-10 rounded-full" />
 
       <div className="mt-4 flex items-center gap-3">

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { BottomSheet } from "@/components/BottomSheet";
+import { Sheet } from "@/components/ui/Sheet";
 import { EmptyState } from "@/components/EmptyState";
 import { GiftIcon } from "@/components/icons";
 import { ErrorRetry } from "@/components/ui/ErrorRetry";
@@ -65,7 +65,7 @@ export function MyDonations() {
       )}
 
       {managing && (
-        <BottomSheet onClose={() => setManagingId(null)} title="Gerenciar doação">
+        <Sheet onClose={() => setManagingId(null)} title="Gerenciar doação">
           <DonorPanel
             donationId={managing.id}
             status={managing.status}
@@ -80,7 +80,7 @@ export function MyDonations() {
             }}
             onToast={showToast}
           />
-        </BottomSheet>
+        </Sheet>
       )}
     </div>
   );

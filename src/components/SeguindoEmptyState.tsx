@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
+import { Button } from "@/components/ui/Button";
 import { apiErrorMessage } from "@/lib/apiError";
 import { withAt } from "@/lib/handle";
 import { useStore } from "@/lib/store";
@@ -64,14 +65,14 @@ export function SeguindoEmptyState({ onGoGeneral }: { onGoGeneral: () => void })
                   <p className="truncate text-xs text-paperDim">{withAt(u.username)}</p>
                 </div>
               </Link>
-              <button
-                type="button"
+              <Button
+                variant="primary"
+                className="shrink-0"
                 onClick={() => follow(u.username)}
                 disabled={pending === u.username}
-                className="shrink-0 rounded-full bg-foil px-3.5 py-1.5 text-xs font-bold text-leather hover:opacity-90 disabled:opacity-60"
               >
                 Seguir
-              </button>
+              </Button>
             </div>
           ))}
         </div>
