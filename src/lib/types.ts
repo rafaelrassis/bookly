@@ -303,14 +303,17 @@ export type NotificationType =
   | "DONATION_RECEIPT_CONFIRMED"
   | "DONATION_RESERVE_EXTENDED";
 
-/** Notificação in-app real (GET /api/notifications) — fluxo de doação hoje,
- * genérica o bastante pra follows/reviews/clubes depois. */
-export type ApiNotification = {
-  id: string;
+/** Item da lista de GET /api/notifications — já vem agrupado pelo servidor
+ * (mesmo tipo + mesma doação, entre não lidas; ver lib/notification-grouping
+ * no backend). `actors` tem 1 item pra notificações não agrupadas e mais de
+ * 1 quando várias pessoas geraram notificações pro mesmo alvo. */
+export type ApiNotificationGroup = {
+  key: string;
   type: NotificationType;
+  donationId: string | null;
   read: boolean;
   createdAt: string;
-  actor: { id: string; username: string | null; name: string; avatar: number; avatarUrl: string | null } | null;
+  actors: { id: string; username: string | null; name: string; avatar: number; avatarUrl: string | null }[];
   donation: { id: string; bookId: string; book: { title: string } } | null;
 };
 
