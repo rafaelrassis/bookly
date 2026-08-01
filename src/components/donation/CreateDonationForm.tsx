@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Spinner } from "@/components/Spinner";
+import { CityAutocomplete } from "@/components/CityAutocomplete";
 import { apiErrorMessage } from "@/lib/apiError";
 import { UF_LIST } from "@/lib/uf";
 
@@ -35,6 +36,11 @@ export function CreateDonationForm({
   const [uploading, setUploading] = useState(false);
   const [state, setState] = useState(defaultState ?? "");
   const [city, setCity] = useState(defaultCity ?? "");
+  /** Só vira true quando o usuário escolhe uma sugestão do autocomplete —
+   * garante que city/state gravados são o nome canônico do IBGE (spec
+   * autocomplete de cidades), mesmo que defaultCity/defaultState (perfil)
+   * já tenha preenchido o campo com texto livre pré-spec. */
+  const [citySelected, setCitySelected] = useState(false);
   const [whatsapp, setWhatsapp] = useState("");
   const [instagram, setInstagram] = useState("");
   const [saving, setSaving] = useState(false);
@@ -72,7 +78,7 @@ export function CreateDonationForm({
   }
 
   const canSubmit =
-    !saving && !uploading && photoUrl && state && city.trim() && (whatsapp.trim() || instagram.trim());
+    !saving && !uploading && photoUrl && state && citySelected && (whatsapp.trim() || instagram.trim());
 
   async function submit() {
     if (!canSubmit) return;
@@ -140,7 +146,10 @@ export function CreateDonationForm({
       <div className="flex gap-2">
         <select
           value={state}
-          onChange={(e) => setState(e.target.value)}
+          onChange={(e) => {
+            setState(e.target.value);
+            setCitySelected(false);
+          }}
           aria-label="Estado (UF)"
           className="w-24 rounded-xl border border-line bg-card2 px-3 py-2.5 text-sm text-paper"
         >
@@ -151,15 +160,23 @@ export function CreateDonationForm({
             </option>
           ))}
         </select>
-        <input
-          type="text"
-          value={city}
-          onChange={(e) => setCity(e.target.value)}
-          placeholder="Cidade"
-          aria-label="Cidade"
-          className="min-w-0 flex-1 rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper placeholder:text-paperDim/60"
+        <CityAutocomplete
+          city={city}
+          state={state}
+          onCityChange={(value) => {
+            setCity(value);
+            setCitySelected(false);
+          }}
+          onSelect={(suggestion) => {
+            setCity(suggestion.name);
+            setState(suggestion.state);
+            setCitySelected(true);
+          }}
         />
       </div>
+      {!citySelected && (
+        <p className="text-xs text-paperDim">Escolha a cidade na lista de sugestões.</p>
+      )}
 
       <input
         type="tel"

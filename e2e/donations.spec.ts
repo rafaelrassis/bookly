@@ -42,7 +42,7 @@ test.describe("Doação de livros — fluxo ponta a ponta", () => {
     await login(donor, donorAccount);
     await login(user, userAccount);
 
-    const city = `Cidade E2E ${Date.now()}`;
+    const city = "São Paulo"; // fixture de e2e/global-setup.ts (City)
     const card = donor.locator("li", { hasText: city });
     const cardOnUser = user.locator("li", { hasText: city });
 
@@ -56,7 +56,8 @@ test.describe("Doação de livros — fluxo ponta a ponta", () => {
     await createDialog.locator('input[type="file"]').setInputFiles(FIXTURE_JPG);
     await expect(createDialog.getByText("Trocar foto")).toBeVisible();
     await createDialog.getByLabel(/estado \(uf\)/i).selectOption("SP");
-    await createDialog.getByLabel(/cidade/i).fill(city);
+    await createDialog.getByLabel(/cidade/i).fill("São Pau");
+    await createDialog.getByRole("option", { name: new RegExp(city) }).click();
     await createDialog.getByLabel(/whatsapp/i).fill("5511999998888");
     await createDialog.getByRole("button", { name: "Publicar doação" }).click();
     await expect(createDialog).toBeHidden();
@@ -107,7 +108,7 @@ test.describe("Doação de livros — fluxo ponta a ponta", () => {
     const account = seedAccount("ui_self");
     await login(donor, account);
 
-    const city = `Cidade Self E2E ${Date.now()}`;
+    const city = "Rio de Janeiro"; // fixture de e2e/global-setup.ts (City)
     await stubPhotoUpload(donor);
     await donor.goto(`/book/${BOOK}`);
     await donor.waitForSelector("h1");
@@ -117,14 +118,18 @@ test.describe("Doação de livros — fluxo ponta a ponta", () => {
     await createDialog.locator('input[type="file"]').setInputFiles(FIXTURE_JPG);
     await expect(createDialog.getByText("Trocar foto")).toBeVisible();
     await createDialog.getByLabel(/estado \(uf\)/i).selectOption("RJ");
-    await createDialog.getByLabel(/cidade/i).fill(city);
+    await createDialog.getByLabel(/cidade/i).fill("Rio de Jan");
+    await createDialog.getByRole("option", { name: new RegExp(city) }).click();
     await createDialog.getByLabel(/instagram/i).fill("doador_self_teste");
     await createDialog.getByRole("button", { name: "Publicar doação" }).click();
     await expect(createDialog).toBeHidden();
 
-    const card = donor.locator("li", { hasText: city });
+    // Filtra também por "sua doação" (não só a cidade): em reruns locais contra
+    // um Postgres reaproveitado (fora do CI, que sempre nasce vazio), pode
+    // haver doações antigas na mesma cidade fixture de outras contas — só a
+    // do doador atual mostra esse texto, o que mantém o locator único.
+    const card = donor.locator("li", { hasText: city }).filter({ hasText: /sua doação/i });
     await expect(card).toBeVisible();
-    await expect(card.getByText(/sua doação/i)).toBeVisible();
     await expect(card.getByRole("button", { name: "Quero este" })).toHaveCount(0);
 
     await ctx.close();

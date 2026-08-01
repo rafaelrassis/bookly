@@ -476,6 +476,18 @@ model ClubDiscussionComment {
   @@index([clubBookOfMonthId, page])
 }
 
+/// Cache local dos municípios do IBGE (spec autocomplete de cidades) —
+/// seedado uma vez via prisma/seed-cities.ts, evita bater na API do IBGE a
+/// cada tecla digitada no autocomplete de cidade/UF.
+model City {
+  id       String @id @default(cuid())
+  ibgeCode String @unique
+  name     String
+  state    String @db.Char(2) // UF
+
+  @@index([state, name])
+}
+
 enum DonationStatus {
   DISPONIVEL
   RESERVADO
