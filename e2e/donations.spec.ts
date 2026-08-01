@@ -91,8 +91,10 @@ test.describe("Doação de livros — fluxo ponta a ponta", () => {
     await expect(whatsappLink).toBeVisible();
     await expect(whatsappLink).toHaveAttribute("href", /^https:\/\/wa\.me\/5511999998888$/);
 
-    // 6. Doador marca como doado → some da lista de ambos
+    // 6. Doador marca como doado (com confirmação) → some da lista de ambos
     await manageDialog.getByRole("button", { name: /marcar como doado/i }).click();
+    const confirmDoadoDialog = donor.getByRole("dialog", { name: "Marcar como doado" });
+    await confirmDoadoDialog.getByRole("button", { name: /marcar como doado/i }).click();
     await expect(manageDialog.getByText(/já foi doado/i)).toBeVisible();
 
     await user.reload();
