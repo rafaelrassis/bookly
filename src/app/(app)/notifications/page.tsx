@@ -50,11 +50,10 @@ function groupHref(g: ApiNotificationGroup): string {
   switch (g.type) {
     case "DONATION_REQUEST_RECEIVED":
     case "DONATION_RECEIPT_CONFIRMED":
-      return "/profile#minhas-doacoes";
     case "DONATION_CHOSEN":
     case "DONATION_COMPLETED":
     case "DONATION_RESERVE_EXTENDED":
-      return "/profile#recebidos";
+      return "/profile/doacoes";
     default:
       return "/profile";
   }

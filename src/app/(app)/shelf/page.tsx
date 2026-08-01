@@ -301,13 +301,12 @@ export default function ShelfPage() {
           {items.map(({ book, entry }) => (
             <li key={book.id} className="group relative">
               <Link href={`/book/${book.id}`} className="block">
-                <div
-                  className={`aspect-[2/3] w-full overflow-hidden rounded-md shadow-md shadow-black/40 ${
-                    entry.status === "DNF" ? "grayscale-[0.6] opacity-80" : ""
-                  }`}
-                >
-                  <BookCover book={book} width={160} className="h-full w-full" />
-                </div>
+                <BookCover
+                  book={book}
+                  fluid
+                  sizes="(min-width: 1024px) 14vw, (min-width: 768px) 16vw, (min-width: 480px) 24vw, 32vw"
+                  className={entry.status === "DNF" ? "grayscale-[0.6] opacity-80" : ""}
+                />
                 <p className="mt-2 line-clamp-2 text-caption font-bold group-hover:text-foil">{book.title}</p>
                 <p className="text-meta font-normal normal-case tracking-normal text-paperMuted">
                   {book.authors}
