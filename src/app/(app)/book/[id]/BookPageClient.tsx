@@ -212,6 +212,7 @@ export function BookPageClient({ params }: { params: { id: string } }) {
 
   const [communityReviews, setCommunityReviews] = useState<CommunityReview[]>([]);
   const [reviewsCursor, setReviewsCursor] = useState<string | null>(null);
+  const [recommendations, setRecommendations] = useState<Book[]>([]);
 
   const [editingReview, setEditingReview] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
@@ -278,6 +279,18 @@ export function BookPageClient({ params }: { params: { id: string } }) {
       cancelled = true;
     };
   }, [bookId, loadReviews, retryCount]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/books/${bookId}/recommendations`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data) setRecommendations(data.recommendations);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [bookId]);
 
   if (notFoundFlag) notFound();
 
@@ -756,6 +769,21 @@ export function BookPageClient({ params }: { params: { id: string } }) {
           )}
         </div>
       </section>
+
+      {recommendations.length > 0 && (
+        <section className="mt-6">
+          <SectionTitle>Quem leu isso também leu</SectionTitle>
+          <div className="no-scrollbar -mx-5 mt-3 flex gap-3 overflow-x-auto px-5">
+            {recommendations.map((rec) => (
+              <Link key={rec.id} href={`/book/${rec.id}`} className="w-28 shrink-0">
+                <BookCover book={rec} width={112} />
+                <p className="mt-1.5 truncate text-xs font-bold">{rec.title}</p>
+                <p className="truncate text-[11px] text-paperDim">{rec.authors}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {donating && (
         <BottomSheet onClose={() => setDonating(false)} title="Doar este livro">

@@ -248,6 +248,7 @@ model ReadingEvent {
   createdAt    DateTime   @default(now())
 
   @@index([userId, finishedAt])
+  @@index([bookId])
 }
 
 /// Meta anual de livros (Reading Challenge). Progresso é derivado de
