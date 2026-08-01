@@ -130,14 +130,14 @@ export function DonorPanel({ donationId, status, onStatusChange, onDeleted, onTo
   if (loading) {
     return (
       <div className="flex justify-center py-8">
-        <Spinner size={24} className="text-paperDim" label="Carregando interessados" />
+        <Spinner size={24} className="text-paperMuted" label="Carregando interessados" />
       </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-3">
-      {status === "DOADO" && <p className="text-sm text-paperDim">Este livro já foi doado. 🎉</p>}
+      {status === "DOADO" && <p className="text-sm text-paperMuted">Este livro já foi doado. 🎉</p>}
 
       {status === "RESERVADO" && chosen && (
         <div className="rounded-xl border border-foil/40 bg-card2 p-3">
@@ -177,7 +177,7 @@ export function DonorPanel({ donationId, status, onStatusChange, onDeleted, onTo
       {status === "DISPONIVEL" && (
         <>
           {pending.length === 0 ? (
-            <p className="text-sm text-paperDim">Ninguém demonstrou interesse ainda.</p>
+            <p className="text-sm text-paperMuted">Ninguém demonstrou interesse ainda.</p>
           ) : (
             <ul className="flex flex-col gap-2.5">
               {pending.map((r) => (

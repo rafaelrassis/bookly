@@ -6,9 +6,9 @@ import { AVATAR_CHOICES } from "@/lib/avatars";
 import { AvatarUpload } from "@/components/AvatarUpload";
 import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
-import { SectionTitle } from "@/components/SectionTitle";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
+import { Section } from "@/components/ui/Section";
 import { withoutAt } from "@/lib/handle";
 import { UF_LIST } from "@/lib/uf";
 import { useUsernameCheck } from "@/hooks/useUsernameCheck";
@@ -105,11 +105,8 @@ export default function EditProfilePage() {
         <h1 className="text-lg font-extrabold">Editar perfil</h1>
       </BackHeader>
 
-      <section className="mt-4">
-        <SectionTitle>Foto</SectionTitle>
-        <div className="mt-3">
-          <AvatarUpload />
-        </div>
+      <Section title="Foto">
+        <AvatarUpload />
 
         {!user.avatarUrl && (
           <div className="mt-3 flex flex-wrap gap-3">
@@ -128,13 +125,13 @@ export default function EditProfilePage() {
             ))}
           </div>
         )}
-      </section>
+      </Section>
 
       <section className="mt-6 flex flex-col gap-3">
-        <label className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
+        <label className="flex flex-col gap-1.5 text-sm font-medium text-paperMuted">
           Nome de usuário
           <div className="flex items-center rounded-xl border border-line bg-card px-4">
-            <span className="text-paperDim">@</span>
+            <span className="text-paperMuted">@</span>
             <input
               type="text"
               value={username}
@@ -143,7 +140,7 @@ export default function EditProfilePage() {
             />
           </div>
           {usernameCheck.state === "checking" && (
-            <p className="text-xs text-paperDim">Verificando…</p>
+            <p className="text-xs text-paperMuted">Verificando…</p>
           )}
           {usernameCheck.state === "available" && (
             <p className="text-xs text-green-600">Disponível ✓</p>
@@ -163,7 +160,7 @@ export default function EditProfilePage() {
             className="min-h-tap w-full resize-none rounded-xl border border-line bg-card px-4 py-3 text-base text-paper focus:border-foil/60"
           />
         </Field>
-        <div className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
+        <div className="flex flex-col gap-1.5 text-sm font-medium text-paperMuted">
           Localização
           <div className="flex gap-2">
             <select
@@ -193,12 +190,8 @@ export default function EditProfilePage() {
         </div>
       </section>
 
-      <section className="mt-6">
-        <div className="flex items-center justify-between">
-          <SectionTitle>Favoritos</SectionTitle>
-          <span className="text-xs font-bold text-paperDim">{top4.length}/4</span>
-        </div>
-        <p className="mt-1 text-xs text-paperDim">Escolha até 4 entre os livros que você leu.</p>
+      <Section title="Favoritos" action={<span className="text-xs font-bold text-paperMuted">{top4.length}/4</span>}>
+        <p className="text-xs text-paperMuted">Escolha até 4 entre os livros que você leu.</p>
         <div className="mt-3 grid grid-cols-4 gap-3">
           {readBooks.map((book) => {
             const selected = top4.includes(book.id);
@@ -215,7 +208,7 @@ export default function EditProfilePage() {
               >
                 <BookCover book={book} width={88} />
                 {selected && (
-                  <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-foil text-[10px] font-bold text-leather">
+                  <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-foil text-meta text-leather">
                     {top4.indexOf(book.id) + 1}
                   </span>
                 )}
@@ -223,13 +216,13 @@ export default function EditProfilePage() {
             );
           })}
         </div>
-      </section>
+      </Section>
 
       <div className="mb-4 mt-8 flex gap-2">
         <button
           type="button"
           onClick={() => router.back()}
-          className="flex-1 rounded-xl border border-line bg-card px-5 py-3.5 font-bold text-paperDim transition-colors hover:text-paper"
+          className="flex-1 rounded-xl border border-line bg-card px-5 py-3.5 font-bold text-paperMuted transition-colors hover:text-paper"
         >
           Cancelar
         </button>

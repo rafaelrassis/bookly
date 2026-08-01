@@ -49,9 +49,9 @@ export function ReceivedDonations() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h3 className="text-xs font-extrabold uppercase tracking-[0.18em] text-paperDim">Em andamento</h3>
+        <h3 className="text-meta uppercase text-paperMuted">Em andamento</h3>
         {data.emAndamento.length === 0 ? (
-          <p className="mt-3 text-sm text-paperDim">
+          <p className="mt-3 text-sm text-paperMuted">
             Quando um doador te escolher, o livro aparece aqui.
           </p>
         ) : (
@@ -70,7 +70,7 @@ export function ReceivedDonations() {
 
       {data.recebidos.length > 0 && (
         <div>
-          <h3 className="text-xs font-extrabold uppercase tracking-[0.18em] text-paperDim">Recebidos</h3>
+          <h3 className="text-meta uppercase text-paperMuted">Recebidos</h3>
           <ul className="mt-3 flex flex-col gap-3">
             {data.recebidos.map((d) => (
               <ReceivedCard
@@ -127,14 +127,14 @@ function ReceivedCard({
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate font-display text-sm font-bold">{donation.bookTitle}</p>
-          <p className="mt-0.5 text-xs text-paperDim">
+          <p className="mt-0.5 text-xs text-paperMuted">
             {donation.city} · {donation.state}
           </p>
 
           {donor.username && (
             <Link href={`/u/${donor.username}`} className="mt-2 flex items-center gap-1.5">
               <Avatar user={donorHandle} avatarIndex={donor.avatar} avatarUrl={donor.avatarUrl} size={20} />
-              <span className="truncate text-xs font-bold text-paperDim">{donor.name}</span>
+              <span className="truncate text-xs font-bold text-paperMuted">{donor.name}</span>
             </Link>
           )}
 

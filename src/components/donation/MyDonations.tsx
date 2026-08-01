@@ -99,7 +99,7 @@ function Section({
 
   return (
     <div>
-      <h3 className="text-xs font-extrabold uppercase tracking-[0.18em] text-paperDim">{title}</h3>
+      <h3 className="text-meta uppercase text-paperMuted">{title}</h3>
       {isEmpty ? (
         emptyCta ? (
           <EmptyState
@@ -138,7 +138,7 @@ function DonationCard({ donation, onManage }: { donation: ApiMyDonation; onManag
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate font-display text-sm font-bold">{donation.bookTitle}</p>
-          <p className="mt-0.5 text-xs text-paperDim">
+          <p className="mt-0.5 text-xs text-paperMuted">
             {donation.city} · {donation.state}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-1.5">

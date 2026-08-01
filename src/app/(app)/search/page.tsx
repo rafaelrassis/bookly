@@ -25,7 +25,7 @@ function BookRow({ book, added, onQuickAdd }: { book: Book; added: boolean; onQu
             {book.authors} · {book.year}
           </p>
           {book.hasDonation && (
-            <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-foil/15 px-2 py-0.5 text-[10px] font-bold text-foil">
+            <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-foil/15 px-2 py-0.5 text-meta text-foil">
               <GiftIcon size={10} />
               Doação disponível
             </span>

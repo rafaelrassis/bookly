@@ -175,7 +175,7 @@ export function CreateDonationForm({
         />
       </div>
       {!citySelected && (
-        <p className="text-xs text-paperDim">Escolha a cidade na lista de sugestões.</p>
+        <p className="text-xs text-paperMuted">Escolha a cidade na lista de sugestões.</p>
       )}
 
       <input
@@ -194,7 +194,7 @@ export function CreateDonationForm({
         aria-label="Instagram"
         className="w-full rounded-xl border border-line bg-card2 px-4 py-2.5 text-sm text-paper"
       />
-      <p className="text-xs text-paperDim">
+      <p className="text-xs text-paperMuted">
         O contato só é revelado pra pessoa que você escolher entre os interessados.
       </p>
 
@@ -202,7 +202,7 @@ export function CreateDonationForm({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-xl px-4 py-2.5 text-sm font-bold text-paperDim hover:text-paper"
+          className="rounded-xl px-4 py-2.5 text-sm font-bold text-paperMuted hover:text-paper"
         >
           Cancelar
         </button>

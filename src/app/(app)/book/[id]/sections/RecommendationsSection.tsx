@@ -13,7 +13,7 @@ export function RecommendationsSection({ recommendations }: { recommendations: B
           <Link key={rec.id} href={`/book/${rec.id}`} className="w-28 shrink-0 md:w-auto">
             <BookCover book={rec} fluid sizes="(min-width: 1024px) 18vw, (min-width: 768px) 22vw, 112px" />
             <p className="mt-1.5 truncate text-xs font-bold">{rec.title}</p>
-            <p className="truncate text-[11px] text-paperMuted">{rec.authors}</p>
+            <p className="truncate text-caption text-paperMuted">{rec.authors}</p>
           </Link>
         ))}
       </div>

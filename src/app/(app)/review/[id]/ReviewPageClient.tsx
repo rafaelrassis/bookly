@@ -137,7 +137,7 @@ export function ReviewPageClient({ params }: { params: { id: string } }) {
             <Link href={profileHref} className="text-sm font-bold hover:text-foil">
               {authorHandle}
             </Link>
-            <p className="text-xs text-paperDim">
+            <p className="text-xs text-paperMuted">
               avaliou <span className="font-display font-bold italic">{review.book.title}</span>
             </p>
           </div>
@@ -152,15 +152,15 @@ export function ReviewPageClient({ params }: { params: { id: string } }) {
             {review.title && (
               <h2 className="mt-2 font-display text-xl font-bold leading-snug">{review.title}</h2>
             )}
-            {dates && <p className="mt-1 text-xs text-paperDim">{dates}</p>}
+            {dates && <p className="mt-1 text-xs text-paperMuted">{dates}</p>}
           </div>
         </div>
 
-        <p className="mt-4 whitespace-pre-line text-[15px] leading-relaxed text-paper">
+        <p className="mt-4 whitespace-pre-line text-body leading-relaxed text-paper">
           {review.text}
         </p>
 
-        <div className="mt-5 flex items-center gap-5 border-y border-line py-3 text-sm text-paperDim">
+        <div className="mt-5 flex items-center gap-5 border-y border-line py-3 text-sm text-paperMuted">
           <button
             type="button"
             onClick={toggleLike}
@@ -187,7 +187,7 @@ export function ReviewPageClient({ params }: { params: { id: string } }) {
                   size={26}
                 />
               </Link>
-              <p className="min-w-0 text-sm text-paperDim">
+              <p className="min-w-0 text-sm text-paperMuted">
                 <Link
                   href={`/u/${comment.user.username}`}
                   className="font-bold text-paper hover:text-foil"

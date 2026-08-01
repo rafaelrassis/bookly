@@ -7,10 +7,10 @@ import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
 import { LockIcon } from "@/components/icons";
 import { PageLoader } from "@/components/PageLoader";
-import { SectionTitle } from "@/components/SectionTitle";
 import { Spinner } from "@/components/Spinner";
 import { Chip } from "@/components/ui/Chip";
 import { ErrorRetry } from "@/components/ui/ErrorRetry";
+import { Section } from "@/components/ui/Section";
 import { useStore } from "@/lib/store";
 import type { ApiList, Book } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -190,18 +190,18 @@ export default function ListPage({ params }: { params: { id: string } }) {
             {label}
           </Chip>
         ))}
-        <span className="ml-auto text-xs font-bold uppercase tracking-[0.14em] text-paperDim">
+        <span className="ml-auto text-meta uppercase text-paperMuted">
           {books.length} {books.length === 1 ? "livro" : "livros"}
         </span>
       </div>
       {list.visibility === "public" ? (
-        <p className="mt-2 text-xs text-paperDim">Listas públicas aparecem no seu perfil.</p>
+        <p className="mt-2 text-xs text-paperMuted">Listas públicas aparecem no seu perfil.</p>
       ) : (
-        <p className="mt-2 text-xs text-paperDim">Só você vê esta lista.</p>
+        <p className="mt-2 text-xs text-paperMuted">Só você vê esta lista.</p>
       )}
 
       {books.length === 0 ? (
-        <p className="mt-8 text-center text-sm text-paperDim">
+        <p className="mt-8 text-center text-sm text-paperMuted">
           Lista vazia. Adicione livros da sua estante!
         </p>
       ) : (
@@ -216,80 +216,81 @@ export default function ListPage({ params }: { params: { id: string } }) {
                 onClick={() => removeBook(book.id)}
                 disabled={removingId === book.id}
                 aria-label={`Remover ${book.title} da lista`}
-                className="tap absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-card2 text-[10px] font-bold text-paperDim ring-1 ring-line hover:text-ribbonText disabled:opacity-60"
+                className="tap absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-card2 text-meta text-paperMuted ring-1 ring-line hover:text-ribbonText disabled:opacity-60"
               >
-                {removingId === book.id ? <Spinner size={10} className="text-paperDim" /> : "✕"}
+                {removingId === book.id ? <Spinner size={10} className="text-paperMuted" /> : "✕"}
               </button>
             </div>
           ))}
         </div>
       )}
 
-      <section className="mb-4 mt-7">
-        {adding ? (
-          <>
-            <div className="flex items-center justify-between">
-              <SectionTitle>Adicionar da estante</SectionTitle>
-              <button
-                type="button"
-                onClick={() => {
-                  setAdding(false);
-                  setPicked([]);
-                }}
-                className="text-xs font-bold text-paperDim hover:text-paper"
-              >
-                Cancelar
-              </button>
-            </div>
-            {candidates.length === 0 ? (
-              <p className="mt-3 text-sm text-paperDim">
-                Todos os livros da sua estante já estão na lista.
-              </p>
-            ) : (
-              <div className="mt-3 grid grid-cols-4 gap-3">
-                {candidates.map((book) => {
-                  const selected = picked.includes(book.id);
-                  return (
-                    <button
-                      key={book.id}
-                      type="button"
-                      onClick={() => togglePick(book.id)}
-                      aria-pressed={selected}
-                      aria-label={book.title}
-                      className={`relative rounded-md transition-opacity ${
-                        selected ? "" : "opacity-60 hover:opacity-90"
-                      }`}
-                    >
-                      <BookCover book={book} width={88} />
-                      {selected && (
-                        <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-foil text-[10px] font-bold text-leather">
-                          ✓
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+      {adding ? (
+        <Section
+          title="Adicionar da estante"
+          action={
             <button
               type="button"
-              onClick={confirmAdd}
-              disabled={picked.length === 0 || busy}
-              className="mt-4 flex w-full items-center justify-center rounded-xl bg-foil px-5 py-3 font-bold text-leather transition-opacity hover:opacity-90 disabled:opacity-40"
+              onClick={() => {
+                setAdding(false);
+                setPicked([]);
+              }}
+              className="text-xs font-bold text-paperMuted hover:text-paper"
             >
-              {busy ? <Spinner size={18} className="text-leather" /> : `Adicionar (${picked.length})`}
+              Cancelar
             </button>
-          </>
-        ) : (
+          }
+        >
+          {candidates.length === 0 ? (
+            <p className="mt-3 text-sm text-paperMuted">
+              Todos os livros da sua estante já estão na lista.
+            </p>
+          ) : (
+            <div className="mt-3 grid grid-cols-4 gap-3">
+              {candidates.map((book) => {
+                const selected = picked.includes(book.id);
+                return (
+                  <button
+                    key={book.id}
+                    type="button"
+                    onClick={() => togglePick(book.id)}
+                    aria-pressed={selected}
+                    aria-label={book.title}
+                    className={`relative rounded-md transition-opacity ${
+                      selected ? "" : "opacity-60 hover:opacity-90"
+                    }`}
+                  >
+                    <BookCover book={book} width={88} />
+                    {selected && (
+                      <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-foil text-meta text-leather">
+                        ✓
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={confirmAdd}
+            disabled={picked.length === 0 || busy}
+            className="mt-4 flex w-full items-center justify-center rounded-xl bg-foil px-5 py-3 font-bold text-leather transition-opacity hover:opacity-90 disabled:opacity-40"
+          >
+            {busy ? <Spinner size={18} className="text-leather" /> : `Adicionar (${picked.length})`}
+          </button>
+        </Section>
+      ) : (
+        <section className="mb-4 mt-7">
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="w-full rounded-xl border border-dashed border-line px-5 py-3.5 font-bold text-paperDim transition-colors hover:text-paper"
+            className="w-full rounded-xl border border-dashed border-line px-5 py-3.5 font-bold text-paperMuted transition-colors hover:text-paper"
           >
             + Adicionar livros
           </button>
-        )}
-      </section>
+        </section>
+      )}
 
       {list.isOwner && <DeleteListButton listId={list.id} listName={list.name} />}
     </div>

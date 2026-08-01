@@ -64,7 +64,7 @@ export default function ProfileStatsPage() {
                 );
               })}
             </div>
-            <div className="mt-1.5 flex justify-between text-[10px] text-paperMuted">
+            <div className="mt-1.5 flex justify-between text-meta text-paperMuted">
               <span>{HISTOGRAM_LABELS[0.5]}</span>
               <span className="text-foil">{HISTOGRAM_LABELS[5]}</span>
             </div>
@@ -73,7 +73,7 @@ export default function ProfileStatsPage() {
             <p className="font-display text-3xl font-black text-foil">
               {avgRating !== null ? formatDecimal(avgRating) : "–"}
             </p>
-            <p className="text-[10px] text-paperMuted">sua média</p>
+            <p className="text-meta text-paperMuted">sua média</p>
           </div>
         </div>
       </Section>

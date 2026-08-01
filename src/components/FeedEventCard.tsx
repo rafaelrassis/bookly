@@ -44,7 +44,7 @@ function SimpleEventPost({
           <Avatar user={authorHandle} avatarIndex={event.user.avatar} avatarUrl={event.user.avatarUrl} />
         </Link>
         <div className="min-w-0 flex-1">
-          <p className="flex flex-wrap items-center gap-1.5 text-sm leading-snug text-paperDim">
+          <p className="flex flex-wrap items-center gap-1.5 text-sm leading-snug text-paperMuted">
             <span className="shrink-0 text-foil">{icon}</span>
             {text}
           </p>
@@ -144,7 +144,7 @@ export function FeedEventCard({ event }: { event: ApiFeedEvent }) {
           </>
         }
       >
-        <span className="mt-0.5 block font-display text-sm italic leading-snug text-paperDim line-clamp-3">
+        <span className="mt-0.5 block font-display text-sm italic leading-snug text-paperMuted line-clamp-3">
           &ldquo;{event.highlight.text}&rdquo;
         </span>
       </SimpleEventPost>

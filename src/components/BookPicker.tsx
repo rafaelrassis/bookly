@@ -57,13 +57,13 @@ export function BookPicker({
         <BookCover book={selected} width={dense ? 32 : 40} />
         <div className="min-w-0 flex-1">
           <p className="truncate font-display text-sm font-bold">{selected.title}</p>
-          <p className="truncate text-xs text-paperDim">{selected.authors}</p>
+          <p className="truncate text-xs text-paperMuted">{selected.authors}</p>
         </div>
         <button
           type="button"
           onClick={onClear}
           aria-label="Trocar livro"
-          className="shrink-0 rounded-full px-2 text-sm text-paperDim hover:text-ribbonText"
+          className="shrink-0 rounded-full px-2 text-sm text-paperMuted hover:text-ribbonText"
         >
           ✕
         </button>
@@ -85,7 +85,7 @@ export function BookPicker({
         className={`mt-2 overflow-y-auto rounded-2xl border border-line bg-card ${dense ? "max-h-40" : "max-h-56"}`}
       >
         {results.length === 0 ? (
-          <p className="p-4 text-sm text-paperDim">Nenhum livro encontrado.</p>
+          <p className="p-4 text-sm text-paperMuted">Nenhum livro encontrado.</p>
         ) : (
           results.map((book) => (
             <button
@@ -99,7 +99,7 @@ export function BookPicker({
                 <span className="block truncate font-display text-sm font-bold">
                   {book.title}
                 </span>
-                <span className="block truncate text-xs text-paperDim">{book.authors}</span>
+                <span className="block truncate text-xs text-paperMuted">{book.authors}</span>
               </span>
             </button>
           ))

@@ -80,20 +80,20 @@ export function OnboardingForm() {
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-app flex-col px-5 pb-10 pt-14">
-      <Link href="/" className="self-start text-sm text-paperDim hover:text-paper">
+      <Link href="/" className="self-start text-sm text-paperMuted hover:text-paper">
         ‹ Voltar
       </Link>
 
       <Logo className="mt-6 text-3xl" />
       <h1 className="mt-6 text-2xl font-extrabold">Vamos montar seu perfil</h1>
-      <p className="mt-1 text-paperDim">Escolha seu nome de usuário e conte o que você gosta de ler.</p>
+      <p className="mt-1 text-paperMuted">Escolha seu nome de usuário e conte o que você gosta de ler.</p>
 
       <form onSubmit={handleSubmit} className="mt-8 flex flex-1 flex-col">
         <div className="flex flex-col gap-3">
-          <label className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-paperMuted">
             Nome de usuário
             <div className="flex items-center rounded-xl border border-line bg-card px-4">
-              <span className="text-paperDim">@</span>
+              <span className="text-paperMuted">@</span>
               <input
                 type="text"
                 value={username}
@@ -107,7 +107,7 @@ export function OnboardingForm() {
               />
             </div>
             {usernameCheck.state === "checking" && (
-              <p className="text-xs text-paperDim">Verificando…</p>
+              <p className="text-xs text-paperMuted">Verificando…</p>
             )}
             {usernameCheck.state === "available" && (
               <p className="text-xs text-green-600">Disponível ✓</p>
@@ -130,7 +130,7 @@ export function OnboardingForm() {
             />
           </Field>
 
-          <div className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
+          <div className="flex flex-col gap-1.5 text-sm font-medium text-paperMuted">
             Localização (opcional)
             <div className="flex gap-2">
               <select
@@ -163,7 +163,7 @@ export function OnboardingForm() {
         </div>
 
         <fieldset className="mt-8">
-          <legend className="text-sm font-medium text-paperDim">Gêneros de interesse</legend>
+          <legend className="text-sm font-medium text-paperMuted">Gêneros de interesse</legend>
           <p className="mt-1 text-xs text-paperMuted">
             Usamos seus gêneros para recomendar livros na busca e no perfil.
           </p>
@@ -179,7 +179,7 @@ export function OnboardingForm() {
                   className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                     selected
                       ? "bg-foil font-bold text-leather"
-                      : "border border-line bg-card text-paperDim hover:text-paper"
+                      : "border border-line bg-card text-paperMuted hover:text-paper"
                   }`}
                 >
                   {genre}

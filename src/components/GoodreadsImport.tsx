@@ -48,7 +48,7 @@ export function GoodreadsImport() {
 
   return (
     <div>
-      <div className="text-sm text-paperDim">
+      <div className="text-sm text-paperMuted">
         <p>Baixe sua biblioteca no Goodreads e envie o arquivo .csv aqui:</p>
         <ol className="mt-2 list-decimal space-y-1 pl-4">
           <li>
@@ -104,14 +104,14 @@ export function GoodreadsImport() {
           </p>
 
           {report.deferred > 0 && (
-            <p className="mt-2 text-paperDim">
+            <p className="mt-2 text-paperMuted">
               ⏳ {report.deferred} não processado{report.deferred === 1 ? "" : "s"} hoje (limite
               diário). Reimporte o mesmo arquivo amanhã — não vai duplicar.
             </p>
           )}
 
           {report.failed > 0 && (
-            <p className="mt-2 text-paperDim">
+            <p className="mt-2 text-paperMuted">
               ⚠️ {report.failed} livro{report.failed === 1 ? "" : "s"} com erro ao gravar. Tente
               reimportar o mesmo arquivo.
             </p>
@@ -123,13 +123,13 @@ export function GoodreadsImport() {
                 type="button"
                 onClick={() => setNotFoundOpen((v) => !v)}
                 aria-expanded={notFoundOpen}
-                className="font-medium text-paperDim underline decoration-dotted underline-offset-2 hover:text-paper"
+                className="font-medium text-paperMuted underline decoration-dotted underline-offset-2 hover:text-paper"
               >
                 ❓ {report.notFound.length} não encontrado{report.notFound.length === 1 ? "" : "s"}
               </button>
               {notFoundOpen && (
                 <>
-                  <ul className="mt-2 flex flex-col gap-1 text-xs text-paperDim">
+                  <ul className="mt-2 flex flex-col gap-1 text-xs text-paperMuted">
                     {report.notFound.map((b, i) => (
                       <li key={i}>
                         {b.title}
@@ -137,7 +137,7 @@ export function GoodreadsImport() {
                       </li>
                     ))}
                   </ul>
-                  <p className="mt-2 text-xs text-paperDim">
+                  <p className="mt-2 text-xs text-paperMuted">
                     Adicione esses manualmente pela busca de livros.
                   </p>
                 </>

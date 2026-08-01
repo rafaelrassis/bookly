@@ -61,7 +61,7 @@ export default function ProfileActivityPage() {
                   className="flex flex-col items-center gap-1 rounded-md"
                 >
                   <BookCover book={book} fluid sizes="(min-width: 768px) 16vw, 22vw" />
-                  <Stars rating={rating} className="text-[10px]" />
+                  <Stars rating={rating} className="text-meta" />
                 </Link>
               ))}
             </div>

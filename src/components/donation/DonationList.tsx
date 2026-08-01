@@ -152,14 +152,14 @@ export function DonationList({ bookId, myUf, myCity, reloadSignal, onToast }: Pr
             aria-label="Raio de busca em quilômetros"
             className="h-1.5 w-40 accent-foil"
           />
-          <span className="text-xs font-bold text-paperDim">{radiusKm} km</span>
+          <span className="text-xs font-bold text-paperMuted">{radiusKm} km</span>
         </div>
       )}
 
-      {geoError && <p className="mt-2 text-xs text-paperDim">{geoError}</p>}
+      {geoError && <p className="mt-2 text-xs text-paperMuted">{geoError}</p>}
 
       {!myUf && mode === "brazil" && (
-        <p className="mt-2 text-xs text-paperDim">
+        <p className="mt-2 text-xs text-paperMuted">
           Defina sua cidade no perfil para ver doações perto de você.{" "}
           <Link href="/profile/edit" className="font-bold text-foil hover:opacity-80">
             Editar perfil
@@ -169,10 +169,10 @@ export function DonationList({ bookId, myUf, myCity, reloadSignal, onToast }: Pr
 
       {loading ? (
         <div className="flex justify-center py-6">
-          <Spinner size={22} className="text-paperDim" label="Carregando doações" />
+          <Spinner size={22} className="text-paperMuted" label="Carregando doações" />
         </div>
       ) : donations.length === 0 ? (
-        <p className="mt-3 text-sm text-paperDim">
+        <p className="mt-3 text-sm text-paperMuted">
           Nenhuma doação disponível deste livro por aqui ainda.
         </p>
       ) : (
@@ -187,7 +187,7 @@ export function DonationList({ bookId, myUf, myCity, reloadSignal, onToast }: Pr
                   <p className="text-sm font-bold">
                     {d.city} · {d.state}
                   </p>
-                  <p className="mt-0.5 text-xs text-paperDim">
+                  <p className="mt-0.5 text-xs text-paperMuted">
                     {STATUS_LABEL[d.status]}
                     {typeof d.distanceKm === "number" && ` · a ${Math.round(d.distanceKm)} km`}
                   </p>

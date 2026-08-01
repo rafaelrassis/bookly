@@ -32,13 +32,13 @@ export default function LoginPage() {
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-app flex-col px-5 pb-10 pt-14">
-      <Link href="/" className="self-start text-sm text-paperDim hover:text-paper">
+      <Link href="/" className="self-start text-sm text-paperMuted hover:text-paper">
         ‹ Voltar
       </Link>
 
       <div className="mt-10 text-center">
         <Logo className="text-4xl" />
-        <p className="mt-2 text-paperDim">Entre para continuar sua leitura</p>
+        <p className="mt-2 text-paperMuted">Entre para continuar sua leitura</p>
       </div>
 
       <div className="mt-10">
@@ -47,7 +47,7 @@ export default function LoginPage() {
 
       {emailLoginEnabled ? (
         <>
-          <div className="mt-6 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.12em] text-paperDim">
+          <div className="mt-6 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.12em] text-paperMuted">
             <span className="h-px flex-1 bg-line" />
             ou
             <span className="h-px flex-1 bg-line" />
@@ -90,20 +90,20 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-paperDim">
+          <p className="mt-6 text-center text-sm text-paperMuted">
             Não tem conta?{" "}
             <Link href="/signup" className="font-semibold text-paper underline">
               Criar conta
             </Link>
           </p>
-          <p className="mt-2 text-center text-sm text-paperDim">
+          <p className="mt-2 text-center text-sm text-paperMuted">
             <Link href="/forgot-password" className="underline">
               Esqueci minha senha
             </Link>
           </p>
         </>
       ) : (
-        <p className="mt-7 text-center text-xs text-paperDim">
+        <p className="mt-7 text-center text-xs text-paperMuted">
           Ao continuar você concorda com os termos de uso. Não tem conta? O login cria uma
           automaticamente.
         </p>

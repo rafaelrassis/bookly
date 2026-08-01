@@ -49,7 +49,7 @@ export function SeguindoEmptyState({ onGoGeneral }: { onGoGeneral: () => void })
   return (
     <div className="mt-1 rounded-2xl border border-line bg-card p-5 text-center">
       <p className="font-display text-base font-bold">Você ainda não segue ninguém</p>
-      <p className="mt-1 text-sm text-paperDim">Siga leitores pra ver as reviews deles aqui.</p>
+      <p className="mt-1 text-sm text-paperMuted">Siga leitores pra ver as reviews deles aqui.</p>
 
       {suggestions && suggestions.length > 0 && (
         <div className="mt-4 flex flex-col gap-2 text-left">
@@ -62,7 +62,7 @@ export function SeguindoEmptyState({ onGoGeneral }: { onGoGeneral: () => void })
                 <Avatar user={withAt(u.username)} avatarIndex={u.avatar} avatarUrl={u.avatarUrl} size={36} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-bold">{u.name}</p>
-                  <p className="truncate text-xs text-paperDim">{withAt(u.username)}</p>
+                  <p className="truncate text-xs text-paperMuted">{withAt(u.username)}</p>
                 </div>
               </Link>
               <Button
@@ -81,7 +81,7 @@ export function SeguindoEmptyState({ onGoGeneral }: { onGoGeneral: () => void })
       <button
         type="button"
         onClick={onGoGeneral}
-        className="mt-4 text-sm font-bold text-paperDim underline"
+        className="mt-4 text-sm font-bold text-paperMuted underline"
       >
         Explorar no Geral
       </button>

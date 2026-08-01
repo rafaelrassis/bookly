@@ -344,20 +344,20 @@ export default function ShelfPage() {
                     </p>
                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${badge.className}`}
+                        className={`rounded-full px-2 py-0.5 text-meta ${badge.className}`}
                       >
                         {badge.label}
                       </span>
                       {tags.map((t) => (
                         <span
                           key={t}
-                          className="rounded-full bg-card2 px-2 py-0.5 text-[10px] text-paperMuted"
+                          className="rounded-full bg-card2 px-2 py-0.5 text-meta text-paperMuted"
                         >
                           {t}
                         </span>
                       ))}
                       {book.hasDonation && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-foil/15 px-2 py-0.5 text-[10px] font-bold text-foil">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-foil/15 px-2 py-0.5 text-meta text-foil">
                           <GiftIcon size={10} />
                           Doação disponível
                         </span>

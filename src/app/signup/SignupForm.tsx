@@ -57,13 +57,13 @@ export function SignupForm() {
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-app flex-col px-5 pb-10 pt-14">
-      <Link href="/login" className="self-start text-sm text-paperDim hover:text-paper">
+      <Link href="/login" className="self-start text-sm text-paperMuted hover:text-paper">
         ‹ Voltar
       </Link>
 
       <div className="mt-10 text-center">
         <Logo className="text-4xl" />
-        <p className="mt-2 text-paperDim">Crie sua conta e comece a registrar suas leituras</p>
+        <p className="mt-2 text-paperMuted">Crie sua conta e comece a registrar suas leituras</p>
       </div>
 
       <form onSubmit={handleSubmit} className="mt-10 flex flex-col gap-3">
@@ -76,10 +76,10 @@ export function SignupForm() {
             placeholder="Victor Frankenstein"
           />
         </Field>
-        <label className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
+        <label className="flex flex-col gap-1.5 text-sm font-medium text-paperMuted">
           Nome de usuário
           <div className="flex items-center rounded-xl border border-line bg-card px-4">
-            <span className="text-paperDim">@</span>
+            <span className="text-paperMuted">@</span>
             <input
               type="text"
               value={username}
@@ -128,7 +128,7 @@ export function SignupForm() {
         </button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-paperDim">
+      <p className="mt-6 text-center text-sm text-paperMuted">
         Já tem conta?{" "}
         <Link href="/login" className="font-semibold text-paper underline">
           Entrar

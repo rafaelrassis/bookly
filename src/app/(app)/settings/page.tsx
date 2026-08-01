@@ -5,9 +5,9 @@ import { signOut } from "next-auth/react";
 import { BackHeader } from "@/components/BackHeader";
 import { FeedbackModal } from "@/components/FeedbackModal";
 import { GoodreadsImport } from "@/components/GoodreadsImport";
-import { SectionTitle } from "@/components/SectionTitle";
 import { Button } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
+import { Section } from "@/components/ui/Section";
 import { emailLoginEnabled } from "@/lib/featureFlags";
 import { useStore } from "@/lib/store";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -80,17 +80,16 @@ export default function SettingsPage() {
         <h1 className="text-lg font-extrabold">Configurações</h1>
       </BackHeader>
 
-      <section className="mt-4">
-        <SectionTitle>Conta</SectionTitle>
+      <Section title="Conta">
         <div className="mt-3 rounded-2xl border border-line bg-card">
           <div className="flex items-center justify-between px-4 py-3.5">
-            <span className="text-sm text-paperDim">E-mail</span>
+            <span className="text-sm text-paperMuted">E-mail</span>
             <span className="text-sm font-medium">{user.email}</span>
           </div>
 
           {emailLoginEnabled && (
             <div className="flex items-center justify-between border-t border-line px-4 py-3.5">
-              <span className="text-sm text-paperDim">Senha</span>
+              <span className="text-sm text-paperMuted">Senha</span>
               <span className="text-sm font-medium">••••••••</span>
             </div>
           )}
@@ -144,10 +143,9 @@ export default function SettingsPage() {
             </div>
           </div>
         )}
-      </section>
+      </Section>
 
-      <section className="mt-7">
-        <SectionTitle>Aparência</SectionTitle>
+      <Section title="Aparência">
         <div className="mt-3 flex items-center justify-between rounded-2xl border border-line bg-card px-4 py-3.5">
           <span className="text-sm">Tema</span>
           <div className="flex gap-1" role="group" aria-label="Tema do aplicativo">
@@ -163,17 +161,15 @@ export default function SettingsPage() {
             ))}
           </div>
         </div>
-      </section>
+      </Section>
 
-      <section className="mt-7">
-        <SectionTitle>Importar biblioteca</SectionTitle>
+      <Section title="Importar biblioteca">
         <div className="mt-3 rounded-2xl border border-line bg-card p-4">
           <GoodreadsImport />
         </div>
-      </section>
+      </Section>
 
-      <section className="mb-4 mt-7">
-        <SectionTitle>Sessão</SectionTitle>
+      <Section title="Sessão" className="mb-4">
         <button
           type="button"
           onClick={() => signOut({ callbackUrl: "/" })}
@@ -191,7 +187,7 @@ export default function SettingsPage() {
         {feedbackOpen && (
           <FeedbackModal onClose={() => setFeedbackOpen(false)} onToast={showToast} />
         )}
-      </section>
+      </Section>
     </div>
   );
 }

@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
-import { SectionTitle } from "@/components/SectionTitle";
 import { Button } from "@/components/ui/Button";
+import { Section } from "@/components/ui/Section";
 import { withAt } from "@/lib/handle";
 import { useStore } from "@/lib/store";
 import type { ApiAuthor } from "@/lib/types";
@@ -40,8 +40,7 @@ export function DiscoverReaders() {
   if (!suggestions || suggestions.length === 0) return null;
 
   return (
-    <section id="discover-readers" className="mt-7">
-      <SectionTitle>Descobrir leitores</SectionTitle>
+    <Section id="discover-readers" title="Descobrir leitores">
       <div className="no-scrollbar -mx-5 mt-3 flex gap-3 overflow-x-auto px-5">
         {suggestions.map((u) => (
           <div
@@ -52,7 +51,7 @@ export function DiscoverReaders() {
               <Avatar user={withAt(u.username)} avatarIndex={u.avatar} avatarUrl={u.avatarUrl} size={48} />
               <div className="min-w-0">
                 <p className="truncate font-display text-sm font-bold">{u.name}</p>
-                <p className="truncate text-xs text-paperDim">{withAt(u.username)}</p>
+                <p className="truncate text-xs text-paperMuted">{withAt(u.username)}</p>
               </div>
             </Link>
             <Button
@@ -67,6 +66,6 @@ export function DiscoverReaders() {
           </div>
         ))}
       </div>
-    </section>
+    </Section>
   );
 }

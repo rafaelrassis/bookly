@@ -52,13 +52,13 @@ export function ForgotPasswordForm() {
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-app flex-col px-5 pb-10 pt-14">
-      <Link href="/login" className="self-start text-sm text-paperDim hover:text-paper">
+      <Link href="/login" className="self-start text-sm text-paperMuted hover:text-paper">
         ‹ Voltar
       </Link>
 
       <div className="mt-10 text-center">
         <Logo className="text-4xl" />
-        <p className="mt-2 text-paperDim">
+        <p className="mt-2 text-paperMuted">
           {step === "request" ? "Recupere o acesso à sua conta" : "Defina uma nova senha"}
         </p>
       </div>
@@ -84,8 +84,8 @@ export function ForgotPasswordForm() {
         </form>
       ) : (
         <form onSubmit={resetPassword} className="mt-10 flex flex-col gap-3">
-          {info && <p className="text-sm text-paperDim">{info}</p>}
-          <label className="flex flex-col gap-1.5 text-sm font-medium text-paperDim">
+          {info && <p className="text-sm text-paperMuted">{info}</p>}
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-paperMuted">
             Código (6 dígitos)
             <input
               type="text"
@@ -125,7 +125,7 @@ export function ForgotPasswordForm() {
           <button
             type="button"
             onClick={() => setStep("request")}
-            className="text-sm text-paperDim underline"
+            className="text-sm text-paperMuted underline"
           >
             Usar outro e-mail
           </button>
