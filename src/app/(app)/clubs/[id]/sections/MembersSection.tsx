@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Avatar } from "@/components/Avatar";
-import { SectionTitle } from "@/components/SectionTitle";
 import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
+import { Section } from "@/components/ui/Section";
 import { withoutAt } from "@/lib/handle";
 import { formatStreak } from "@/lib/streak";
 import { useModalA11y } from "@/lib/useModalA11y";
@@ -27,8 +27,7 @@ export function MembersSection({ club, me, streaks, onRemoveMember }: Props) {
 
   return (
     <>
-      <section className="mt-6">
-        <SectionTitle>Progresso dos membros</SectionTitle>
+      <Section title="Progresso dos membros">
         <div className="mt-3 flex flex-col gap-2.5 rounded-2xl border border-line bg-card p-4">
           {visibleMembers.map((m) => {
             const isMe = m.user === me;
@@ -43,7 +42,7 @@ export function MembersSection({ club, me, streaks, onRemoveMember }: Props) {
                 <div className="min-w-0 flex-1">
                   <p className="flex items-baseline justify-between text-xs">
                     <span className="truncate font-bold">{isMe ? `${m.user} (você)` : m.user}</span>
-                    <span className="ml-2 shrink-0 text-paperDim">{m.percent}%</span>
+                    <span className="ml-2 shrink-0 text-paperMuted">{m.percent}%</span>
                   </p>
                   <div className="mt-1 h-1 overflow-hidden rounded-full bg-card2">
                     <div
@@ -62,7 +61,7 @@ export function MembersSection({ club, me, streaks, onRemoveMember }: Props) {
             </Button>
           )}
         </div>
-      </section>
+      </Section>
 
       {membersOpen && (
         <MembersModal
@@ -119,7 +118,7 @@ function MembersModal({
               <div className="min-w-0 flex-1">
                 <p className="flex items-baseline justify-between text-xs">
                   <span className="truncate font-bold">{m.user === me ? `${m.user} (você)` : m.user}</span>
-                  <span className="ml-2 shrink-0 text-paperDim">{m.percent}%</span>
+                  <span className="ml-2 shrink-0 text-paperMuted">{m.percent}%</span>
                 </p>
                 <div className="mt-1 h-1 overflow-hidden rounded-full bg-card2">
                   <div

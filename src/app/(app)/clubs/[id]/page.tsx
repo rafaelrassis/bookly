@@ -123,7 +123,7 @@ export default function ClubPage({ params }: { params: { id: string } }) {
     return (
       <div className="pt-4">
         <BackHeader />
-        <p className="mt-10 text-center text-paperDim">Clube não encontrado.</p>
+        <p className="mt-10 text-center text-paperMuted">Clube não encontrado.</p>
       </div>
     );
   }

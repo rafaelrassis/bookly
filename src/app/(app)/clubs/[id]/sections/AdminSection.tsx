@@ -1,7 +1,7 @@
 import { CopyIcon } from "@/components/icons";
-import { SectionTitle } from "@/components/SectionTitle";
 import { Spinner } from "@/components/Spinner";
 import { Button } from "@/components/ui/Button";
+import { Section } from "@/components/ui/Section";
 import type { ClubDetail } from "@/lib/types";
 
 type Props = {
@@ -53,8 +53,7 @@ export function AdminSection({
       )}
 
       {editing && club.isCreator && (
-        <section className="mt-5 rounded-2xl border border-foil/40 bg-card p-4">
-          <SectionTitle>Editar clube</SectionTitle>
+        <Section title="Editar clube" className="rounded-2xl border border-foil/40 bg-card p-4">
           <div className="mt-3 flex flex-col gap-2.5">
             <input
               type="text"
@@ -81,7 +80,7 @@ export function AdminSection({
               {savingEdit ? <Spinner size={16} className="text-leather" /> : "Salvar"}
             </Button>
           </div>
-        </section>
+        </Section>
       )}
     </>
   );

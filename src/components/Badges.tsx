@@ -1,5 +1,5 @@
 import { GiftIcon } from "@/components/icons";
-import { SectionTitle } from "@/components/SectionTitle";
+import { Section } from "@/components/ui/Section";
 
 type BadgeItem = { key: string; icon: React.ReactNode; label: string; count: number };
 
@@ -15,8 +15,7 @@ export function Badges({ donatedCount }: { donatedCount: number }) {
   ];
 
   return (
-    <section className="mt-6">
-      <SectionTitle>Selos</SectionTitle>
+    <Section title="Selos">
       <div className="mt-3 flex gap-3">
         {badges.map((badge) => (
           <div
@@ -33,6 +32,6 @@ export function Badges({ donatedCount }: { donatedCount: number }) {
           </div>
         ))}
       </div>
-    </section>
+    </Section>
   );
 }

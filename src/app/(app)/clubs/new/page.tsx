@@ -4,10 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { BackHeader } from "@/components/BackHeader";
 import { LockIcon } from "@/components/icons";
-import { SectionTitle } from "@/components/SectionTitle";
 import { Spinner } from "@/components/Spinner";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
+import { Section } from "@/components/ui/Section";
 import { useStore } from "@/lib/store";
 import type { Visibility } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -70,8 +70,7 @@ export default function NewClubPage() {
         </Field>
       </div>
 
-      <section className="mt-6">
-        <SectionTitle>Visibilidade</SectionTitle>
+      <Section title="Visibilidade">
         <div className="mt-3 flex gap-2">
           {(
             [
@@ -87,7 +86,7 @@ export default function NewClubPage() {
               className={`flex flex-1 items-center justify-center gap-1.5 rounded-full px-3 py-2.5 text-sm font-bold transition-colors ${
                 visibility === key
                   ? "bg-foil text-leather"
-                  : "border border-line bg-card text-paperDim hover:text-paper"
+                  : "border border-line bg-card text-paperMuted hover:text-paper"
               }`}
             >
               {key === "private" && <LockIcon />}
@@ -96,11 +95,11 @@ export default function NewClubPage() {
           ))}
         </div>
         {visibility === "private" && (
-          <p className="mt-2 text-xs text-paperDim">
+          <p className="mt-2 text-xs text-paperMuted">
             Clubes privados geram um código de 6 caracteres para convidar quem você quiser.
           </p>
         )}
-      </section>
+      </Section>
 
       <button
         type="button"

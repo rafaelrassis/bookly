@@ -26,7 +26,7 @@ function ClubCard({ club }: { club: ClubSummary }) {
         <BookCover book={club.book} width={56} />
       ) : (
         <div
-          className="flex w-14 shrink-0 items-center justify-center rounded-md border border-dashed border-line/70 bg-card2 text-center text-[9px] leading-tight text-paperMuted"
+          className="flex w-14 shrink-0 items-center justify-center rounded-md border border-dashed border-line/70 bg-card2 text-center text-caption leading-tight text-paperMuted"
           style={{ height: 56 * 1.5 }}
           aria-label="Nenhum livro definido ainda"
         >
@@ -187,7 +187,7 @@ export default function ClubsPage() {
               {joining ? <Spinner size={16} className="text-leather" /> : "Entrar"}
             </Button>
           </div>
-          <p id="club-code-hint" className="mt-2 text-[11px] text-paperMuted">
+          <p id="club-code-hint" className="mt-2 text-caption text-paperMuted">
             6 letras e números, sem espaços.
           </p>
         </Sheet>

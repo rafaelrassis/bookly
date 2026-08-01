@@ -25,7 +25,7 @@ export function ClubHeader({ club, membershipBusy, onJoin, onLeave, onDelete, on
         )}
         {club.name}
       </h1>
-      <p className="mt-2 max-w-72 text-sm text-paperDim">{club.desc}</p>
+      <p className="mt-2 max-w-72 text-sm text-paperMuted">{club.desc}</p>
 
       <div className="mt-5 flex w-full gap-2">
         {club.isCreator ? (

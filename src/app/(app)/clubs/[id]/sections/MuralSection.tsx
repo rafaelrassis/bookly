@@ -1,7 +1,7 @@
 import type { RefObject } from "react";
 import { Avatar } from "@/components/Avatar";
-import { SectionTitle } from "@/components/SectionTitle";
 import { Spinner } from "@/components/Spinner";
+import { Section } from "@/components/ui/Section";
 import { formatClockTime } from "@/lib/format";
 import type { ClubMember, ClubMessage } from "@/lib/types";
 
@@ -34,7 +34,7 @@ function Bubble({
 }) {
   if (message.system) {
     return (
-      <p className="my-1 text-center text-xs text-paperDim">
+      <p className="my-1 text-center text-xs text-paperMuted">
         <MentionText text={message.text} />
       </p>
     );
@@ -61,7 +61,7 @@ function Bubble({
           <span className="text-meta text-paperMuted">{formatClockTime(message.time)}</span>
         </p>
         {message.replyTo && (
-          <p className="mt-1.5 border-l-2 border-foil/60 pl-2 text-xs italic text-paperDim">
+          <p className="mt-1.5 border-l-2 border-foil/60 pl-2 text-xs italic text-paperMuted">
             <span className="font-bold not-italic">{message.replyTo.user}</span>{" "}
             {message.replyTo.text.length > 80
               ? `${message.replyTo.text.slice(0, 80)}…`
@@ -120,9 +120,7 @@ export function MuralSection({
   onApplyMention,
 }: Props) {
   return (
-    <section className="mb-4 mt-6">
-      <SectionTitle>Mural</SectionTitle>
-
+    <Section title="Mural" className="mb-4">
       {joined ? (
         <>
           <div className="mt-3 flex max-h-[26rem] flex-col gap-3 overflow-y-auto lg:max-h-[36rem]">
@@ -135,14 +133,14 @@ export function MuralSection({
               />
             ))}
             {messages.length === 0 && (
-              <p className="text-sm text-paperDim">Ainda não há mensagens. Comece a conversa!</p>
+              <p className="text-sm text-paperMuted">Ainda não há mensagens. Comece a conversa!</p>
             )}
             <div ref={feedEndRef} />
           </div>
 
           <div className="mt-4 lg:sticky lg:bottom-0 lg:border-t lg:border-line lg:bg-leather/95 lg:px-0 lg:pb-4 lg:pt-3 lg:backdrop-blur">
             {replyTo && (
-              <div className="mb-2 flex items-start justify-between gap-2 rounded-xl border-l-2 border-foil bg-card px-3 py-2 text-xs text-paperDim">
+              <div className="mb-2 flex items-start justify-between gap-2 rounded-xl border-l-2 border-foil bg-card px-3 py-2 text-xs text-paperMuted">
                 <p className="min-w-0">
                   Respondendo <span className="font-bold text-paper">{replyTo.user}</span>:{" "}
                   <span className="italic">
@@ -153,7 +151,7 @@ export function MuralSection({
                   type="button"
                   onClick={onCancelReply}
                   aria-label="Cancelar resposta"
-                  className="shrink-0 text-paperDim hover:text-ribbonText"
+                  className="shrink-0 text-paperMuted hover:text-ribbonText"
                 >
                   ✕
                 </button>
@@ -205,8 +203,8 @@ export function MuralSection({
           </div>
         </>
       ) : (
-        <p className="mt-3 text-sm text-paperDim">Participe do clube pra ver e escrever no mural.</p>
+        <p className="mt-3 text-sm text-paperMuted">Participe do clube pra ver e escrever no mural.</p>
       )}
-    </section>
+    </Section>
   );
 }

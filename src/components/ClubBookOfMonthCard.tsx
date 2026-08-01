@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { BookCover } from "@/components/BookCover";
 import { BookPicker } from "@/components/BookPicker";
-import { SectionTitle } from "@/components/SectionTitle";
+import { IconButton } from "@/components/ui/IconButton";
+import { Section } from "@/components/ui/Section";
 import { Spinner } from "@/components/Spinner";
 import { useModalA11y } from "@/lib/useModalA11y";
 import { useStore } from "@/lib/store";
@@ -41,14 +42,9 @@ function SetBookModal({
       >
         <div className="flex items-center justify-between">
           <h2 className="font-display text-lg font-bold">Livro do mês</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Fechar"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-paperDim hover:text-paper"
-          >
+          <IconButton label="Fechar" onClick={onClose}>
             ✕
-          </button>
+          </IconButton>
         </div>
         <div className="mt-4">
           <BookPicker
@@ -62,7 +58,7 @@ function SetBookModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl px-4 py-2.5 text-sm font-bold text-paperDim hover:text-paper"
+            className="rounded-xl px-4 py-2.5 text-sm font-bold text-paperMuted hover:text-paper"
           >
             Cancelar
           </button>
@@ -166,10 +162,9 @@ export function ClubBookOfMonthCard({ clubId, isCreator }: { clubId: string; isC
   if (!bookOfMonth) {
     if (!isCreator) return null;
     return (
-      <section className="mt-6">
-        <SectionTitle>Livro do mês</SectionTitle>
+      <Section title="Livro do mês">
         <div className="mt-3 flex flex-col items-center gap-3 rounded-2xl border border-line bg-card p-5 text-center">
-          <p className="text-sm text-paperDim">O clube ainda não tem um livro do mês.</p>
+          <p className="text-sm text-paperMuted">O clube ainda não tem um livro do mês.</p>
           <button
             type="button"
             onClick={() => setModalOpen(true)}
@@ -181,7 +176,7 @@ export function ClubBookOfMonthCard({ clubId, isCreator }: { clubId: string; isC
         {modalOpen && (
           <SetBookModal onClose={() => setModalOpen(false)} onSave={setBookOfMonth} saving={saving} />
         )}
-      </section>
+      </Section>
     );
   }
 
@@ -194,10 +189,10 @@ export function ClubBookOfMonthCard({ clubId, isCreator }: { clubId: string; isC
         : 0;
 
   return (
-    <section className="mt-6">
-      <div className="flex items-center justify-between">
-        <SectionTitle>Livro do mês</SectionTitle>
-        {isCreator && (
+    <Section
+      title="Livro do mês"
+      action={
+        isCreator && (
           <button
             type="button"
             onClick={() => setModalOpen(true)}
@@ -205,17 +200,18 @@ export function ClubBookOfMonthCard({ clubId, isCreator }: { clubId: string; isC
           >
             Trocar
           </button>
-        )}
-      </div>
+        )
+      }
+    >
       <div className="mt-3 rounded-2xl border border-foil/40 bg-card p-4">
         <Link href={`/book/${book.id}`} className="flex items-center gap-4">
           <BookCover book={book} width={56} />
           <div className="min-w-0 flex-1">
             <p className="truncate font-display text-base font-bold">{book.title}</p>
-            <p className="truncate text-sm text-paperDim">{book.authors}</p>
+            <p className="truncate text-sm text-paperMuted">{book.authors}</p>
           </div>
         </Link>
-        <p className="mt-3 text-xs text-paperDim">
+        <p className="mt-3 text-xs text-paperMuted">
           {data.started} de {data.totalMembers}{" "}
           {data.totalMembers === 1 ? "membro já começou" : "membros já começaram"} · {data.finished}{" "}
           {data.finished === 1 ? "já terminou" : "já terminaram"}
@@ -225,7 +221,7 @@ export function ClubBookOfMonthCard({ clubId, isCreator }: { clubId: string; isC
           <div className="mt-3">
             <div className="flex items-baseline justify-between text-xs">
               <span className="font-bold">Seu progresso</span>
-              <span className="text-paperDim">{percent}%</span>
+              <span className="text-paperMuted">{percent}%</span>
             </div>
             <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-card2">
               <div className="h-full rounded-full bg-ribbon" style={{ width: `${percent}%` }} />
@@ -252,7 +248,7 @@ export function ClubBookOfMonthCard({ clubId, isCreator }: { clubId: string; isC
         <button
           type="button"
           onClick={toggleHistory}
-          className="mt-3 text-xs font-bold text-paperDim hover:text-foil"
+          className="mt-3 text-xs font-bold text-paperMuted hover:text-foil"
         >
           {history ? "Ocultar meses anteriores" : "Ver meses anteriores"}
         </button>
@@ -264,7 +260,7 @@ export function ClubBookOfMonthCard({ clubId, isCreator }: { clubId: string; isC
         {history && !historyLoading && (
           <div className="mt-2 flex flex-col gap-2">
             {history.length === 0 ? (
-              <p className="text-xs text-paperDim">Sem histórico ainda.</p>
+              <p className="text-xs text-paperMuted">Sem histórico ainda.</p>
             ) : (
               history.map((item) => (
                 <Link
@@ -275,7 +271,7 @@ export function ClubBookOfMonthCard({ clubId, isCreator }: { clubId: string; isC
                   <BookCover book={item.book} width={28} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-xs font-bold">{item.book.title}</p>
-                    <p className="text-[10px] text-paperDim">{item.month}</p>
+                    <p className="text-caption text-paperMuted">{item.month}</p>
                   </div>
                 </Link>
               ))
@@ -287,6 +283,6 @@ export function ClubBookOfMonthCard({ clubId, isCreator }: { clubId: string; isC
       {modalOpen && (
         <SetBookModal onClose={() => setModalOpen(false)} onSave={setBookOfMonth} saving={saving} />
       )}
-    </section>
+    </Section>
   );
 }

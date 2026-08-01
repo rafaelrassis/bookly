@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
-import { SectionTitle } from "@/components/SectionTitle";
 import { Spinner } from "@/components/Spinner";
+import { Section } from "@/components/ui/Section";
 import { formatNotificationTime } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import type { ApiClubDiscussion } from "@/lib/types";
@@ -78,12 +78,10 @@ export function ClubDiscussionCard({ clubId }: { clubId: string }) {
   }
 
   return (
-    <section className="mt-6">
-      <SectionTitle>Discussão</SectionTitle>
-
+    <Section title="Discussão">
       {locked ? (
         <div className="mt-3 flex flex-col items-center gap-3 rounded-2xl border border-line bg-card p-5 text-center">
-          <p className="text-sm text-paperDim">
+          <p className="text-sm text-paperMuted">
             Adicione o livro e comece a ler pra participar da discussão.
           </p>
           <Link
@@ -108,7 +106,7 @@ export function ClubDiscussionCard({ clubId }: { clubId: string }) {
                 <div className="min-w-0 flex-1 rounded-xl bg-card2 px-3 py-2.5">
                   <p className="flex items-baseline justify-between gap-2 text-xs">
                     <span className="font-bold">{c.author.user}</span>
-                    <span className="shrink-0 text-[10px] text-paperDim">
+                    <span className="shrink-0 text-caption text-paperMuted">
                       pág. {c.page} · {formatNotificationTime(c.createdAt)}
                     </span>
                   </p>
@@ -117,12 +115,12 @@ export function ClubDiscussionCard({ clubId }: { clubId: string }) {
               </div>
             ))}
             {data.comments.length === 0 && (
-              <p className="text-sm text-paperDim">Ainda não há comentários. Comece a discussão!</p>
+              <p className="text-sm text-paperMuted">Ainda não há comentários. Comece a discussão!</p>
             )}
           </div>
 
           {!!data.lockedCount && (
-            <p className="text-xs text-paperDim">
+            <p className="text-xs text-paperMuted">
               {data.lockedCount === 1
                 ? "1 comentário bloqueado"
                 : `${data.lockedCount} comentários bloqueados`}{" "}
@@ -140,7 +138,7 @@ export function ClubDiscussionCard({ clubId }: { clubId: string }) {
               className="resize-none rounded-xl border border-line bg-card2 px-3.5 py-2.5 text-sm text-paper"
             />
             <div className="flex items-center gap-2">
-              <label className="flex items-center gap-1.5 text-xs text-paperDim">
+              <label className="flex items-center gap-1.5 text-xs text-paperMuted">
                 até a pág.
                 <input
                   type="number"
@@ -167,6 +165,6 @@ export function ClubDiscussionCard({ clubId }: { clubId: string }) {
           </div>
         </div>
       )}
-    </section>
+    </Section>
   );
 }

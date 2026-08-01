@@ -6,9 +6,9 @@ import { Avatar } from "@/components/Avatar";
 import { BackHeader } from "@/components/BackHeader";
 import { BookCover } from "@/components/BookCover";
 import { PageLoader } from "@/components/PageLoader";
-import { SectionTitle } from "@/components/SectionTitle";
 import { Spinner } from "@/components/Spinner";
 import { ErrorRetry } from "@/components/ui/ErrorRetry";
+import { Section } from "@/components/ui/Section";
 import { withAt, withoutAt } from "@/lib/handle";
 import { useStore } from "@/lib/store";
 import type { ApiBookOfMonthMember, ApiBookOfMonthMembers, ApiClubBookOfMonthDetail } from "@/lib/types";
@@ -28,7 +28,7 @@ function MemberRow({ member, me }: { member: ApiBookOfMonthMember; me: string })
       <div className="min-w-0 flex-1">
         <p className="flex items-baseline justify-between text-xs">
           <span className="truncate font-bold">{isMe ? `${member.user} (você)` : member.user}</span>
-          <span className="ml-2 shrink-0 text-paperDim">{member.percent}%</span>
+          <span className="ml-2 shrink-0 text-paperMuted">{member.percent}%</span>
         </p>
         <div className="mt-1 h-1 overflow-hidden rounded-full bg-card2">
           <div
@@ -107,7 +107,7 @@ export default function BookOfMonthMembersPage({ params }: { params: { id: strin
     return (
       <div className="pt-4">
         <BackHeader />
-        <p className="mt-10 text-center text-paperDim">Este clube ainda não tem um livro do mês.</p>
+        <p className="mt-10 text-center text-paperMuted">Este clube ainda não tem um livro do mês.</p>
       </div>
     );
   }
@@ -143,7 +143,7 @@ export default function BookOfMonthMembersPage({ params }: { params: { id: strin
         <BookCover book={book} width={48} />
         <div className="min-w-0">
           <p className="truncate font-display text-base font-bold">{book.title}</p>
-          <p className="truncate text-sm text-paperDim">{book.authors}</p>
+          <p className="truncate text-sm text-paperMuted">{book.authors}</p>
         </div>
       </Link>
 
@@ -158,32 +158,29 @@ export default function BookOfMonthMembersPage({ params }: { params: { id: strin
         </button>
       )}
 
-      <section className="mt-6">
-        <SectionTitle>Terminaram ({data.finished.length})</SectionTitle>
+      <Section title={`Terminaram (${data.finished.length})`}>
         <div className="mt-3 flex flex-col gap-2.5 rounded-2xl border border-line bg-card p-4">
           {data.finished.length === 0 ? (
-            <p className="text-sm text-paperDim">Ninguém terminou ainda.</p>
+            <p className="text-sm text-paperMuted">Ninguém terminou ainda.</p>
           ) : (
             data.finished.map((m) => <MemberRow key={m.userId} member={m} me={me} />)
           )}
         </div>
-      </section>
+      </Section>
 
-      <section className="mt-6">
-        <SectionTitle>Lendo ({data.reading.length})</SectionTitle>
+      <Section title={`Lendo (${data.reading.length})`}>
         <div className="mt-3 flex flex-col gap-2.5 rounded-2xl border border-line bg-card p-4">
           {data.reading.length === 0 ? (
-            <p className="text-sm text-paperDim">Ninguém está lendo ainda.</p>
+            <p className="text-sm text-paperMuted">Ninguém está lendo ainda.</p>
           ) : (
             data.reading.map((m) => <MemberRow key={m.userId} member={m} me={me} />)
           )}
         </div>
-      </section>
+      </Section>
 
-      <section className="mt-6">
-        <SectionTitle>Ainda não começaram</SectionTitle>
+      <Section title="Ainda não começaram">
         <div className="mt-3 rounded-2xl border border-line bg-card p-4">
-          <p className="text-sm text-paperDim">
+          <p className="text-sm text-paperMuted">
             {data.notStartedCount === 0
               ? "Todo mundo já começou!"
               : `${data.notStartedCount} de ${data.totalMembers} ${
@@ -191,7 +188,7 @@ export default function BookOfMonthMembersPage({ params }: { params: { id: strin
                 } a ler.`}
           </p>
         </div>
-      </section>
+      </Section>
     </div>
   );
 }
