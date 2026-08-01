@@ -347,8 +347,8 @@ test("recebedor confirma recebimento de doação ainda RESERVADO: finaliza a doa
   const notifs = await (await page.request.get("/api/notifications")).json();
   expect(
     notifs.notifications.some(
-      (n: { type: string; actor: { id: string } | null }) =>
-        n.type === "DONATION_RECEIPT_CONFIRMED" && n.actor?.id === r.id,
+      (n: { type: string; actors: { id: string }[] }) =>
+        n.type === "DONATION_RECEIPT_CONFIRMED" && n.actors.some((a) => a.id === r.id),
     ),
   ).toBe(true);
 

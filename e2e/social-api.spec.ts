@@ -32,11 +32,16 @@ test("review com título aparece no feed geral e some do feed ao zerar a nota", 
   expect(mine.review.likes).toBe(0);
   expect(mine.review.comments).toBe(0);
 
-  // nota 0 apaga a review — some do feed
+  // nota 0 apaga a review — some do feed. O evento BOOK_FINISHED gerado
+  // junto (avaliar marca como lido) é um fato de leitura à parte e
+  // continua existindo — só o item de tipo REVIEW deve sumir.
   await page.request.put("/api/books/duna/review", { data: { rating: 0 } });
   const feedAfter = await (await page.request.get("/api/feed?scope=all")).json();
   expect(
-    feedAfter.items.find((r: { user: { username: string } }) => r.user.username === a.username)
+    feedAfter.items.find(
+      (r: { type: string; user: { username: string } }) =>
+        r.user.username === a.username && r.type === "REVIEW"
+    )
   ).toBeUndefined();
 });
 

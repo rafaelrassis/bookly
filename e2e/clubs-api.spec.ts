@@ -194,9 +194,13 @@ test("progresso publica mensagem de sistema uma vez por mudança de %", async ({
   await login(page, a);
 
   const created = await page.request.post("/api/clubs", {
-    data: { name: "Clube de progresso", bookId: "duna", desc: "", visibility: "public" },
+    data: { name: "Clube de progresso", desc: "", visibility: "public" },
   });
   const { id } = await created.json();
+  // `publishProgressToClubs` só publica pra clubes com um livro do mês
+  // corrente — POST /api/clubs não seta mais isso (passou pra
+  // ClubBookOfMonth), então precisa do PUT dedicado antes de medir progresso.
+  await page.request.put(`/api/clubs/${id}/book-of-month`, { data: { bookId: "duna" } });
 
   const ctxB = await browser.newContext();
   const pageB = await ctxB.newPage();

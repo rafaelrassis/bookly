@@ -80,7 +80,9 @@ test.describe("Doação de livros — fluxo ponta a ponta", () => {
     await expect(card).toBeVisible();
     await card.getByRole("button", { name: /sua doação · gerenciar/i }).click();
     const manageDialog = donor.getByRole("dialog", { name: "Gerenciar doação" });
-    await expect(manageDialog.getByText(userAccount.name)).toBeVisible();
+    // exact: true — sem isso, "Leitora ui_user" também casa com o botão
+    // "Escolher Leitora ui_user" (violação de strict mode).
+    await expect(manageDialog.getByText(userAccount.name, { exact: true })).toBeVisible();
     await manageDialog.getByRole("button", { name: "Escolher" }).click();
     await expect(manageDialog.getByRole("button", { name: /marcar como doado/i })).toBeVisible();
 
