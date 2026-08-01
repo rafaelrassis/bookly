@@ -125,7 +125,7 @@ export function MuralSection({
 
       {joined ? (
         <>
-          <div className="mt-3 flex max-h-[26rem] flex-col gap-3 overflow-y-auto">
+          <div className="mt-3 flex max-h-[26rem] flex-col gap-3 overflow-y-auto lg:max-h-[36rem]">
             {messages.map((message) => (
               <Bubble
                 key={message.id}
@@ -140,7 +140,7 @@ export function MuralSection({
             <div ref={feedEndRef} />
           </div>
 
-          <div className="mt-4">
+          <div className="mt-4 lg:sticky lg:bottom-0 lg:border-t lg:border-line lg:bg-leather/95 lg:px-0 lg:pb-4 lg:pt-3 lg:backdrop-blur">
             {replyTo && (
               <div className="mb-2 flex items-start justify-between gap-2 rounded-xl border-l-2 border-foil bg-card px-3 py-2 text-xs text-paperDim">
                 <p className="min-w-0">

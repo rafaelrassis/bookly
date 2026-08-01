@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { BackHeader } from "@/components/BackHeader";
 import { PageLoader } from "@/components/PageLoader";
 import { ErrorRetry } from "@/components/ui/ErrorRetry";
+import { AsideContent } from "@/lib/aside";
 import { withAt } from "@/lib/handle";
 import { useStore } from "@/lib/store";
 import type { ApiClubStreaks, ClubDetail, ClubMessage } from "@/lib/types";
@@ -318,9 +319,23 @@ export default function ClubPage({ params }: { params: { id: string } }) {
         onRegenerateCode={regenerateCode}
       />
 
-      <BookOfMonthSection clubId={club.id} isCreator={club.isCreator} joined={club.joined} />
+      <div className="lg:hidden">
+        <BookOfMonthSection clubId={club.id} isCreator={club.isCreator} joined={club.joined} />
+      </div>
+      <AsideContent>
+        <div className="[&>section:first-child]:mt-0">
+          <BookOfMonthSection clubId={club.id} isCreator={club.isCreator} joined={club.joined} />
+        </div>
+      </AsideContent>
 
-      <MembersSection club={club} me={me} streaks={streaks} onRemoveMember={removeMember} />
+      <div className="lg:hidden">
+        <MembersSection club={club} me={me} streaks={streaks} onRemoveMember={removeMember} />
+      </div>
+      <AsideContent>
+        <div className="[&>section:first-child]:mt-0">
+          <MembersSection club={club} me={me} streaks={streaks} onRemoveMember={removeMember} />
+        </div>
+      </AsideContent>
 
       <MuralSection
         joined={club.joined}
