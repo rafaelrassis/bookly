@@ -1,86 +1,76 @@
-import { describe, expect, it } from "vitest";
+import { describe, it, expect } from "vitest";
 import { computeWeeklyStreak, formatStreak } from "./streak";
 
+// segunda-feira de referência, UTC, sem ambiguidade de fuso
+const mon = (y: number, m: number, d: number) => new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+
 describe("computeWeeklyStreak", () => {
-  it("retorna 0 quando não há logs", () => {
-    expect(computeWeeklyStreak([], new Date("2026-08-01T12:00:00Z"))).toBe(0);
+  it("sem nenhum log retorna 0", () => {
+    expect(computeWeeklyStreak([])).toBe(0);
   });
 
-  it("retorna 1 quando há log só na semana corrente", () => {
-    const now = new Date("2026-08-05T12:00:00Z"); // quarta-feira
-    expect(computeWeeklyStreak([new Date("2026-08-04T09:00:00Z")], now)).toBe(1);
+  it("1 log na semana corrente conta como streak de 1", () => {
+    const now = mon(2026, 8, 5); // quarta-feira
+    expect(computeWeeklyStreak([mon(2026, 8, 3)], now)).toBe(1);
   });
 
-  it("retorna 1 quando o único log é da semana passada (semana corrente ainda não quebrou)", () => {
-    const now = new Date("2026-08-05T12:00:00Z"); // semana de 3 a 9 de ago
-    expect(computeWeeklyStreak([new Date("2026-07-29T09:00:00Z")], now)).toBe(1);
+  it("3 semanas seguidas com log -> streak = 3", () => {
+    const now = mon(2026, 8, 20);
+    const logs = [mon(2026, 8, 17), mon(2026, 8, 10), mon(2026, 8, 3)];
+    expect(computeWeeklyStreak(logs, now)).toBe(3);
   });
 
-  it("retorna 0 quando o log mais recente é de 2+ semanas atrás", () => {
-    const now = new Date("2026-08-05T12:00:00Z");
-    expect(computeWeeklyStreak([new Date("2026-07-20T09:00:00Z")], now)).toBe(0);
+  it("pula uma semana no meio -> streak reseta, conta só a sequência mais recente", () => {
+    const now = mon(2026, 8, 24);
+    // log em 17/08 e 03/08, SEM log em 10/08 -> quebra entre as duas
+    const logs = [mon(2026, 8, 17), mon(2026, 8, 3)];
+    expect(computeWeeklyStreak(logs, now)).toBe(1);
   });
 
-  it("conta 2 semanas consecutivas (semana corrente + anterior)", () => {
-    const now = new Date("2026-08-05T12:00:00Z");
-    const dates = [new Date("2026-08-04T09:00:00Z"), new Date("2026-07-29T09:00:00Z")];
-    expect(computeWeeklyStreak(dates, now)).toBe(2);
+  it("semana corrente ainda sem log não quebra o streak (semana não acabou)", () => {
+    // "now" numa semana sem log ainda, mas a semana anterior teve log
+    const now = mon(2026, 8, 24); // semana de 24-30/ago
+    const logs = [mon(2026, 8, 17), mon(2026, 8, 10)]; // semanas de 17 e 10 (consecutivas)
+    expect(computeWeeklyStreak(logs, now)).toBe(2);
   });
 
-  it("conta 3 semanas consecutivas", () => {
-    const now = new Date("2026-08-05T12:00:00Z");
-    const dates = [
-      new Date("2026-08-04T09:00:00Z"),
-      new Date("2026-07-29T09:00:00Z"),
-      new Date("2026-07-22T09:00:00Z"),
-    ];
-    expect(computeWeeklyStreak(dates, now)).toBe(3);
+  it("duas semanas inteiras sem log -> streak quebrado, retorna 0", () => {
+    const now = mon(2026, 8, 24); // semana de 24-30/ago
+    const logs = [mon(2026, 8, 3)]; // último log há 3 semanas
+    expect(computeWeeklyStreak(logs, now)).toBe(0);
   });
 
-  it("para de contar ao encontrar um buraco entre semanas com log", () => {
-    const now = new Date("2026-08-05T12:00:00Z");
-    const dates = [
-      new Date("2026-08-04T09:00:00Z"), // semana corrente
-      new Date("2026-07-15T09:00:00Z"), // 3 semanas atrás (buraco)
-    ];
-    expect(computeWeeklyStreak(dates, now)).toBe(1);
+  it("múltiplos logs na mesma semana contam como 1 semana só, não inflam o streak", () => {
+    const now = mon(2026, 8, 5);
+    const logs = [mon(2026, 8, 3), mon(2026, 8, 4), mon(2026, 8, 3)]; // 3 logs, mesma semana
+    expect(computeWeeklyStreak(logs, now)).toBe(1);
   });
 
-  it("deduplica múltiplos logs na mesma semana ISO", () => {
-    const now = new Date("2026-08-05T12:00:00Z");
-    const dates = [
-      new Date("2026-08-03T08:00:00Z"),
-      new Date("2026-08-04T09:00:00Z"),
-      new Date("2026-08-05T10:00:00Z"),
-    ];
-    expect(computeWeeklyStreak(dates, now)).toBe(1);
+  it("atravessa virada de ano sem quebrar (dez -> jan, semanas consecutivas)", () => {
+    const now = mon(2027, 1, 12);
+    // semana de 29/dez/2026 (seg) e semana de 5/jan/2027 (seg) são consecutivas
+    const logs = [mon(2027, 1, 5), mon(2026, 12, 29), mon(2026, 12, 22)];
+    expect(computeWeeklyStreak(logs, now)).toBe(3);
   });
 
-  it("virada de ano: conta streak entre a última semana ISO de um ano e a primeira do seguinte", () => {
-    // 2023-12-25 (seg) inicia a última semana ISO de 2023; 2024-01-01 (seg) inicia a primeira de 2024.
-    const now = new Date("2024-01-03T12:00:00Z");
-    const dates = [new Date("2024-01-01T09:00:00Z"), new Date("2023-12-25T09:00:00Z")];
-    expect(computeWeeklyStreak(dates, now)).toBe(2);
-  });
-
-  it("virada de ano: 31/dez e 1/jan na mesma semana ISO contam como 1 semana só", () => {
-    // Semana ISO de 2024-12-30 (seg) a 2025-01-05 (dom) engloba os dois dias.
-    const now = new Date("2025-01-02T12:00:00Z");
-    const dates = [new Date("2024-12-31T20:00:00Z"), new Date("2025-01-01T06:00:00Z")];
-    expect(computeWeeklyStreak(dates, now)).toBe(1);
+  it("virada de ano com quebra de verdade no meio -> não conta a virada como consecutiva por engano", () => {
+    const now = mon(2027, 1, 12);
+    // log em 5/jan/2027 e 22/dez/2026, SEM log em 29/dez -> quebra
+    const logs = [mon(2027, 1, 5), mon(2026, 12, 22)];
+    expect(computeWeeklyStreak(logs, now)).toBe(1);
   });
 });
 
 describe("formatStreak", () => {
-  it("formata 0 sem destaque e no singular/plural neutro", () => {
+  it("streak 0 não tem destaque nem emoji", () => {
     expect(formatStreak(0)).toBe("0 semanas");
   });
 
-  it("formata 1 com destaque e no singular", () => {
+  it("streak 1 usa singular", () => {
     expect(formatStreak(1)).toBe("🔥 1 semana");
   });
 
-  it("formata valores maiores que 1 no plural", () => {
-    expect(formatStreak(5)).toBe("🔥 5 semanas");
+  it("streak > 1 usa plural", () => {
+    expect(formatStreak(3)).toBe("🔥 3 semanas");
   });
 });
