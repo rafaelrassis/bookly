@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { BookCover } from "@/components/BookCover";
 import { Logo } from "@/components/Logo";
-import { SectionTitle } from "@/components/SectionTitle";
+import { Section } from "@/components/ui/Section";
 import { SocialLoginButtons } from "@/components/SocialLoginButtons";
 import { useTopBooks } from "@/lib/store/hooks";
 import { useStore } from "@/lib/store";
@@ -47,7 +47,7 @@ export default function LandingPage() {
     <main className="mx-auto flex min-h-dvh w-full max-w-app flex-col px-5 pb-10 pt-16">
       <div className="text-center">
         <Logo className="text-5xl" />
-        <p className="mt-3 text-lg text-paperDim">
+        <p className="mt-3 text-lg text-paperMuted">
           Registre o que você lê.
           <br />
           Descubra o que ler.
@@ -59,14 +59,13 @@ export default function LandingPage() {
       </div>
 
       {topBooks.length > 0 && (
-        <section className="mt-10">
-          <SectionTitle>Top livros do mês</SectionTitle>
-          <div className="no-scrollbar -mx-5 mt-3 flex gap-3 overflow-x-auto px-5">
+        <Section title="Top livros do mês">
+          <div className="no-scrollbar -mx-5 flex gap-3 overflow-x-auto px-5">
             {topBooks.map((book) => (
               <BookCover key={book.id} book={book} width={96} />
             ))}
           </div>
-        </section>
+        </Section>
       )}
 
       <section className="mt-10 flex flex-col gap-3">

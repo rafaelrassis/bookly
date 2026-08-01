@@ -81,13 +81,13 @@ export function YearInBooksPageClient({
         <Avatar user={handle} avatarIndex={user.avatar} avatarUrl={user.avatarUrl} size={48} />
         <div className="min-w-0">
           <p className="truncate font-display text-lg font-bold">{user.name}</p>
-          <p className="text-sm text-paperDim">{handle}</p>
+          <p className="text-sm text-paperMuted">{handle}</p>
         </div>
       </section>
 
       <div className="mt-6 rounded-2xl border border-line bg-card p-4">
         {!stats || stats.booksRead === 0 ? (
-          <p className="py-4 text-center text-sm text-paperDim">
+          <p className="py-4 text-center text-sm text-paperMuted">
             Nenhum livro concluído em {year} ainda.
           </p>
         ) : (
@@ -120,7 +120,7 @@ export function YearInBooksPageClient({
             {stats.topGenres.length > 0 && (
               <div className="mt-4 flex flex-col gap-2 border-t border-line pt-4">
                 {stats.topGenres.map(({ genre, count }) => (
-                  <div key={genre} className="flex items-center justify-between text-xs text-paperDim">
+                  <div key={genre} className="flex items-center justify-between text-xs text-paperMuted">
                     <span className="truncate">{genre}</span>
                     <span className="shrink-0 font-bold text-paper">{count}</span>
                   </div>

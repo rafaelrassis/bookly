@@ -67,7 +67,7 @@ export function VerificationModal({ email, onVerified, onSkip }: Props) {
         <h2 id="verification-modal-title" className="text-lg font-extrabold">
           Verificar e-mail
         </h2>
-        <p className="mt-1 text-sm text-paperDim">
+        <p className="mt-1 text-sm text-paperMuted">
           Enviamos um código de 6 dígitos para <span className="text-paper">{email}</span>.
         </p>
 
@@ -101,13 +101,13 @@ export function VerificationModal({ email, onVerified, onSkip }: Props) {
             type="button"
             onClick={resend}
             disabled={cooldown > 0}
-            className="text-sm text-paperDim underline decoration-dotted disabled:no-underline disabled:opacity-60"
+            className="text-sm text-paperMuted underline decoration-dotted disabled:no-underline disabled:opacity-60"
           >
             {cooldown > 0 ? `Reenviar em ${cooldown}s` : "Reenviar código"}
           </button>
 
           {onSkip && (
-            <button type="button" onClick={onSkip} className="text-sm text-paperDim underline">
+            <button type="button" onClick={onSkip} className="text-sm text-paperMuted underline">
               Pular por agora
             </button>
           )}

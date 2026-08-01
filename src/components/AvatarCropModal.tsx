@@ -61,7 +61,7 @@ export function AvatarCropModal({ src, onCancel, onConfirm }: Props) {
         </div>
 
         <div className="space-y-4 border-t border-line bg-card p-4 pb-[max(1rem,env(safe-area-inset-bottom))] text-paper">
-          <label className="block text-xs font-bold uppercase tracking-wide text-paperDim">
+          <label className="block text-xs font-bold uppercase tracking-wide text-paperMuted">
             Zoom
             <input
               type="range"
@@ -98,7 +98,7 @@ export function AvatarCropModal({ src, onCancel, onConfirm }: Props) {
               type="button"
               onClick={onCancel}
               disabled={busy}
-              className="rounded-full px-5 py-2 text-sm font-bold text-paperDim disabled:opacity-60"
+              className="rounded-full px-5 py-2 text-sm font-bold text-paperMuted disabled:opacity-60"
             >
               Cancelar
             </button>

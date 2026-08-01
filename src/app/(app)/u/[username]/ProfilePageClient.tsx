@@ -10,7 +10,7 @@ import { BookCover } from "@/components/BookCover";
 import { EmptyState } from "@/components/EmptyState";
 import { BadgeCheckIcon, BookOpenIcon } from "@/components/icons";
 import { Stars } from "@/components/Stars";
-import { SectionTitle } from "@/components/SectionTitle";
+import { Section } from "@/components/ui/Section";
 import { ErrorRetry } from "@/components/ui/ErrorRetry";
 import { withAt, withoutAt } from "@/lib/handle";
 import { formatCount } from "@/lib/format";
@@ -108,7 +108,7 @@ export function ProfilePageClient({ params }: { params: { username: string } }) 
         <BackHeader>
           <h1 className="text-lg font-extrabold">Perfil</h1>
         </BackHeader>
-        <p className="mt-8 text-center text-sm text-paperDim">Usuário não encontrado.</p>
+        <p className="mt-8 text-center text-sm text-paperMuted">Usuário não encontrado.</p>
       </div>
     );
   }
@@ -148,7 +148,7 @@ export function ProfilePageClient({ params }: { params: { username: string } }) 
         <Avatar user={handle} avatarIndex={profile.avatar} avatarUrl={profile.avatarUrl} size={72} />
         <div className="min-w-0 flex-1">
           <h2 className="font-display text-xl font-bold">{profile.name}</h2>
-          <p className="text-sm text-paperDim">{handle}</p>
+          <p className="text-sm text-paperMuted">{handle}</p>
           {(tier || receiverBadge) && (
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
               {tier && (
@@ -173,7 +173,7 @@ export function ProfilePageClient({ params }: { params: { username: string } }) 
               )}
             </div>
           )}
-          <div className="mt-1 flex gap-4 text-xs text-paperDim">
+          <div className="mt-1 flex gap-4 text-xs text-paperMuted">
             <span>
               <b className="text-paper">{profile.followers}</b> seguidores
             </span>
@@ -193,7 +193,7 @@ export function ProfilePageClient({ params }: { params: { username: string } }) 
         aria-pressed={profile.isFollowing}
         className={`mt-4 w-full rounded-xl px-5 py-3 text-sm font-bold transition-colors disabled:opacity-60 ${
           profile.isFollowing
-            ? "border border-line bg-card text-paperDim hover:text-paper"
+            ? "border border-line bg-card text-paperMuted hover:text-paper"
             : "bg-foil text-leather hover:opacity-90"
         }`}
       >
@@ -201,16 +201,15 @@ export function ProfilePageClient({ params }: { params: { username: string } }) 
       </button>
 
       {profile.top4.length > 0 && (
-        <section className="mt-7">
-          <SectionTitle>Favoritos</SectionTitle>
-          <div className="mt-3 grid grid-cols-4 gap-3">
+        <Section title="Favoritos">
+          <div className="grid grid-cols-4 gap-3">
             {favoriteBooks.map((book) => (
               <Link key={book.id} href={`/book/${book.id}`} aria-label={book.title} className="rounded-md">
                 <BookCover book={book} width={88} />
               </Link>
             ))}
           </div>
-        </section>
+        </Section>
       )}
 
       <div className="mt-6 flex rounded-2xl border border-line bg-card py-4">
@@ -236,9 +235,8 @@ export function ProfilePageClient({ params }: { params: { username: string } }) 
       <Badges donatedCount={profile.stats.donatedCount} />
 
       {publicLists.length > 0 && (
-        <section className="mt-7">
-          <SectionTitle>Listas</SectionTitle>
-          <div className="mt-3 flex flex-col gap-3">
+        <Section title="Listas">
+          <div className="flex flex-col gap-3">
             {publicLists.map((list) => (
               <Link
                 key={list.id}
@@ -247,7 +245,7 @@ export function ProfilePageClient({ params }: { params: { username: string } }) 
               >
                 <div className="min-w-0">
                   <p className="truncate font-bold">{list.name}</p>
-                  <p className="text-xs text-paperDim">
+                  <p className="text-xs text-paperMuted">
                     {list.bookIds.length} {list.bookIds.length === 1 ? "livro" : "livros"}
                   </p>
                 </div>
@@ -259,11 +257,10 @@ export function ProfilePageClient({ params }: { params: { username: string } }) 
               </Link>
             ))}
           </div>
-        </section>
+        </Section>
       )}
 
-      <section className="mt-7 pb-8">
-        <SectionTitle>Reviews</SectionTitle>
+      <Section title="Reviews" className="pb-8">
         {reviews.length === 0 ? (
           <EmptyState
             icon={<BookOpenIcon />}
@@ -271,7 +268,7 @@ export function ProfilePageClient({ params }: { params: { username: string } }) 
             description={`${profile.name} ainda não avaliou nenhum livro por aqui.`}
           />
         ) : (
-          <div className="mt-3 flex flex-col gap-3">
+          <div className="flex flex-col gap-3">
             {reviews.map((review) => (
               <Link
                 key={review.id}
@@ -283,13 +280,13 @@ export function ProfilePageClient({ params }: { params: { username: string } }) 
                   <p className="truncate font-display text-sm font-bold">{review.book.title}</p>
                   <Stars rating={review.rating} className="text-xs" />
                   {review.title && <p className="mt-1 text-sm font-bold">{review.title}</p>}
-                  <p className="mt-0.5 line-clamp-2 text-sm text-paperDim">{review.text}</p>
+                  <p className="mt-0.5 line-clamp-2 text-sm text-paperMuted">{review.text}</p>
                 </div>
               </Link>
             ))}
           </div>
         )}
-      </section>
+      </Section>
     </div>
   );
 }

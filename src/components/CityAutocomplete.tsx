@@ -99,12 +99,12 @@ export function CityAutocomplete({ city, state, onCityChange, onSelect, disabled
                     }}
                     className="block w-full px-4 py-2 text-left text-sm text-paper hover:bg-card"
                   >
-                    {s.name} <span className="text-paperDim">({s.state})</span>
+                    {s.name} <span className="text-paperMuted">({s.state})</span>
                   </button>
                 </li>
               ))
             : !loading && (
-                <li className="px-4 py-2 text-sm text-paperDim">Nenhuma cidade encontrada</li>
+                <li className="px-4 py-2 text-sm text-paperMuted">Nenhuma cidade encontrada</li>
               )}
         </ul>
       )}

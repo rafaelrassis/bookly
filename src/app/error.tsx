@@ -23,7 +23,7 @@ export default function GlobalError({
     <main className="mx-auto flex min-h-dvh w-full max-w-app flex-col items-center justify-center px-5 text-center">
       <Logo className="text-3xl" />
       <p className="mt-6 text-lg font-bold">Algo deu errado</p>
-      <p className="mt-2 max-w-64 text-sm text-paperDim">
+      <p className="mt-2 max-w-64 text-sm text-paperMuted">
         Não foi possível carregar esta página. Tente de novo em instantes.
       </p>
       <button
