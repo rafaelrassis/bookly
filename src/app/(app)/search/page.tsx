@@ -117,8 +117,8 @@ export default function SearchPage() {
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Título ou autor…"
-            aria-label="Buscar livros por título ou autor"
+            placeholder="Título, autor ou ISBN…"
+            aria-label="Buscar livros por título, autor ou ISBN"
             className="min-h-tap w-full rounded-xl border border-line bg-card px-4 text-base text-paper"
           />
         </BackHeader>

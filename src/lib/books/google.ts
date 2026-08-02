@@ -1,4 +1,5 @@
 import type { Book } from "@/lib/types";
+import { normalizeIsbn, isbn10to13 } from "./isbn";
 
 const GOOGLE_BOOKS_API = "https://www.googleapis.com/books/v1/volumes";
 
@@ -34,6 +35,7 @@ type GoogleVolume = {
     ratingsCount?: number;
     description?: string;
     imageLinks?: { thumbnail?: string; smallThumbnail?: string };
+    industryIdentifiers?: { type?: string; identifier?: string }[];
   };
 };
 
@@ -43,6 +45,12 @@ function mapVolume(item: GoogleVolume): Book | null {
 
   const year = info.publishedDate ? parseInt(info.publishedDate.slice(0, 4), 10) : NaN;
   const cover = info.imageLinks?.thumbnail ?? info.imageLinks?.smallThumbnail;
+
+  const ids = info.industryIdentifiers ?? [];
+  const isbn13 = ids.find((i) => i.type === "ISBN_13")?.identifier;
+  const isbn10raw = ids.find((i) => i.type === "ISBN_10")?.identifier;
+  const isbn10 = isbn10raw ? normalizeIsbn(isbn10raw) : undefined;
+  const isbn = isbn13 ? normalizeIsbn(isbn13) : (isbn10 ? isbn10to13(isbn10) ?? undefined : undefined);
 
   return {
     id: item.id,
@@ -56,6 +64,8 @@ function mapVolume(item: GoogleVolume): Book | null {
     count: info.ratingsCount ?? 0,
     synopsis: info.description ?? "",
     coverUrl: cover ? cover.replace(/^http:/, "https:") : undefined,
+    isbn,
+    isbn10,
   };
 }
 
@@ -107,7 +117,7 @@ function relevanceScore(book: Book, q: string): number {
 }
 
 async function runSearch(q: string, extraParams: string, maxAttempts?: number): Promise<Book[]> {
-  const url = `${GOOGLE_BOOKS_API}?q=${encodeURIComponent(q)}&maxResults=20&country=BR&orderBy=relevance${extraParams}&key=${requireApiKey()}`;
+  const url = `${GOOGLE_BOOKS_API}?q=${encodeURIComponent(q)}&maxResults=20&country=BR&orderBy=relevance&printType=books${extraParams}&key=${requireApiKey()}`;
   const res = await fetchGoogleBooks(url, maxAttempts);
   if (!res.ok) throw new Error(`Google Books search failed: ${res.status} ${await res.text()}`);
   const data = (await res.json()) as { items?: GoogleVolume[] };
@@ -146,6 +156,11 @@ export async function searchGoogleBooks(q: string): Promise<Book[]> {
 
   searchCache.set(key, { at: Date.now(), books });
   return books;
+}
+
+/** Busca exata por ISBN (fallback quando o catálogo local não tem o livro). */
+export async function searchGoogleByIsbn(isbn: string): Promise<Book[]> {
+  return runSearch(`isbn:${normalizeIsbn(isbn)}`, "", 2);
 }
 
 /** `null` quando o volume não existe (404); demais falhas (rede, 5xx, quota)

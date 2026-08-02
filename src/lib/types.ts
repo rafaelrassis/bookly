@@ -13,6 +13,10 @@ export type Book = {
   coverUrl?: string;
   /** true quando há doação DISPONIVEL deste livro — selo na busca/estante. */
   hasDonation?: boolean;
+  /** ISBN-13 (ou ISBN-10 se não houver 13) resolvido do Google Books. */
+  isbn?: string;
+  /** ISBN-10 normalizado, quando existir. */
+  isbn10?: string;
 };
 
 export type DonationStatus = "DISPONIVEL" | "RESERVADO" | "DOADO";

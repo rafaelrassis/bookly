@@ -1,4 +1,5 @@
 import type { Prisma, Book } from "@/generated/prisma/client";
+import type { Book as ApiBook } from "@/lib/types";
 import { db } from "@/lib/db";
 import { getGoogleBook } from "@/lib/books/google";
 
@@ -47,6 +48,40 @@ export async function getOrCreateBook(id: string): Promise<Book | null> {
       coverUrl: googleBook.coverUrl,
     },
   });
+}
+
+/** Grava/atualiza em lote os volumes vindos da busca do Google, para o
+ * catálogo local crescer a cada pesquisa. Falha aqui nunca quebra a busca. */
+export async function cacheGoogleBooks(books: ApiBook[]): Promise<void> {
+  await Promise.allSettled(
+    books.map((b) => {
+      const [gradientFrom, gradientTo] = b.gradient;
+      const data = {
+        title: b.title,
+        authors: b.authors,
+        year: b.year,
+        pages: b.pages,
+        genre: b.genre,
+        gradientFrom,
+        gradientTo,
+        synopsis: b.synopsis,
+        coverUrl: b.coverUrl,
+        isbn: b.isbn ?? null,
+        isbn10: b.isbn10 ?? null,
+      };
+      return db.book.upsert({
+        where: { id: b.id },
+        create: { id: b.id, avg: b.avg, count: b.count, ...data },
+        update: {
+          title: data.title,
+          authors: data.authors,
+          synopsis: data.synopsis,
+          coverUrl: data.coverUrl,
+          isbn10: data.isbn10,
+        },
+      });
+    }),
+  );
 }
 
 /** Recomputa avg/count cacheados no Book a partir das reviews existentes.

@@ -186,12 +186,19 @@ model Book {
   /// deduplicar por livro já importado sem gastar cota do Google Books
   /// (import de CSV do Goodreads).
   isbn         String?  @unique
+  /// ISBN-10 normalizado (dígitos + X), quando existir — busca exata sem hífen.
+  isbn10       String?
   avg          Float    @default(0)
   count        Int      @default(0)
   createdAt    DateTime @default(now())
   /// Toca só nos campos voláteis (título/autores/sinopse/capa) refrescados
   /// do Google Books; usada pela política de staleness em getOrCreateBook().
   updatedAt    DateTime @updatedAt
+
+  // "searchText" (lower(unaccent(title || ' ' || authors)), coluna GERADA
+  // pelo Postgres — ver migration 20260802120000_book_search) não entra
+  // aqui de propósito: é read-only e o Prisma tentaria escrever nela em
+  // todo create(); a busca acessa via $queryRaw (src/lib/books/local.ts).
 
   shelfEntries     ShelfEntry[]
   reviews          Review[]
@@ -205,6 +212,8 @@ model Book {
   clubBooksOfMonth ClubBookOfMonth[]
 
   @@index([genre])
+  @@index([isbn10])
+  @@index([isbn])
 }
 
 /// Estante do usuário: status + progresso. currentPage/lastPage sempre em
