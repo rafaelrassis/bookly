@@ -118,7 +118,7 @@ async function runSearch(q: string, extraParams: string): Promise<Book[]> {
  * puro — mescla e deduplica por id, o score de relevância decide a ordem. */
 export async function searchGoogleBooks(q: string): Promise<Book[]> {
   const [titleBoosted, general] = await Promise.all([
-    runSearch(`intitle:${q}`, ""),
+    runSearch(`intitle:"${q}"`, ""),
     runSearch(q, ""),
   ]);
   const byId = new Map<string, Book>();
