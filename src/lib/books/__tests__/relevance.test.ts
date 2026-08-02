@@ -45,4 +45,14 @@ describe("dedupeByWork", () => {
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe("2");
   });
+
+  it("mantém edições separadas quando o ano é diferente", () => {
+    const original = mkBook({ id: "1", title: "Duna", authors: "Frank Herbert", year: 1965, count: 300 });
+    const relancamento = mkBook({ id: "2", title: "Duna", authors: "Frank Herbert", year: 2021, count: 5000 });
+
+    const result = dedupeByWork([original, relancamento]);
+
+    expect(result).toHaveLength(2);
+    expect(result.map((b) => b.year).sort()).toEqual([1965, 2021]);
+  });
 });

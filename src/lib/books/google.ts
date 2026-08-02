@@ -149,15 +149,20 @@ export function relevanceScore(book: Book, q: string): number {
   return score;
 }
 
-/** Chave de obra: título + primeiro autor, normalizados e sem pontuação.
- * Colapsa edições diferentes do mesmo livro (que têm ids distintos). */
+/** Chave de edição: título + primeiro autor + ano, normalizados e sem
+ * pontuação. Colapsa só reimpressões idênticas do mesmo ano (ex.: capa dura
+ * e brochura do mesmo lançamento) — edições de anos diferentes (relançamento,
+ * nova tradução) permanecem como resultados distintos, pra usuário escolher
+ * a versão certa ao adicionar na estante. */
 function workKey(b: Book): string {
   const title = normalize(b.title).replace(/[^a-z0-9]/g, "");
   const author = normalize(b.authors.split(",")[0] ?? "").replace(/[^a-z0-9]/g, "");
-  return `${title}|${author}`;
+  return `${title}|${author}|${b.year || "s-d"}`;
 }
 
-/** Mantém a melhor edição de cada obra: mais avaliações > tem capa > tem sinopse. */
+/** Mantém a melhor cópia de cada edição (mesmo título+autor+ano): mais
+ * avaliações > tem capa > tem sinopse. Edições de anos diferentes não são
+ * tocadas aqui — cada uma sobrevive como resultado próprio. */
 export function dedupeByWork(books: Book[]): Book[] {
   const best = new Map<string, Book>();
   for (const b of books) {
