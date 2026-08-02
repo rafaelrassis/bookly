@@ -1,5 +1,6 @@
 import type { Book } from "@/lib/types";
 import { normalizeIsbn, isbn10to13 } from "./isbn";
+import { normalizeGenre } from "./genre-map";
 
 const GOOGLE_BOOKS_API = "https://www.googleapis.com/books/v1/volumes";
 
@@ -58,7 +59,7 @@ function mapVolume(item: GoogleVolume): Book | null {
     authors: info.authors?.join(", ") || "Autor desconhecido",
     year: Number.isFinite(year) ? year : 0,
     pages: info.pageCount ?? 0,
-    genre: info.categories?.[0] ?? "Geral",
+    genre: normalizeGenre(info.categories?.[0]),
     gradient: gradientFor(item.id),
     avg: info.averageRating ?? 0,
     count: info.ratingsCount ?? 0,
