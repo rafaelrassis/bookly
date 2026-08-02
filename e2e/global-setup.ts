@@ -76,16 +76,6 @@ const FIXTURE_READER = {
   name: "Leitora Fixture E2E",
 };
 
-/** Cidades reais (IBGE) usadas pelo autocomplete em donations.spec.ts — em
- * CI a tabela City só existe pela migration, nunca é seedada do IBGE de
- * verdade (ver prisma/seed-cities.ts, roda manual e não entra no CI pelo
- * guard de "seed" em scripts/assert-no-seed.ts), então o e2e precisa das
- * suas próprias linhas fixas pra ter o que selecionar na lista. */
-const FIXTURE_CITIES = [
-  { id: "e2e-fixture-city-sp", ibgeCode: "3550308", name: "São Paulo", state: "SP" },
-  { id: "e2e-fixture-city-rj", ibgeCode: "3304557", name: "Rio de Janeiro", state: "RJ" },
-];
-
 export default async function globalSetup() {
   const client = new Client({ connectionString: process.env.DATABASE_URL });
   await client.connect();
@@ -96,15 +86,6 @@ export default async function globalSetup() {
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, now())
          ON CONFLICT (id) DO NOTHING`,
         [book.id, book.title, book.authors, book.year, book.pages, book.genre, book.gradientFrom, book.gradientTo, book.synopsis]
-      );
-    }
-
-    for (const city of FIXTURE_CITIES) {
-      await client.query(
-        `INSERT INTO "City" (id, "ibgeCode", name, state)
-         VALUES ($1, $2, $3, $4)
-         ON CONFLICT ("ibgeCode") DO NOTHING`,
-        [city.id, city.ibgeCode, city.name, city.state]
       );
     }
 

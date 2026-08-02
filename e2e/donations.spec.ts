@@ -42,7 +42,7 @@ test.describe("Doação de livros — fluxo ponta a ponta", () => {
     await login(donor, donorAccount);
     await login(user, userAccount);
 
-    const city = "São Paulo"; // fixture de e2e/global-setup.ts (City)
+    const city = "São Paulo"; // município real do IBGE (src/data/br-cities.ts)
     const card = donor.locator("li", { hasText: city });
     const cardOnUser = user.locator("li", { hasText: city });
 
@@ -130,7 +130,7 @@ test.describe("Doação de livros — fluxo ponta a ponta", () => {
     await login(donor, donorAccount);
     await login(user, userAccount);
 
-    const city = "São Paulo"; // fixture de e2e/global-setup.ts (City)
+    const city = "São Paulo"; // município real do IBGE (src/data/br-cities.ts)
 
     await stubPhotoUpload(donor);
     await donor.goto(`/book/${BOOK}`);
@@ -196,7 +196,7 @@ test.describe("Doação de livros — fluxo ponta a ponta", () => {
     const account = seedAccount("ui_self");
     await login(donor, account);
 
-    const city = "Rio de Janeiro"; // fixture de e2e/global-setup.ts (City)
+    const city = "Rio de Janeiro"; // município real do IBGE (src/data/br-cities.ts)
     await stubPhotoUpload(donor);
     await donor.goto(`/book/${BOOK}`);
     await donor.waitForSelector("h1");
