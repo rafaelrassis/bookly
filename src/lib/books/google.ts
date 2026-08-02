@@ -106,26 +106,93 @@ function normalize(text: string): string {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
-/** Score simples: título idêntico > começa com > contém a query inteira > resto. */
-function relevanceScore(book: Book, q: string): number {
-  const title = normalize(book.title);
-  const query = normalize(q);
-  if (title === query) return 3;
-  if (title.startsWith(query)) return 2;
-  if (title.includes(query)) return 1;
-  return 0;
+const STOPWORDS = new Set([
+  "a","o","as","os","de","da","do","das","dos","e","em","para","por","com",
+  "um","uma","uns","umas","no","na","nos","nas","que","tem","quem","ao","aos",
+  "the","of","and","to","in","for",
+]);
+
+function tokens(text: string): string[] {
+  return normalize(text)
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+/** Tokens "fortes" da query: sem stopwords e com mais de 2 letras.
+ * Cai nos tokens crus quando a query inteira é composta de stopwords. */
+function strongTokens(q: string): string[] {
+  const all = tokens(q);
+  const strong = all.filter((t) => !STOPWORDS.has(t) && t.length > 2);
+  return strong.length > 0 ? strong : all;
+}
+
+/**
+ * Score de relevância (0 a ~2.5):
+ *  - base: fração dos tokens fortes da query presentes no título
+ *  - +1.0 quando o título contém a frase inteira da query
+ *  - +0.5 quando o título cobre todos os tokens fortes
+ *  - +0.3 quando os tokens aparecem no autor (busca por autor)
+ */
+export function relevanceScore(book: Book, q: string): number {
+  const ref = strongTokens(q);
+  const titleTokens = new Set(tokens(book.title));
+  const authorTokens = new Set(tokens(book.authors));
+
+  const hits = ref.filter((t) => titleTokens.has(t)).length;
+  let score = hits / ref.length;
+
+  if (normalize(book.title).includes(normalize(q))) score += 1;
+  if (ref.every((t) => titleTokens.has(t))) score += 0.5;
+  if (ref.every((t) => authorTokens.has(t))) score += 0.3;
+
+  return score;
+}
+
+/** Chave de obra: título + primeiro autor, normalizados e sem pontuação.
+ * Colapsa edições diferentes do mesmo livro (que têm ids distintos). */
+function workKey(b: Book): string {
+  const title = normalize(b.title).replace(/[^a-z0-9]/g, "");
+  const author = normalize(b.authors.split(",")[0] ?? "").replace(/[^a-z0-9]/g, "");
+  return `${title}|${author}`;
+}
+
+/** Mantém a melhor edição de cada obra: mais avaliações > tem capa > tem sinopse. */
+export function dedupeByWork(books: Book[]): Book[] {
+  const best = new Map<string, Book>();
+  for (const b of books) {
+    const k = workKey(b);
+    const cur = best.get(k);
+    if (!cur) {
+      best.set(k, b);
+      continue;
+    }
+    const better =
+      b.count - cur.count ||
+      Number(Boolean(b.coverUrl)) - Number(Boolean(cur.coverUrl)) ||
+      Number(Boolean(b.synopsis)) - Number(Boolean(cur.synopsis));
+    if (better > 0) best.set(k, b);
+  }
+  return Array.from(best.values());
 }
 
 async function runSearch(q: string, extraParams: string, maxAttempts?: number): Promise<Book[]> {
-  const url = `${GOOGLE_BOOKS_API}?q=${encodeURIComponent(q)}&maxResults=20&country=BR&orderBy=relevance&printType=books${extraParams}&key=${requireApiKey()}`;
+  const url = `${GOOGLE_BOOKS_API}?q=${encodeURIComponent(q)}&maxResults=20&country=BR&printType=books&langRestrict=pt&orderBy=relevance${extraParams}&key=${requireApiKey()}`;
   const res = await fetchGoogleBooks(url, maxAttempts);
   if (!res.ok) throw new Error(`Google Books search failed: ${res.status} ${await res.text()}`);
   const data = (await res.json()) as { items?: GoogleVolume[] };
   return (data.items ?? []).map(mapVolume).filter((b): b is Book => b !== null);
 }
 
+export type SearchResult = { books: Book[]; more: Book[] };
+
+/** Acima deste score consideramos "match forte de título" e ativamos o corte. */
+const STRONG_MATCH = 1;
+/** Piso para permanecer na lista principal quando há match forte. */
+const KEEP_THRESHOLD = 0.6;
+
 const SEARCH_CACHE_TTL_MS = 5 * 60_000;
-const searchCache = new Map<string, { at: number; books: Book[] }>();
+const searchCache = new Map<string, { at: number; result: SearchResult }>();
 
 /** Cache in-memory por instância (best-effort — não sobrevive a cold start
  * nem é compartilhado entre instâncias serverless). Reduz custo de quota e
@@ -134,28 +201,42 @@ function cacheKey(q: string): string {
   return normalize(q.trim());
 }
 
-/** As duas buscas rodam em paralelo (evita dobrar a latência do fallback
- * sequencial). `intitle:` tende a vir vazio quando a query é autor/assunto
- * puro — mescla e deduplica por id, o score de relevância decide a ordem.
- * Frase precisa ir entre aspas: sem aspas, `intitle:` só restringe a
- * primeira palavra e o resto vira busca livre normal. */
-export async function searchGoogleBooks(q: string): Promise<Book[]> {
+/** As três buscas rodam em paralelo (evita somar latência de fallback
+ * sequencial). `intitle:"frase"` costuma vir vazio para query de autor/assunto;
+ * a busca por tokens de título cobre o caso do artigo inicial ("A história
+ * do..."), e a geral é a rede de segurança. Mescla e deduplica por id, depois
+ * por obra — o score de relevância decide ordem e corte. */
+export async function searchGoogleBooks(q: string): Promise<SearchResult> {
   const key = cacheKey(q);
   const cached = searchCache.get(key);
-  if (cached && Date.now() - cached.at < SEARCH_CACHE_TTL_MS) return cached.books;
+  if (cached && Date.now() - cached.at < SEARCH_CACHE_TTL_MS) return cached.result;
 
-  const [titleBoosted, general] = await Promise.all([
+  const core = strongTokens(q);
+  const [phrase, byTitleTokens, general] = await Promise.all([
     runSearch(`intitle:"${q}"`, "", 2),
+    runSearch(core.map((t) => `intitle:${t}`).join(" "), "", 2),
     runSearch(q, "", 2),
   ]);
-  const byId = new Map<string, Book>();
-  for (const b of [...titleBoosted, ...general]) byId.set(b.id, b);
-  const books = Array.from(byId.values()).sort(
-    (a, b) => relevanceScore(b, q) - relevanceScore(a, q)
-  );
 
-  searchCache.set(key, { at: Date.now(), books });
-  return books;
+  const byId = new Map<string, Book>();
+  for (const b of [...phrase, ...byTitleTokens, ...general]) {
+    if (!byId.has(b.id)) byId.set(b.id, b);
+  }
+
+  const scored = dedupeByWork(Array.from(byId.values()))
+    .map((b) => ({ b, s: relevanceScore(b, q) }))
+    .sort((x, y) => y.s - x.s || y.b.count - x.b.count);
+
+  const best = scored[0]?.s ?? 0;
+  const strong = best >= STRONG_MATCH;
+
+  const result: SearchResult = {
+    books: (strong ? scored.filter((x) => x.s >= KEEP_THRESHOLD) : scored).map((x) => x.b),
+    more: (strong ? scored.filter((x) => x.s < KEEP_THRESHOLD) : []).map((x) => x.b),
+  };
+
+  searchCache.set(key, { at: Date.now(), result });
+  return result;
 }
 
 /** Busca exata por ISBN (fallback quando o catálogo local não tem o livro). */

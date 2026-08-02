@@ -37,8 +37,8 @@ export async function resolveBook(
 
   if (row.isbn) {
     budget.googleCalls++;
-    const hits = await searchGoogleBooks(`isbn:${row.isbn}`).catch(() => []);
-    const gid = hits[0]?.id;
+    const hits = await searchGoogleBooks(`isbn:${row.isbn}`).catch(() => ({ books: [], more: [] }));
+    const gid = hits.books[0]?.id;
     if (gid) {
       const book = await getOrCreateBook(gid);
       if (book) {
@@ -52,8 +52,8 @@ export async function resolveBook(
 
   budget.googleCalls++;
   const q = `intitle:${row.title}${row.author ? `+inauthor:${row.author}` : ""}`;
-  const hits = await searchGoogleBooks(q).catch(() => []);
-  const gid = hits[0]?.id;
+  const hits = await searchGoogleBooks(q).catch(() => ({ books: [], more: [] }));
+  const gid = hits.books[0]?.id;
   if (gid) {
     const book = await getOrCreateBook(gid);
     if (book) {

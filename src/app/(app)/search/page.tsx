@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { ErrorRetry } from "@/components/ui/ErrorRetry";
 import { Section } from "@/components/ui/Section";
 import { Spinner } from "@/components/Spinner";
+import { formatCount } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import { useRecommendations } from "@/lib/store/hooks";
 import type { ApiCommunityList, Book } from "@/lib/types";
@@ -23,6 +24,7 @@ function BookRow({ book, added, onQuickAdd }: { book: Book; added: boolean; onQu
           <p className="truncate font-display font-bold">{book.title}</p>
           <p className="truncate text-sm text-paperMuted">
             {book.authors} · {book.year}
+            {book.count > 0 && ` · ${formatCount(book.count)} avaliações`}
           </p>
           {book.hasDonation && (
             <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-foil/15 px-2 py-0.5 text-meta text-foil">
@@ -48,6 +50,8 @@ export default function SearchPage() {
   const showToast = useStore((s) => s.showToast);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Book[]>([]);
+  const [more, setMore] = useState<Book[]>([]);
+  const [showMore, setShowMore] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const [communityLists, setCommunityLists] = useState<ApiCommunityList[]>([]);
@@ -64,8 +68,10 @@ export default function SearchPage() {
   }, []);
 
   useEffect(() => {
+    setShowMore(false);
     if (!q) {
       setResults([]);
+      setMore([]);
       setLoading(false);
       setError(false);
       return;
@@ -78,6 +84,7 @@ export default function SearchPage() {
         .then((res) => (res.ok ? res.json() : Promise.reject(res)))
         .then((data) => {
           setResults(data.books);
+          setMore(data.more ?? []);
         })
         .catch((err) => {
           if (err?.name === "AbortError") return;
@@ -186,13 +193,39 @@ export default function SearchPage() {
           action={{ label: "Limpar busca", onClick: () => setQuery("") }}
         />
       ) : (
-        <ul className="mt-4 flex flex-col">
-          {results.map((book) => (
-            <li key={book.id}>
-              <BookRow book={book} added={addedIds.has(book.id)} onQuickAdd={quickAdd} />
-            </li>
-          ))}
-        </ul>
+        <>
+          <ul className="mt-4 flex flex-col">
+            {results.map((book) => (
+              <li key={book.id}>
+                <BookRow book={book} added={addedIds.has(book.id)} onQuickAdd={quickAdd} />
+              </li>
+            ))}
+          </ul>
+
+          {more.length > 0 && (
+            <div className="mt-2">
+              {!showMore ? (
+                <button
+                  type="button"
+                  onClick={() => setShowMore(true)}
+                  className="px-2 py-2 text-sm text-paperMuted underline underline-offset-4"
+                >
+                  Ver mais {more.length} resultados
+                </button>
+              ) : (
+                <Section title="Resultados menos relevantes">
+                  <ul className="flex flex-col">
+                    {more.map((book) => (
+                      <li key={book.id}>
+                        <BookRow book={book} added={addedIds.has(book.id)} onQuickAdd={quickAdd} />
+                      </li>
+                    ))}
+                  </ul>
+                </Section>
+              )}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

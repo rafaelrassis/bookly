@@ -18,7 +18,7 @@ const LOCAL_ENOUGH = 5;
  * Sem resultados não é erro (200 vazio); Google inacessível com local vazio, sim (502). */
 export async function GET(req: Request) {
   const q = new URL(req.url).searchParams.get("q")?.trim() ?? "";
-  if (q.length < 2) return NextResponse.json({ books: [] });
+  if (q.length < 2) return NextResponse.json({ books: [], more: [] });
 
   const local = await searchLocalBooks(q).catch((err) => {
     console.error("[books/search] busca local falhou:", err);
@@ -26,15 +26,27 @@ export async function GET(req: Request) {
   });
 
   let books: Book[] = local.map(rowToBook);
+  let more: Book[] = [];
 
   if (books.length < LOCAL_ENOUGH) {
     try {
-      const remote = looksLikeIsbn(q) ? await searchGoogleByIsbn(q) : await searchGoogleBooks(q);
       const seen = new Set(books.map((b) => b.id));
       const seenIsbn = new Set(books.map((b) => b.isbn).filter(Boolean));
-      const fresh = remote.filter((b) => !seen.has(b.id) && !(b.isbn && seenIsbn.has(b.isbn)));
-      books = [...books, ...fresh];
-      void cacheGoogleBooks(fresh);
+      const isFresh = (b: Book) => !seen.has(b.id) && !(b.isbn && seenIsbn.has(b.isbn));
+
+      if (looksLikeIsbn(q)) {
+        const remote = await searchGoogleByIsbn(q);
+        const fresh = remote.filter(isFresh);
+        books = [...books, ...fresh];
+        void cacheGoogleBooks(fresh);
+      } else {
+        const remote = await searchGoogleBooks(q);
+        const freshBooks = remote.books.filter(isFresh);
+        const freshMore = remote.more.filter(isFresh);
+        books = [...books, ...freshBooks];
+        more = freshMore;
+        void cacheGoogleBooks([...freshBooks, ...freshMore]);
+      }
     } catch (err) {
       console.error("[books/search] Google Books falhou:", err);
       // local já respondeu: só falha de verdade se não houver nada
@@ -42,9 +54,11 @@ export async function GET(req: Request) {
     }
   }
 
-  const withDonation = await idsWithDonations(books.map((b) => b.id));
+  const withDonation = await idsWithDonations([...books, ...more].map((b) => b.id));
+  const decorate = (b: Book) => ({ ...b, hasDonation: withDonation.has(b.id) });
+
   return NextResponse.json(
-    { books: books.map((b) => ({ ...b, hasDonation: withDonation.has(b.id) })) },
+    { books: books.map(decorate), more: more.map(decorate) },
     { headers: { "Cache-Control": "no-store" } },
   );
 }

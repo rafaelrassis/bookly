@@ -84,8 +84,8 @@ async function main() {
   for (let i = 0; i < TERMS.length; i++) {
     const term = TERMS[i];
     try {
-      const books = await searchGoogleBooks(term);
-      await cacheGoogleBooks(books);
+      const { books, more } = await searchGoogleBooks(term);
+      await cacheGoogleBooks([...books, ...more]);
       console.log(`  [${i + 1}/${TERMS.length}] "${term}" -> ${books.length} livros`);
     } catch (err) {
       console.log(`  [${i + 1}/${TERMS.length}] "${term}" — falhou:`, err);
