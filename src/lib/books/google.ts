@@ -68,7 +68,6 @@ function requireApiKey(): string {
 }
 
 const RETRYABLE_STATUS = new Set([429, 500, 503]);
-const MAX_ATTEMPTS = 3;
 const RETRY_DELAY_MS = 300;
 
 function sleep(ms: number): Promise<void> {
@@ -76,14 +75,16 @@ function sleep(ms: number): Promise<void> {
 }
 
 /** Google Books costuma responder 503 "backendFailed" de forma transitória —
- * tenta de novo (com backoff) antes de propagar como erro. */
-async function fetchGoogleBooks(url: string): Promise<Response> {
+ * tenta de novo (com backoff) antes de propagar como erro.
+ * `maxAttempts` menor na busca (2) que no detalhe (3): a busca já dispara
+ * 2 chamadas em paralelo, então cada retry pesa mais na latência percebida. */
+async function fetchGoogleBooks(url: string, maxAttempts = 3): Promise<Response> {
   let lastRes: Response | undefined;
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const res = await fetch(url);
     if (res.ok || !RETRYABLE_STATUS.has(res.status)) return res;
     lastRes = res;
-    if (attempt < MAX_ATTEMPTS) await sleep(RETRY_DELAY_MS * attempt);
+    if (attempt < maxAttempts) await sleep(RETRY_DELAY_MS * attempt);
   }
   return lastRes!;
 }
@@ -105,31 +106,52 @@ function relevanceScore(book: Book, q: string): number {
   return 0;
 }
 
-async function runSearch(q: string, extraParams: string): Promise<Book[]> {
-  const url = `${GOOGLE_BOOKS_API}?q=${encodeURIComponent(q)}&maxResults=20&country=US&orderBy=relevance${extraParams}&key=${requireApiKey()}`;
-  const res = await fetchGoogleBooks(url);
+async function runSearch(q: string, extraParams: string, maxAttempts?: number): Promise<Book[]> {
+  const url = `${GOOGLE_BOOKS_API}?q=${encodeURIComponent(q)}&maxResults=20&country=BR&orderBy=relevance${extraParams}&key=${requireApiKey()}`;
+  const res = await fetchGoogleBooks(url, maxAttempts);
   if (!res.ok) throw new Error(`Google Books search failed: ${res.status} ${await res.text()}`);
   const data = (await res.json()) as { items?: GoogleVolume[] };
   return (data.items ?? []).map(mapVolume).filter((b): b is Book => b !== null);
 }
 
+const SEARCH_CACHE_TTL_MS = 5 * 60_000;
+const searchCache = new Map<string, { at: number; books: Book[] }>();
+
+/** Cache in-memory por instância (best-effort — não sobrevive a cold start
+ * nem é compartilhado entre instâncias serverless). Reduz custo de quota e
+ * latência pra termos populares repetidos, sem precisar de infra externa. */
+function cacheKey(q: string): string {
+  return normalize(q.trim());
+}
+
 /** As duas buscas rodam em paralelo (evita dobrar a latência do fallback
  * sequencial). `intitle:` tende a vir vazio quando a query é autor/assunto
- * puro — mescla e deduplica por id, o score de relevância decide a ordem. */
+ * puro — mescla e deduplica por id, o score de relevância decide a ordem.
+ * Frase precisa ir entre aspas: sem aspas, `intitle:` só restringe a
+ * primeira palavra e o resto vira busca livre normal. */
 export async function searchGoogleBooks(q: string): Promise<Book[]> {
+  const key = cacheKey(q);
+  const cached = searchCache.get(key);
+  if (cached && Date.now() - cached.at < SEARCH_CACHE_TTL_MS) return cached.books;
+
   const [titleBoosted, general] = await Promise.all([
-    runSearch(`intitle:"${q}"`, ""),
-    runSearch(q, ""),
+    runSearch(`intitle:"${q}"`, "", 2),
+    runSearch(q, "", 2),
   ]);
   const byId = new Map<string, Book>();
   for (const b of [...titleBoosted, ...general]) byId.set(b.id, b);
-  return Array.from(byId.values()).sort((a, b) => relevanceScore(b, q) - relevanceScore(a, q));
+  const books = Array.from(byId.values()).sort(
+    (a, b) => relevanceScore(b, q) - relevanceScore(a, q)
+  );
+
+  searchCache.set(key, { at: Date.now(), books });
+  return books;
 }
 
 /** `null` quando o volume não existe (404); demais falhas (rede, 5xx, quota)
  * lançam pra virar erro explícito na rota (sem mascarar como "não encontrado"). */
 export async function getGoogleBook(id: string): Promise<Book | null> {
-  const url = `${GOOGLE_BOOKS_API}/${encodeURIComponent(id)}?country=US&key=${requireApiKey()}`;
+  const url = `${GOOGLE_BOOKS_API}/${encodeURIComponent(id)}?country=BR&key=${requireApiKey()}`;
   const res = await fetchGoogleBooks(url);
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Google Books get failed: ${res.status} ${await res.text()}`);
