@@ -119,6 +119,77 @@ test.describe("Doação de livros — fluxo ponta a ponta", () => {
     await userCtx.close();
   });
 
+  test("estender prazo e cancelar reserva pela tela de negociação", async ({ browser }) => {
+    const donorCtx = await browser.newContext();
+    const userCtx = await browser.newContext();
+    const donor = await donorCtx.newPage();
+    const user = await userCtx.newPage();
+
+    const donorAccount = seedAccount("ui_donor_ext");
+    const userAccount = seedAccount("ui_user_ext");
+    await login(donor, donorAccount);
+    await login(user, userAccount);
+
+    const city = "São Paulo"; // fixture de e2e/global-setup.ts (City)
+
+    await stubPhotoUpload(donor);
+    await donor.goto(`/book/${BOOK}`);
+    await donor.waitForSelector("h1");
+    await donor.getByRole("button", { name: "+ Doar este livro" }).click();
+
+    const createDialog = donor.getByRole("dialog", { name: "Doar este livro" });
+    await createDialog.locator('input[type="file"]').setInputFiles(FIXTURE_JPG);
+    await expect(createDialog.getByText("Trocar foto")).toBeVisible();
+    await createDialog.getByLabel(/estado \(uf\)/i).selectOption("SP");
+    await createDialog.getByLabel(/cidade/i).fill("São Pau");
+    await createDialog.getByRole("option", { name: new RegExp(city) }).click();
+    await createDialog.getByLabel(/whatsapp/i).fill("5511999997777");
+    await createDialog.getByRole("button", { name: "Publicar doação" }).click();
+    await expect(createDialog).toBeHidden();
+
+    const card = donor.locator("li", { hasText: city }).filter({ hasText: /sua doação/i });
+    await expect(card).toBeVisible();
+
+    await user.goto(`/book/${BOOK}`);
+    await user.waitForSelector("h1");
+    const cardOnUser = user.locator("li", { hasText: city }).filter({ hasText: /quero este|interesse enviado/i });
+    await cardOnUser.getByRole("button", { name: "Quero este" }).click();
+    await expect(cardOnUser.getByText(/interesse enviado/i)).toBeVisible();
+
+    await donor.reload();
+    await donor.locator("li", { hasText: city }).filter({ hasText: /sua doação/i }).getByRole("link", { name: /sua doação · gerenciar/i }).click();
+    await donor.waitForURL(/\/donations\//);
+
+    const candidateRow = donor.locator("li", { hasText: userAccount.name });
+    await candidateRow.getByRole("button", { name: "Escolher" }).click();
+    await expect(donor.getByRole("button", { name: /confirmar entrega/i })).toBeVisible();
+
+    // Estender prazo: fica na mesma tela, reserva continua RESERVADO.
+    await donor.getByRole("button", { name: /estender prazo em 7 dias/i }).click();
+    await expect(donor.getByText(/prazo renovado por mais 7 dias/i)).toBeVisible();
+    await expect(donor.getByRole("button", { name: /confirmar entrega/i })).toBeVisible();
+
+    // Cancelar reserva: abre Sheet de confirmação nomeando a consequência,
+    // e — ao contrário de "Remover doação" — NÃO apaga a doação: ela volta
+    // pra DISPONIVEL e o interessado cancelado volta pra fila (PENDENTE),
+    // então "Escolher" reaparece pro mesmo interessado.
+    await donor.getByRole("button", { name: /cancelar reserva/i }).click();
+    const cancelDialog = donor.getByRole("dialog", { name: "Cancelar reserva" });
+    await expect(cancelDialog.getByText(/volta a ficar dispon[íi]vel/i)).toBeVisible();
+    await cancelDialog.getByRole("button", { name: "Cancelar reserva" }).click();
+    await expect(donor.getByText(/reserva cancelada/i)).toBeVisible();
+    await expect(donor.getByRole("button", { name: /estender prazo em 7 dias/i })).toHaveCount(0);
+    await expect(candidateRow.getByRole("button", { name: "Escolher" })).toBeVisible();
+
+    // A doação continua listada (não sumiu) e o livro voltou a poder ser
+    // pedido — a diferença central entre "cancelar reserva" e "remover".
+    await user.reload();
+    await expect(user.locator("li", { hasText: city }).filter({ hasText: /interesse enviado/i })).toBeVisible();
+
+    await donorCtx.close();
+    await userCtx.close();
+  });
+
   test("não é possível pedir a própria doação", async ({ browser }) => {
     const ctx = await browser.newContext();
     const donor = await ctx.newPage();

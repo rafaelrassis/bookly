@@ -6,7 +6,7 @@ import { checkRateLimit } from "@/lib/ratelimit";
 import { notify } from "@/lib/notifications";
 import { buildDonationTimeline } from "@/lib/donation-state";
 
-const patchSchema = z.object({ action: z.literal("doado") });
+const patchSchema = z.object({ action: z.enum(["doado", "cancelar-reserva"]) });
 
 const ACTOR_SELECT = { id: true, username: true, name: true, avatar: true, avatarUrl: true } as const;
 
@@ -80,7 +80,9 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   });
 }
 
-/** Marca a doação como concluída. */
+/** Marca a doação como concluída, ou cancela uma reserva em andamento
+ * (volta pra DISPONIVEL, sem apagar a doação nem a fila de interessados —
+ * ver `cancelar-reserva` abaixo). */
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
@@ -95,6 +97,42 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const donation = await db.donation.findUnique({ where: { id: params.id } });
   if (!donation || donation.donorId !== session.user.id)
     return NextResponse.json({ error: "Não autorizado" }, { status: 403 });
+
+  if (parsed.data.action === "cancelar-reserva") {
+    if (donation.status !== "RESERVADO") {
+      return NextResponse.json({ error: "Só reservas podem ser canceladas" }, { status: 409 });
+    }
+
+    // Mesma transição do cron de expiração (donation-expiry.ts): volta pra
+    // DISPONIVEL e devolve o escolhido pra fila (PENDENTE) em vez de
+    // recusá-lo — o doador pode reconsiderá-lo depois, e outros pedidos
+    // pendentes continuam intactos.
+    const chosen = await db.donationRequest.findFirst({
+      where: { donationId: params.id, status: "ESCOLHIDO" },
+      select: { id: true, requesterId: true },
+    });
+
+    await db.$transaction([
+      db.donation.update({
+        where: { id: params.id },
+        data: { status: "DISPONIVEL", reservedAt: null, reserveWarnedAt: null },
+      }),
+      ...(chosen
+        ? [db.donationRequest.update({ where: { id: chosen.id }, data: { status: "PENDENTE" } })]
+        : []),
+    ]);
+
+    if (chosen) {
+      await notify({
+        userId: chosen.requesterId,
+        type: "DONATION_RESERVE_EXPIRED",
+        actorId: session.user.id,
+        donationId: params.id,
+      });
+    }
+
+    return NextResponse.json({ ok: true });
+  }
 
   await db.donation.update({
     where: { id: params.id },

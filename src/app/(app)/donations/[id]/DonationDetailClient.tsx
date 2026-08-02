@@ -143,12 +143,29 @@ export function DonationDetailClient({ donationId }: { donationId: string }) {
     if (!donation) return;
     setBusy("cancelar");
     try {
-      const res = await fetch(`/api/donations/${donationId}`, { method: "DELETE" });
-      if (!res.ok) {
-        showToast(await apiErrorMessage(res, "Não foi possível cancelar"));
+      if (donation.status === "RESERVADO") {
+        // Cancela só a reserva — o livro volta a DISPONIVEL e continua
+        // listado (a doação em si não é apagada, ver PATCH cancelar-reserva).
+        const res = await fetch(`/api/donations/${donationId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "cancelar-reserva" }),
+        });
+        if (!res.ok) {
+          showToast(await apiErrorMessage(res, "Não foi possível cancelar a reserva"));
+          return;
+        }
+        showToast("Reserva cancelada — o livro está disponível de novo");
+        load();
         return;
       }
-      showToast(donation.status === "RESERVADO" ? "Reserva cancelada" : "Doação removida");
+
+      const res = await fetch(`/api/donations/${donationId}`, { method: "DELETE" });
+      if (!res.ok) {
+        showToast(await apiErrorMessage(res, "Não foi possível remover a doação"));
+        return;
+      }
+      showToast("Doação removida");
       router.push("/profile/doacoes");
     } finally {
       setBusy(null);
