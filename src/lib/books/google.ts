@@ -88,12 +88,42 @@ async function fetchGoogleBooks(url: string): Promise<Response> {
   return lastRes!;
 }
 
-export async function searchGoogleBooks(q: string): Promise<Book[]> {
-  const url = `${GOOGLE_BOOKS_API}?q=${encodeURIComponent(q)}&maxResults=20&country=US&key=${requireApiKey()}`;
+function normalize(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+/** Score simples: título idêntico > começa com > contém a query inteira > resto. */
+function relevanceScore(book: Book, q: string): number {
+  const title = normalize(book.title);
+  const query = normalize(q);
+  if (title === query) return 3;
+  if (title.startsWith(query)) return 2;
+  if (title.includes(query)) return 1;
+  return 0;
+}
+
+async function runSearch(q: string, extraParams: string): Promise<Book[]> {
+  const url = `${GOOGLE_BOOKS_API}?q=${encodeURIComponent(q)}&maxResults=20&country=US&orderBy=relevance${extraParams}&key=${requireApiKey()}`;
   const res = await fetchGoogleBooks(url);
   if (!res.ok) throw new Error(`Google Books search failed: ${res.status} ${await res.text()}`);
   const data = (await res.json()) as { items?: GoogleVolume[] };
   return (data.items ?? []).map(mapVolume).filter((b): b is Book => b !== null);
+}
+
+/** As duas buscas rodam em paralelo (evita dobrar a latência do fallback
+ * sequencial). `intitle:` tende a vir vazio quando a query é autor/assunto
+ * puro — mescla e deduplica por id, o score de relevância decide a ordem. */
+export async function searchGoogleBooks(q: string): Promise<Book[]> {
+  const [titleBoosted, general] = await Promise.all([
+    runSearch(`intitle:${q}`, ""),
+    runSearch(q, ""),
+  ]);
+  const byId = new Map<string, Book>();
+  for (const b of [...titleBoosted, ...general]) byId.set(b.id, b);
+  return Array.from(byId.values()).sort((a, b) => relevanceScore(b, q) - relevanceScore(a, q));
 }
 
 /** `null` quando o volume não existe (404); demais falhas (rede, 5xx, quota)
