@@ -36,15 +36,17 @@ export function RatingInput({ rating, onChange }: RatingInputProps) {
               aria-pressed={isFull || isHalf}
               className="relative flex min-h-tap min-w-tap items-center justify-center rounded-lg text-4xl leading-none transition-transform active:scale-90"
             >
-              <span className={isFull ? "text-foil" : "text-paperMuted"}>★</span>
-              {isHalf && (
-                <span
-                  className="absolute inset-0 w-1/2 overflow-hidden p-0.5 text-foil"
-                  aria-hidden="true"
-                >
-                  ★
-                </span>
-              )}
+              <span className="relative inline-block">
+                <span className={isFull ? "text-foil" : "text-paperMuted"}>★</span>
+                {isHalf && (
+                  <span
+                    className="absolute left-0 top-0 w-1/2 overflow-hidden text-foil"
+                    aria-hidden="true"
+                  >
+                    ★
+                  </span>
+                )}
+              </span>
             </button>
           );
         })}
