@@ -31,6 +31,47 @@ const EMPTY_USER: UserState = {
 type Toast = { id: number; message: string };
 type Theme = "dark" | "light";
 
+/** Formato do payload de GET /api/users/me (ver serializeProfile em
+ * src/lib/users.ts) — subconjunto de campos que o AuthSync repassa ao store. */
+type ProfileResponse = Pick<
+  UserState,
+  | "name"
+  | "username"
+  | "bio"
+  | "genres"
+  | "avatar"
+  | "avatarUrl"
+  | "top4"
+  | "top4Books"
+  | "followers"
+  | "following"
+  | "progressUnit"
+  | "city"
+  | "state"
+>;
+
+/** Monta o patch completo de perfil a partir do payload de /api/users/me.
+ * Existe pra que esquecer um campo aqui vire um teste falhando (ver
+ * src/lib/store/applyProfile.test.ts) em vez de um bug silencioso — como
+ * aconteceu quando `following` ficou de fora do applyProfile no AuthSync. */
+export function buildProfilePatch(profile: ProfileResponse): Partial<UserState> {
+  return {
+    name: profile.name,
+    username: profile.username,
+    bio: profile.bio,
+    genres: profile.genres,
+    avatar: profile.avatar,
+    avatarUrl: profile.avatarUrl,
+    top4: profile.top4,
+    top4Books: profile.top4Books,
+    followers: profile.followers,
+    following: profile.following,
+    progressUnit: profile.progressUnit,
+    city: profile.city,
+    state: profile.state,
+  };
+}
+
 type Store = {
   user: UserState;
   toast: Toast | null;

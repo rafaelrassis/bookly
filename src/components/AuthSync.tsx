@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { useStore } from "@/lib/store";
+import { useStore, buildProfilePatch } from "@/lib/store";
 
 /** Mantém o store em sincronia com a sessão NextAuth e, uma vez logado, com
  * o perfil real vindo de /api/users/me (identidade, bio, gêneros, avatar,
@@ -32,20 +32,7 @@ export function AuthSync() {
         .then((res) => (res.ok ? res.json() : null))
         .then((profile) => {
           if (!profile) return;
-          applyProfile({
-            name: profile.name,
-            username: profile.username,
-            bio: profile.bio,
-            genres: profile.genres,
-            avatar: profile.avatar,
-            avatarUrl: profile.avatarUrl,
-            top4: profile.top4,
-            top4Books: profile.top4Books,
-            followers: profile.followers,
-            progressUnit: profile.progressUnit,
-            city: profile.city,
-            state: profile.state,
-          });
+          applyProfile(buildProfilePatch(profile));
         })
         .catch(() => {});
     } else if (status === "unauthenticated" && loggedIn) {
