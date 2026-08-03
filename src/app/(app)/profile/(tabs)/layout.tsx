@@ -64,9 +64,13 @@ function ProfileHeader() {
               )}
             </div>
           )}
-          <p className="mt-1 text-xs text-paperMuted">
-            <span className="font-bold text-paper">{user.followers}</span> seguidores ·{" "}
-            <span className="font-bold text-paper">{user.following}</span> seguindo
+          <p className="mt-1 flex gap-3 text-xs text-paperMuted">
+            <Link href={`/u/${user.username}/seguidores`} className="hover:text-paper">
+              <span className="font-bold text-paper">{user.followers}</span> seguidores
+            </Link>
+            <Link href={`/u/${user.username}/seguindo`} className="hover:text-paper">
+              <span className="font-bold text-paper">{user.following}</span> seguindo
+            </Link>
           </p>
         </div>
         <Button asChild>

@@ -174,12 +174,12 @@ export function ProfilePageClient({ params }: { params: { username: string } }) 
             </div>
           )}
           <div className="mt-1 flex gap-4 text-xs text-paperMuted">
-            <span>
+            <Link href={`/u/${profile.username}/seguidores`} className="hover:text-paper">
               <b className="text-paper">{profile.followers}</b> seguidores
-            </span>
-            <span>
+            </Link>
+            <Link href={`/u/${profile.username}/seguindo`} className="hover:text-paper">
               <b className="text-paper">{profile.following}</b> seguindo
-            </span>
+            </Link>
           </div>
         </div>
       </section>
