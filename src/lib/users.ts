@@ -25,6 +25,7 @@ export async function serializeProfile(targetId: string, viewerId?: string) {
     id: target.id,
     username: target.username,
     name: target.name,
+    createdAt: target.createdAt.toISOString(),
     bio: target.bio ?? "",
     genres: target.genres,
     avatar: target.avatar,

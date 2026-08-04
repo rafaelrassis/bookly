@@ -8,6 +8,7 @@ import { buildProfilePatch } from "./index";
 const CAMPOS_ESPERADOS = [
   "name",
   "username",
+  "createdAt",
   "bio",
   "genres",
   "avatar",
@@ -27,6 +28,7 @@ describe("buildProfilePatch", () => {
       id: "user-1",
       name: "Fulana",
       username: "fulana",
+      createdAt: "2024-01-15T00:00:00.000Z",
       bio: "bio de teste",
       genres: ["ficção"],
       avatar: 2,

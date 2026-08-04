@@ -374,6 +374,8 @@ export type UserState = {
   name: string;
   username: string;
   email: string;
+  /** Data de criação da conta (ISO) — limita o seletor de anos do "Seu ano em livros". */
+  createdAt: string;
   bio: string;
   genres: string[];
   followers: number;

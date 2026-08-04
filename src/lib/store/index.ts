@@ -16,6 +16,7 @@ const EMPTY_USER: UserState = {
   name: "",
   username: "",
   email: "",
+  createdAt: "",
   bio: "",
   genres: [],
   followers: 0,
@@ -37,6 +38,7 @@ type ProfileResponse = Pick<
   UserState,
   | "name"
   | "username"
+  | "createdAt"
   | "bio"
   | "genres"
   | "avatar"
@@ -58,6 +60,7 @@ export function buildProfilePatch(profile: ProfileResponse): Partial<UserState> 
   return {
     name: profile.name,
     username: profile.username,
+    createdAt: profile.createdAt,
     bio: profile.bio,
     genres: profile.genres,
     avatar: profile.avatar,

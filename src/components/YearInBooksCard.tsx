@@ -15,14 +15,20 @@ type YearStats = {
 };
 
 const CURRENT_YEAR = new Date().getFullYear();
-const YEAR_OPTIONS = [CURRENT_YEAR, CURRENT_YEAR - 1, CURRENT_YEAR - 2];
 
 export function YearInBooksCard() {
   const username = useStore((s) => s.user.username);
+  const createdAt = useStore((s) => s.user.createdAt);
   const showToast = useStore((s) => s.showToast);
   const [year, setYear] = useState(CURRENT_YEAR);
   const [stats, setStats] = useState<YearStats | null>(null);
   const [loaded, setLoaded] = useState(false);
+
+  const accountYear = createdAt ? new Date(createdAt).getFullYear() : CURRENT_YEAR;
+  const YEAR_OPTIONS = Array.from(
+    { length: CURRENT_YEAR - accountYear + 1 },
+    (_, i) => CURRENT_YEAR - i
+  );
 
   async function onShare() {
     const url = `${window.location.origin}/u/${username}/ano/${year}`;
@@ -69,7 +75,7 @@ export function YearInBooksCard() {
               Compartilhar
             </button>
           )}
-          {YEAR_OPTIONS.map((y) => (
+          {YEAR_OPTIONS.length > 1 && YEAR_OPTIONS.map((y) => (
             <button
               key={y}
               type="button"
