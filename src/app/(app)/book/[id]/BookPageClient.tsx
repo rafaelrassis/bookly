@@ -190,6 +190,20 @@ export function BookPageClient({ params }: { params: { id: string } }) {
     return { delta: data.delta as number, finished: data.status === "READ" };
   }
 
+  async function handleDatesChange(dates: { startedAt?: string; finishedAt?: string }) {
+    const res = await fetch(`/api/books/${bookId}/shelf/dates`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(dates),
+    });
+    if (!res.ok) {
+      showToast(await apiErrorMessage(res, "Não foi possível salvar a data"));
+      return;
+    }
+    const data = await res.json();
+    setEntry(data.entry);
+  }
+
   async function handleReread() {
     if (rereading) return;
     setRereading(true);
@@ -291,6 +305,7 @@ export function BookPageClient({ params }: { params: { id: string } }) {
               rereading={rereading}
               onStatusTap={handleStatusTap}
               onReread={handleReread}
+              onDatesChange={handleDatesChange}
             />
           </div>
         </div>
@@ -303,6 +318,7 @@ export function BookPageClient({ params }: { params: { id: string } }) {
               rereading={rereading}
               onStatusTap={handleStatusTap}
               onReread={handleReread}
+              onDatesChange={handleDatesChange}
             />
           </div>
 
