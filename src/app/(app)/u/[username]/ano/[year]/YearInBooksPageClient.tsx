@@ -6,7 +6,7 @@ import { Avatar } from "@/components/Avatar";
 import { BackHeader } from "@/components/BackHeader";
 import { ErrorRetry } from "@/components/ui/ErrorRetry";
 import { withAt, withoutAt } from "@/lib/handle";
-import { formatCount, formatDecimal } from "@/lib/format";
+import { formatCount, formatDecimal, readingDates } from "@/lib/format";
 import type { YearStats } from "@/lib/stats";
 import YearInBooksLoading from "./loading";
 
@@ -134,6 +134,33 @@ export function YearInBooksPageClient({
                   <div key={cover} className="aspect-[2/3] overflow-hidden rounded-md bg-card2">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={cover} alt="" className="h-full w-full object-cover" />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {stats.books.length > 0 && (
+              <div className="mt-4 flex flex-col gap-3 border-t border-line pt-4">
+                {stats.books.map((book, i) => (
+                  <div key={`${book.id}-${i}`} className="flex items-center gap-3">
+                    <div className="h-14 w-10 shrink-0 overflow-hidden rounded-md bg-card2">
+                      {book.coverUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={book.coverUrl}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate font-display text-sm font-bold text-paper">
+                        {book.title}
+                      </p>
+                      <p className="text-xs text-paperMuted">
+                        {readingDates(book.startedAt, book.finishedAt)}
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>

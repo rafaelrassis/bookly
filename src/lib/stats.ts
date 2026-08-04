@@ -83,6 +83,16 @@ export type YearStats = {
   /** Até 4 capas (Google Books) de livros concluídos no ano, sem repetir
    * livro — usada pelo card de estante compartilhável (opengraph-image). */
   covers: string[];
+  /** Um item por ReadingEvent concluído no ano, mais recente primeiro —
+   * reler o mesmo livro no ano gera duas entradas (mesmo critério de
+   * `booksRead`). */
+  books: {
+    id: string;
+    title: string;
+    coverUrl: string | null;
+    startedAt: string;
+    finishedAt: string;
+  }[];
 };
 
 /** "Seu {ano} em livros": livros lidos, páginas, gêneros mais lidos e nota
@@ -102,7 +112,11 @@ export async function getYearStats(userId: string, year: number): Promise<YearSt
 
   const events = await db.readingEvent.findMany({
     where: { userId, finishedAt: { gte: start, lt: end } },
-    select: { book: { select: { id: true, pages: true, genre: true, coverUrl: true } } },
+    select: {
+      startedAt: true,
+      finishedAt: true,
+      book: { select: { id: true, title: true, pages: true, genre: true, coverUrl: true } },
+    },
   });
 
   const booksRead = events.length;
@@ -138,5 +152,15 @@ export async function getYearStats(userId: string, year: number): Promise<YearSt
     if (covers.length === 4) break;
   }
 
-  return { year, booksRead, pagesRead, topGenres, avgRating, covers };
+  const books = events
+    .map((e) => ({
+      id: e.book.id,
+      title: e.book.title,
+      coverUrl: e.book.coverUrl,
+      startedAt: e.startedAt.toISOString(),
+      finishedAt: e.finishedAt.toISOString(),
+    }))
+    .sort((a, b) => b.finishedAt.localeCompare(a.finishedAt));
+
+  return { year, booksRead, pagesRead, topGenres, avgRating, covers, books };
 }

@@ -3,16 +3,9 @@
 import { useEffect, useState } from "react";
 import { Section } from "@/components/ui/Section";
 import { ShareIcon } from "@/components/icons";
-import { formatCount, formatDecimal } from "@/lib/format";
+import { formatCount, formatDecimal, readingDates } from "@/lib/format";
 import { useStore } from "@/lib/store";
-
-type YearStats = {
-  year: number;
-  booksRead: number;
-  pagesRead: number;
-  topGenres: { genre: string; count: number }[];
-  avgRating: number | null;
-};
+import type { YearStats } from "@/lib/stats";
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -136,6 +129,33 @@ export function YearInBooksCard() {
                       />
                     </div>
                     <span className="w-5 shrink-0 text-right text-xs font-bold text-paper">{count}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {stats.books.length > 0 && (
+              <div className="mt-4 flex flex-col gap-3 border-t border-line pt-4">
+                {stats.books.map((book, i) => (
+                  <div key={`${book.id}-${i}`} className="flex items-center gap-3">
+                    <div className="h-14 w-10 shrink-0 overflow-hidden rounded-md bg-card2">
+                      {book.coverUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={book.coverUrl}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate font-display text-sm font-bold text-paper">
+                        {book.title}
+                      </p>
+                      <p className="text-xs text-paperMuted">
+                        {readingDates(book.startedAt, book.finishedAt)}
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
